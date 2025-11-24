@@ -23,19 +23,29 @@ jobs:
         run: mvn clean test
 
   frontend:
-    if: ${{ hashFiles('frontend/package.json') != '' }}
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend  
     steps:
       - uses: actions/checkout@v4
+      - name: Detect frontend workspace
+        id: detect
+        run: |
+          if [ -f package.json ]; then
+            echo "has_frontend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_frontend=false" >> "$GITHUB_OUTPUT"
+            echo "No frontend/package.json found; skipping frontend job steps."
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
+        if: steps.detect.outputs.has_frontend == 'true'
       - name: Install
+        if: steps.detect.outputs.has_frontend == 'true'
         run: |
           if [ -f package-lock.json ]; then
             npm ci
@@ -43,8 +53,11 @@ jobs:
             npm install
           fi
       - name: Lint
+        if: steps.detect.outputs.has_frontend == 'true'
         run: npm run lint --if-present
       - name: Test
+        if: steps.detect.outputs.has_frontend == 'true'
         run: npm run test --if-present
       - name: Build
+        if: steps.detect.outputs.has_frontend == 'true'
         run: npm run build --if-present
