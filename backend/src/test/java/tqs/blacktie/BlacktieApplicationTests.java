@@ -7,8 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 class BlacktieApplicationTests {
 
 	@Test
-	boolean contextLoads() {
-		return true;
+	void contextLoads() {
 	}
 
 }
+
