@@ -8,16 +8,25 @@ interface User {
 }
 
 export default function HomePage() {
-  const [user, setUser] = useState<User | null>(null)
+  const [user] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null
+
+    const userData = window.localStorage.getItem('user')
+    if (!userData) return null
+
+    try {
+      return JSON.parse(userData) as User
+    } catch (error) {
+      console.error('Failed to parse user data from localStorage', error)
+      return null
+    }
+  })
 
   useEffect(() => {
-    const userData = localStorage.getItem('user')
-    if (userData) {
-      setUser(JSON.parse(userData))
-    } else {
+    if (!user) {
       window.location.href = '/login'
     }
-  }, [])
+  }, [user])
 
   const handleLogout = () => {
     localStorage.removeItem('user')
