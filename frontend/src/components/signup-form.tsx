@@ -67,7 +67,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         const errorData = await response.json()
         setError(errorData.message || "Failed to create account")
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred. Please try again.")
     }
   }
