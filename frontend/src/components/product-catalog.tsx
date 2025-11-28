@@ -35,7 +35,7 @@ export function ProductCatalog() {
       })
 
       setProducts(data)
-    } catch (e) {
+    } catch {
       setError("Failed to load products")
     } finally {
       setLoading(false)
