@@ -49,3 +49,44 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
 
   return res.json()
 }
+
+// User types and functions
+export type User = {
+  id: number
+  name: string
+  email: string
+  role: string
+  createdAt: string
+}
+
+export type SetRoleInput = {
+  role: "renter" | "owner"
+}
+
+export async function getCurrentUser(userId: number): Promise<User> {
+  const res = await fetch(`/api/users/${userId}/profile`)
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: "Failed to fetch user" }))
+    throw new Error(error.message || "Failed to fetch user")
+  }
+
+  return res.json()
+}
+
+export async function setUserRole(userId: number, role: "renter" | "owner"): Promise<User> {
+  const res = await fetch(`/api/users/${userId}/role`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ role }),
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: "Failed to set role" }))
+    throw new Error(error.message || "Failed to set role")
+  }
+
+  return res.json()
+}
