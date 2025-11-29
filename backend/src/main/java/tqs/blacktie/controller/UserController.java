@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import tqs.blacktie.dto.SetRoleRequest;
+import tqs.blacktie.dto.UpdateProfileRequest;
 import tqs.blacktie.dto.UserResponse;
 import tqs.blacktie.entity.User;
 import tqs.blacktie.service.UserService;
@@ -34,6 +35,9 @@ public class UserController {
                 user.getName(),
                 user.getEmail(),
                 user.getRole(),
+                user.getPhone(),
+                user.getAddress(),
+                user.getBusinessInfo(),
                 user.getCreatedAt().toString()
             ))
             .collect(Collectors.toList());
@@ -51,6 +55,9 @@ public class UserController {
                 updatedUser.getName(),
                 updatedUser.getEmail(),
                 updatedUser.getRole(),
+                updatedUser.getPhone(),
+                updatedUser.getAddress(),
+                updatedUser.getBusinessInfo(),
                 updatedUser.getCreatedAt().toString()
             );
             return ResponseEntity.ok(response);
@@ -70,6 +77,9 @@ public class UserController {
                 user.getName(),
                 user.getEmail(),
                 user.getRole(),
+                user.getPhone(),
+                user.getAddress(),
+                user.getBusinessInfo(),
                 user.getCreatedAt().toString()
             );
             return ResponseEntity.ok(response);
@@ -77,6 +87,30 @@ public class UserController {
             Map<String, String> error = new HashMap<>();
             error.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+    }
+
+    @PutMapping("/{userId}/profile")
+    public ResponseEntity<?> updateUserProfile(
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        try {
+            User updatedUser = userService.updateProfile(userId, request);
+            UserResponse response = new UserResponse(
+                updatedUser.getId(),
+                updatedUser.getName(),
+                updatedUser.getEmail(),
+                updatedUser.getRole(),
+                updatedUser.getPhone(),
+                updatedUser.getAddress(),
+                updatedUser.getBusinessInfo(),
+                updatedUser.getCreatedAt().toString()
+            );
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
 
