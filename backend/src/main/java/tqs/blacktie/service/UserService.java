@@ -3,6 +3,7 @@ package tqs.blacktie.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tqs.blacktie.dto.SignUpRequest;
+import tqs.blacktie.dto.UpdateProfileRequest;
 import tqs.blacktie.entity.User;
 import tqs.blacktie.repository.UserRepository;
 
@@ -80,5 +81,28 @@ public class UserService {
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    public User updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            user.setName(request.getName().trim());
+        }
+
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone().trim());
+        }
+
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress().trim());
+        }
+
+        if (request.getBusinessInfo() != null) {
+            user.setBusinessInfo(request.getBusinessInfo().trim());
+        }
+
+        return userRepository.save(user);
     }
 }

@@ -23,6 +23,15 @@ public class User {
     @Column(nullable = false)
     private String role = "renter";
 
+    @Column
+    private String phone;
+
+    @Column
+    private String address;
+
+    @Column(length = 500)
+    private String businessInfo;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -93,5 +102,29 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getBusinessInfo() {
+        return businessInfo;
+    }
+
+    public void setBusinessInfo(String businessInfo) {
+        this.businessInfo = businessInfo;
     }
 }

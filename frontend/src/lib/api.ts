@@ -56,6 +56,9 @@ export type User = {
   name: string
   email: string
   role: string
+  phone?: string
+  address?: string
+  businessInfo?: string
   createdAt: string
 }
 
@@ -86,6 +89,30 @@ export async function setUserRole(userId: number, role: "renter" | "owner"): Pro
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: "Failed to set role" }))
     throw new Error(error.message || "Failed to set role")
+  }
+
+  return res.json()
+}
+
+export type UpdateProfileInput = {
+  name: string
+  phone?: string
+  address?: string
+  businessInfo?: string
+}
+
+export async function updateUserProfile(userId: number, data: UpdateProfileInput): Promise<User> {
+  const res = await fetch(`/api/users/${userId}/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: "Failed to update profile" }))
+    throw new Error(error.message || "Failed to update profile")
   }
 
   return res.json()
