@@ -7,45 +7,42 @@ export default function RoleSetupPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   
-  // Simular userId (em produção viria do token/sessão)
+  // Get userId from localStorage (set after login)
   const userId = Number(localStorage.getItem("userId")) || 1
-
   useEffect(() => {
-    fetchUser()
-  }, [])
-
-  const fetchUser = async () => {
-    try {
-      const userData = await getCurrentUser(userId)
-      setUser(userData)
-      
-      // Se já escolheu o papel (não é mais "renter" default), redireciona
-      if (userData.role !== "renter") {
-        window.location.href = "/"
+    async function fetchUser() {
+      try {
+        const userData = await getCurrentUser(userId)
+        setUser(userData)
+      } catch (e) {
+        console.error(e)
+        setError("Erro ao carregar utilizador")
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      setError("Erro ao carregar utilizador")
-    } finally {
+    }
+
+    if (userId) {
+      fetchUser()
+    } else {
       setLoading(false)
     }
-  }
+  }, [userId])
 
-  const handleRoleSelected = (role: string) => {
-    // Atualizar estado local
+  const handleRoleSelected = async (role: string) => {
     if (user) {
       setUser({ ...user, role })
+      
+      setTimeout(() => {
+        window.location.href = "/"
+      }, 500)
     }
-    
-    // Redirecionar para a página principal
-    setTimeout(() => {
-      window.location.href = "/"
-    }, 1000)
   }
 
   if (loading) {
     return (
       <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-        <div>A carregar...</div>
+        <div>Loading...</div>
       </div>
     )
   }
@@ -53,19 +50,10 @@ export default function RoleSetupPage() {
   if (error || !user) {
     return (
       <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-        <div className="text-red-600">{error || "Utilizador não encontrado"}</div>
+        <div className="text-red-600">{error || "User not found"}</div>
       </div>
     )
   }
 
-  // Mostrar modal apenas se o papel ainda for "renter" (default)
-  if (user.role === "renter") {
-    return <RoleSelectionModal userId={user.id} onRoleSelected={handleRoleSelected} />
-  }
-
-  return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div>Papel já definido: {user.role}</div>
-    </div>
-  )
+  return <RoleSelectionModal userId={user.id} onRoleSelected={handleRoleSelected} />
 }

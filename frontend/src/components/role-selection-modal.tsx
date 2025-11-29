@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -12,7 +12,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
-import { setUserRole } from "@/lib/api"
+import { setUserRole, getCurrentUser } from "@/lib/api"
 
 type RoleSelectionModalProps = {
   userId: number
@@ -21,8 +21,24 @@ type RoleSelectionModalProps = {
 
 export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModalProps) {
   const [selectedRole, setSelectedRole] = useState<"renter" | "owner" | null>(null)
+  const [currentRole, setCurrentRole] = useState<string | null>(null)
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    async function loadCurrentRole() {
+      try {
+        const user = await getCurrentUser(userId)
+        setCurrentRole(user.role)
+        if (user.role === "renter" || user.role === "owner") {
+          setSelectedRole(user.role as "renter" | "owner")
+        }
+      } catch (e) {
+        console.error("Failed to load current role:", e)
+      }
+    }
+    loadCurrentRole()
+  }, [userId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,9 +66,11 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Escolha o seu papel</CardTitle>
+          <CardTitle>Choose Your Role</CardTitle>
           <CardDescription>
-            Selecione como deseja utilizar a plataforma. Esta escolha só pode ser feita uma vez.
+            {currentRole && currentRole !== "renter" 
+              ? `Current role: ${currentRole === "owner" ? "Owner" : currentRole}. You can change it anytime.`
+              : "Select how you want to use the platform. You can change it anytime."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -65,7 +83,7 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
               )}
 
               <Field>
-                <FieldLabel>Selecione o seu papel:</FieldLabel>
+                <FieldLabel>Select your role:</FieldLabel>
                 
                 <div className="space-y-3 mt-2">
                   <label className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
@@ -78,9 +96,9 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
                       className="mt-1 mr-3"
                     />
                     <div>
-                      <div className="font-medium">Renter (Arrendatário)</div>
+                      <div className="font-medium">Renter</div>
                       <div className="text-sm text-gray-600">
-                        Pretendo alugar fatos para eventos
+                        I want to rent suits for events
                       </div>
                     </div>
                   </label>
@@ -95,9 +113,9 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
                       className="mt-1 mr-3"
                     />
                     <div>
-                      <div className="font-medium">Owner (Proprietário)</div>
+                      <div className="font-medium">Owner</div>
                       <div className="text-sm text-gray-600">
-                        Pretendo disponibilizar fatos para aluguer
+                        I want to make my suits available for rent
                       </div>
                     </div>
                   </label>
@@ -106,7 +124,7 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
 
               <div className="mt-6">
                 <Button type="submit" disabled={isSubmitting || !selectedRole} className="w-full">
-                  {isSubmitting ? "A guardar..." : "Confirmar escolha"}
+                  {isSubmitting ? "Saving..." : "Confirm"}
                 </Button>
               </div>
             </FieldGroup>
