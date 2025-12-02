@@ -100,8 +100,6 @@
 						</goals>
 					</execution>
 				</executions>
-					<reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
