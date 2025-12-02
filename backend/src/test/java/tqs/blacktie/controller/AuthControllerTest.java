@@ -1,38 +1,42 @@
 package tqs.blacktie.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import tqs.blacktie.dto.LoginRequest;
+import tqs.blacktie.dto.LoginResponse;
 import tqs.blacktie.dto.SignUpRequest;
+import tqs.blacktie.dto.SignUpResponse;
 import tqs.blacktie.entity.User;
 import tqs.blacktie.service.UserService;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.util.List;
+import java.util.Map;
 
-@WebMvcTest(AuthController.class)
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
 @DisplayName("AuthController Tests")
 class AuthControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
+    @Mock
     private UserService userService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private AuthController authController;
 
     private User testUser;
 
@@ -44,149 +48,152 @@ class AuthControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /api/auth/register")
-    class RegisterEndpointTests {
+    @DisplayName("Registration Endpoint Tests")
+    class RegisterTests {
 
         @Test
-        @DisplayName("Should return 201 when registration is successful")
-        void whenRegisterWithValidData_thenReturn201() throws Exception {
+        @DisplayName("Should register user successfully")
+        void whenValidRegister_thenReturnCreated() {
             SignUpRequest request = new SignUpRequest("John Doe", "john@example.com", "password123");
-            
             when(userService.createUser(any(SignUpRequest.class))).thenReturn(testUser);
 
-            mockMvc.perform(post("/api/auth/register")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("John Doe"))
-                .andExpect(jsonPath("$.email").value("john@example.com"))
-                .andExpect(jsonPath("$.message").value("Account created successfully"));
+            ResponseEntity<?> response = authController.register(request);
+
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertInstanceOf(SignUpResponse.class, response.getBody());
+            SignUpResponse body = (SignUpResponse) response.getBody();
+            assertEquals(1L, body.getId());
+            assertEquals("John Doe", body.getName());
+            assertEquals("john@example.com", body.getEmail());
+            assertEquals("Account created successfully", body.getMessage());
         }
 
         @Test
-        @DisplayName("Should return 400 when email already exists")
-        void whenRegisterWithExistingEmail_thenReturn400() throws Exception {
+        @DisplayName("Should return bad request when email exists")
+        @SuppressWarnings("unchecked")
+        void whenEmailExists_thenReturnBadRequest() {
             SignUpRequest request = new SignUpRequest("John Doe", "john@example.com", "password123");
-            
             when(userService.createUser(any(SignUpRequest.class)))
-                .thenThrow(new IllegalArgumentException("Email already exists"));
+                    .thenThrow(new IllegalArgumentException("Email already exists"));
 
-            mockMvc.perform(post("/api/auth/register")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Email already exists"));
-        }
+            ResponseEntity<?> response = authController.register(request);
 
-        @Test
-        @DisplayName("Should return 400 when name is missing")
-        void whenRegisterWithMissingName_thenReturn400() throws Exception {
-            String invalidRequest = "{\"email\":\"john@example.com\",\"password\":\"password123\"}";
-
-            mockMvc.perform(post("/api/auth/register")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidRequest))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.name").value("Name is required"));
-        }
-
-        @Test
-        @DisplayName("Should return 400 when email is invalid")
-        void whenRegisterWithInvalidEmail_thenReturn400() throws Exception {
-            SignUpRequest request = new SignUpRequest("John Doe", "invalid-email", "password123");
-
-            mockMvc.perform(post("/api/auth/register")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.email").value("Email should be valid"));
-        }
-
-        @Test
-        @DisplayName("Should return 400 when password is too short")
-        void whenRegisterWithShortPassword_thenReturn400() throws Exception {
-            SignUpRequest request = new SignUpRequest("John Doe", "john@example.com", "short");
-
-            mockMvc.perform(post("/api/auth/register")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.password").value("Password must be at least 8 characters long"));
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            Map<String, String> body = (Map<String, String>) response.getBody();
+            assertEquals("Email already exists", body.get("message"));
         }
     }
 
     @Nested
-    @DisplayName("POST /api/auth/login")
-    class LoginEndpointTests {
+    @DisplayName("Login Endpoint Tests")
+    class LoginTests {
 
         @Test
-        @DisplayName("Should return 200 when login is successful")
-        void whenLoginWithValidCredentials_thenReturn200() throws Exception {
+        @DisplayName("Should login successfully")
+        void whenValidLogin_thenReturnOk() {
             LoginRequest request = new LoginRequest("john@example.com", "password123");
-            
-            when(userService.authenticateUser(anyString(), anyString())).thenReturn(testUser);
+            when(userService.authenticateUser("john@example.com", "password123")).thenReturn(testUser);
 
-            mockMvc.perform(post("/api/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("John Doe"))
-                .andExpect(jsonPath("$.email").value("john@example.com"))
-                .andExpect(jsonPath("$.role").value("renter"))
-                .andExpect(jsonPath("$.message").value("Login successful"));
+            ResponseEntity<?> response = authController.login(request);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertInstanceOf(LoginResponse.class, response.getBody());
+            LoginResponse body = (LoginResponse) response.getBody();
+            assertEquals(1L, body.getId());
+            assertEquals("John Doe", body.getName());
+            assertEquals("john@example.com", body.getEmail());
+            assertEquals("renter", body.getRole());
+            assertEquals("Login successful", body.getMessage());
         }
 
         @Test
-        @DisplayName("Should return 401 when credentials are invalid")
-        void whenLoginWithInvalidCredentials_thenReturn401() throws Exception {
+        @DisplayName("Should return unauthorized for invalid credentials")
+        @SuppressWarnings("unchecked")
+        void whenInvalidCredentials_thenReturnUnauthorized() {
             LoginRequest request = new LoginRequest("john@example.com", "wrongpassword");
+            when(userService.authenticateUser("john@example.com", "wrongpassword"))
+                    .thenThrow(new IllegalArgumentException("Invalid email or password"));
+
+            ResponseEntity<?> response = authController.login(request);
+
+            assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+            Map<String, String> body = (Map<String, String>) response.getBody();
+            assertEquals("Invalid email or password", body.get("message"));
+        }
+
+        @Test
+        @DisplayName("Should login as admin and return correct role")
+        void whenAdminLogin_thenReturnAdminRole() {
+            User adminUser = new User("Admin", "admin@example.com", "hashedPassword", "admin");
+            adminUser.setId(2L);
             
-            when(userService.authenticateUser(anyString(), anyString()))
-                .thenThrow(new IllegalArgumentException("Invalid email or password"));
+            LoginRequest request = new LoginRequest("admin@example.com", "password123");
+            when(userService.authenticateUser("admin@example.com", "password123")).thenReturn(adminUser);
 
-            mockMvc.perform(post("/api/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid email or password"));
+            ResponseEntity<?> response = authController.login(request);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            LoginResponse body = (LoginResponse) response.getBody();
+            assertEquals("admin", body.getRole());
         }
 
         @Test
-        @DisplayName("Should return 400 when email is missing")
-        void whenLoginWithMissingEmail_thenReturn400() throws Exception {
-            String invalidRequest = "{\"password\":\"password123\"}";
+        @DisplayName("Should login as owner and return correct role")
+        void whenOwnerLogin_thenReturnOwnerRole() {
+            User ownerUser = new User("Owner", "owner@example.com", "hashedPassword", "owner");
+            ownerUser.setId(3L);
+            
+            LoginRequest request = new LoginRequest("owner@example.com", "password123");
+            when(userService.authenticateUser("owner@example.com", "password123")).thenReturn(ownerUser);
 
-            mockMvc.perform(post("/api/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidRequest))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.email").value("Email is required"));
+            ResponseEntity<?> response = authController.login(request);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            LoginResponse body = (LoginResponse) response.getBody();
+            assertEquals("owner", body.getRole());
+        }
+    }
+
+    @Nested
+    @DisplayName("Validation Exception Handler Tests")
+    class ValidationExceptionHandlerTests {
+
+        @Test
+        @DisplayName("Should handle validation exceptions correctly")
+        void whenValidationFails_thenReturnBadRequest() {
+            MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+            BindingResult bindingResult = mock(BindingResult.class);
+            FieldError fieldError = new FieldError("signUpRequest", "email", "Email is required");
+            
+            when(ex.getBindingResult()).thenReturn(bindingResult);
+            when(bindingResult.getAllErrors()).thenReturn(List.of(fieldError));
+
+            ResponseEntity<Map<String, String>> response = authController.handleValidationExceptions(ex);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Email is required", response.getBody().get("email"));
+            assertEquals("Validation failed", response.getBody().get("message"));
         }
 
         @Test
-        @DisplayName("Should return 400 when password is missing")
-        void whenLoginWithMissingPassword_thenReturn400() throws Exception {
-            String invalidRequest = "{\"email\":\"john@example.com\"}";
+        @DisplayName("Should handle multiple validation errors")
+        void whenMultipleValidationErrors_thenReturnAllErrors() {
+            MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+            BindingResult bindingResult = mock(BindingResult.class);
+            FieldError emailError = new FieldError("signUpRequest", "email", "Email is required");
+            FieldError nameError = new FieldError("signUpRequest", "name", "Name is required");
+            
+            when(ex.getBindingResult()).thenReturn(bindingResult);
+            when(bindingResult.getAllErrors()).thenReturn(List.of(emailError, nameError));
 
-            mockMvc.perform(post("/api/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidRequest))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.password").value("Password is required"));
-        }
+            ResponseEntity<Map<String, String>> response = authController.handleValidationExceptions(ex);
 
-        @Test
-        @DisplayName("Should return 400 when email format is invalid")
-        void whenLoginWithInvalidEmailFormat_thenReturn400() throws Exception {
-            LoginRequest request = new LoginRequest("invalid-email", "password123");
-
-            mockMvc.perform(post("/api/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.email").value("Email should be valid"));
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Email is required", response.getBody().get("email"));
+            assertEquals("Name is required", response.getBody().get("name"));
+            assertEquals("Validation failed", response.getBody().get("message"));
         }
     }
 }

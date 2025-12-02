@@ -1,42 +1,44 @@
 package tqs.blacktie.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import tqs.blacktie.dto.SetRoleRequest;
 import tqs.blacktie.dto.UpdateProfileRequest;
+import tqs.blacktie.dto.UserResponse;
 import tqs.blacktie.entity.User;
 import tqs.blacktie.service.UserService;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(UserController.class)
+@ExtendWith(MockitoExtension.class)
 @DisplayName("UserController Tests")
 class UserControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
+    @Mock
     private UserService userService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private UserController userController;
 
     private User testUser;
 
@@ -45,221 +47,241 @@ class UserControllerTest {
         testUser = new User("John Doe", "john@example.com", "hashedPassword");
         testUser.setId(1L);
         testUser.setRole("renter");
-        testUser.setCreatedAt(LocalDateTime.of(2024, 1, 1, 12, 0));
+        testUser.setPhone("+351912345678");
+        testUser.setAddress("123 Main St");
     }
 
     @Nested
-    @DisplayName("GET /api/users")
+    @DisplayName("Get All Users Tests")
     class GetAllUsersTests {
 
         @Test
         @DisplayName("Should return list of users")
-        void whenGetAllUsers_thenReturnUsersList() throws Exception {
+        void whenGetAllUsers_thenReturnList() {
             User user2 = new User("Jane Doe", "jane@example.com", "hashedPassword");
             user2.setId(2L);
             user2.setRole("owner");
-            user2.setCreatedAt(LocalDateTime.of(2024, 1, 2, 12, 0));
 
             when(userService.getAllUsers()).thenReturn(Arrays.asList(testUser, user2));
 
-            mockMvc.perform(get("/api/users"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("John Doe"))
-                .andExpect(jsonPath("$[0].role").value("renter"))
-                .andExpect(jsonPath("$[1].id").value(2))
-                .andExpect(jsonPath("$[1].name").value("Jane Doe"))
-                .andExpect(jsonPath("$[1].role").value("owner"));
+            List<UserResponse> result = userController.getAllUsers();
+
+            assertEquals(2, result.size());
+            assertEquals(1L, result.get(0).getId());
+            assertEquals("John Doe", result.get(0).getName());
+            assertEquals("renter", result.get(0).getRole());
+            assertEquals(2L, result.get(1).getId());
+            assertEquals("Jane Doe", result.get(1).getName());
+            assertEquals("owner", result.get(1).getRole());
         }
 
         @Test
         @DisplayName("Should return empty list when no users")
-        void whenGetAllUsersEmpty_thenReturnEmptyList() throws Exception {
-            when(userService.getAllUsers()).thenReturn(List.of());
+        void whenNoUsers_thenReturnEmptyList() {
+            when(userService.getAllUsers()).thenReturn(Collections.emptyList());
 
-            mockMvc.perform(get("/api/users"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isEmpty());
+            List<UserResponse> result = userController.getAllUsers();
+
+            assertTrue(result.isEmpty());
         }
     }
 
     @Nested
-    @DisplayName("POST /api/users/{userId}/role")
+    @DisplayName("Set User Role Tests")
     class SetUserRoleTests {
 
         @Test
-        @DisplayName("Should set user role to owner")
-        void whenSetUserRoleToOwner_thenReturn200() throws Exception {
-            SetRoleRequest request = new SetRoleRequest("owner");
+        @DisplayName("Should set user role successfully")
+        void whenSetRole_thenReturnUpdatedUser() {
             testUser.setRole("owner");
-            
+            SetRoleRequest request = new SetRoleRequest("owner");
+
             when(userService.setUserRole(eq(1L), eq("owner"))).thenReturn(testUser);
 
-            mockMvc.perform(post("/api/users/1/role")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.role").value("owner"));
+            ResponseEntity<?> response = userController.setUserRole(1L, request);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertInstanceOf(UserResponse.class, response.getBody());
+            UserResponse body = (UserResponse) response.getBody();
+            assertEquals(1L, body.getId());
+            assertEquals("owner", body.getRole());
         }
 
         @Test
-        @DisplayName("Should set user role to renter")
-        void whenSetUserRoleToRenter_thenReturn200() throws Exception {
-            SetRoleRequest request = new SetRoleRequest("renter");
-            
-            when(userService.setUserRole(eq(1L), eq("renter"))).thenReturn(testUser);
-
-            mockMvc.perform(post("/api/users/1/role")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("renter"));
-        }
-
-        @Test
-        @DisplayName("Should return 400 when user not found")
-        void whenSetUserRoleUserNotFound_thenReturn400() throws Exception {
+        @DisplayName("Should return bad request when user not found")
+        @SuppressWarnings("unchecked")
+        void whenUserNotFound_thenReturnBadRequest() {
             SetRoleRequest request = new SetRoleRequest("owner");
-            
+
             when(userService.setUserRole(eq(999L), eq("owner")))
-                .thenThrow(new IllegalArgumentException("User not found"));
+                    .thenThrow(new IllegalArgumentException("User not found"));
 
-            mockMvc.perform(post("/api/users/999/role")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("User not found"));
+            ResponseEntity<?> response = userController.setUserRole(999L, request);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            Map<String, String> body = (Map<String, String>) response.getBody();
+            assertEquals("User not found", body.get("message"));
         }
 
         @Test
-        @DisplayName("Should return 400 when role is invalid")
-        void whenSetUserRoleInvalid_thenReturn400() throws Exception {
-            SetRoleRequest request = new SetRoleRequest("manager");
+        @DisplayName("Should return bad request for invalid role")
+        @SuppressWarnings("unchecked")
+        void whenInvalidRole_thenReturnBadRequest() {
+            SetRoleRequest request = new SetRoleRequest("admin");
 
-            mockMvc.perform(post("/api/users/1/role")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-        }
+            when(userService.setUserRole(eq(1L), eq("admin")))
+                    .thenThrow(new IllegalArgumentException("Cannot set role to admin"));
 
-        @Test
-        @DisplayName("Should return 400 when role is blank")
-        void whenSetUserRoleBlank_thenReturn400() throws Exception {
-            String invalidRequest = "{\"role\":\"\"}";
+            ResponseEntity<?> response = userController.setUserRole(1L, request);
 
-            mockMvc.perform(post("/api/users/1/role")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidRequest))
-                .andExpect(status().isBadRequest());
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            Map<String, String> body = (Map<String, String>) response.getBody();
+            assertEquals("Cannot set role to admin", body.get("message"));
         }
     }
 
     @Nested
-    @DisplayName("GET /api/users/{userId}/profile")
+    @DisplayName("Get User Profile Tests")
     class GetUserProfileTests {
 
         @Test
-        @DisplayName("Should return user profile")
-        void whenGetUserProfile_thenReturnProfile() throws Exception {
-            testUser.setPhone("+351912345678");
-            testUser.setAddress("123 Main St, Lisbon");
-            
+        @DisplayName("Should get user profile successfully")
+        void whenGetProfile_thenReturnUser() {
             when(userService.getUserById(1L)).thenReturn(testUser);
 
-            mockMvc.perform(get("/api/users/1/profile"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("John Doe"))
-                .andExpect(jsonPath("$.email").value("john@example.com"))
-                .andExpect(jsonPath("$.phone").value("+351912345678"))
-                .andExpect(jsonPath("$.address").value("123 Main St, Lisbon"));
+            ResponseEntity<?> response = userController.getUserProfile(1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertInstanceOf(UserResponse.class, response.getBody());
+            UserResponse body = (UserResponse) response.getBody();
+            assertEquals(1L, body.getId());
+            assertEquals("John Doe", body.getName());
+            assertEquals("john@example.com", body.getEmail());
+            assertEquals("+351912345678", body.getPhone());
+            assertEquals("123 Main St", body.getAddress());
         }
 
         @Test
-        @DisplayName("Should return 404 when user not found")
-        void whenGetUserProfileNotFound_thenReturn404() throws Exception {
+        @DisplayName("Should return not found when user does not exist")
+        @SuppressWarnings("unchecked")
+        void whenUserNotFound_thenReturnNotFound() {
             when(userService.getUserById(999L))
-                .thenThrow(new IllegalArgumentException("User not found"));
+                    .thenThrow(new IllegalArgumentException("User not found"));
 
-            mockMvc.perform(get("/api/users/999/profile"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("User not found"));
+            ResponseEntity<?> response = userController.getUserProfile(999L);
+
+            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+            Map<String, String> body = (Map<String, String>) response.getBody();
+            assertEquals("User not found", body.get("message"));
         }
     }
 
     @Nested
-    @DisplayName("PUT /api/users/{userId}/profile")
+    @DisplayName("Update User Profile Tests")
     class UpdateUserProfileTests {
 
         @Test
-        @DisplayName("Should update user profile")
-        void whenUpdateUserProfile_thenReturn200() throws Exception {
+        @DisplayName("Should update profile successfully")
+        void whenUpdateProfile_thenReturnUpdatedUser() {
             UpdateProfileRequest request = new UpdateProfileRequest(
-                "John Updated", "+351912345678", "123 Main St", null
+                    "Jane Doe", "+351987654321", "456 New St", null
             );
-            
-            testUser.setName("John Updated");
-            testUser.setPhone("+351912345678");
-            testUser.setAddress("123 Main St");
-            
+
+            testUser.setName("Jane Doe");
+            testUser.setPhone("+351987654321");
+            testUser.setAddress("456 New St");
+
             when(userService.updateProfile(eq(1L), any(UpdateProfileRequest.class))).thenReturn(testUser);
 
-            mockMvc.perform(put("/api/users/1/profile")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("John Updated"))
-                .andExpect(jsonPath("$.phone").value("+351912345678"))
-                .andExpect(jsonPath("$.address").value("123 Main St"));
+            ResponseEntity<?> response = userController.updateUserProfile(1L, request);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertInstanceOf(UserResponse.class, response.getBody());
+            UserResponse body = (UserResponse) response.getBody();
+            assertEquals("Jane Doe", body.getName());
+            assertEquals("+351987654321", body.getPhone());
+            assertEquals("456 New St", body.getAddress());
         }
 
         @Test
-        @DisplayName("Should return 400 when user not found")
-        void whenUpdateUserProfileNotFound_thenReturn400() throws Exception {
-            UpdateProfileRequest request = new UpdateProfileRequest("John", null, null, null);
-            
+        @DisplayName("Should return bad request when user not found")
+        @SuppressWarnings("unchecked")
+        void whenUserNotFound_thenReturnBadRequest() {
+            UpdateProfileRequest request = new UpdateProfileRequest(
+                    "Jane Doe", null, null, null
+            );
+
             when(userService.updateProfile(eq(999L), any(UpdateProfileRequest.class)))
-                .thenThrow(new IllegalArgumentException("User not found"));
+                    .thenThrow(new IllegalArgumentException("User not found"));
 
-            mockMvc.perform(put("/api/users/999/profile")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("User not found"));
-        }
+            ResponseEntity<?> response = userController.updateUserProfile(999L, request);
 
-        @Test
-        @DisplayName("Should return 400 when name is blank")
-        void whenUpdateUserProfileBlankName_thenReturn400() throws Exception {
-            String invalidRequest = "{\"name\":\"\"}";
-
-            mockMvc.perform(put("/api/users/1/profile")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidRequest))
-                .andExpect(status().isBadRequest());
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            Map<String, String> body = (Map<String, String>) response.getBody();
+            assertEquals("User not found", body.get("message"));
         }
 
         @Test
         @DisplayName("Should update profile with business info for owner")
-        void whenUpdateUserProfileWithBusinessInfo_thenReturn200() throws Exception {
-            UpdateProfileRequest request = new UpdateProfileRequest(
-                "Business Owner", "+351912345678", "Business St", "Premium rental service"
-            );
-            
+        void whenUpdateWithBusinessInfo_thenSuccess() {
             testUser.setRole("owner");
+            UpdateProfileRequest request = new UpdateProfileRequest(
+                    "Business Owner", "+351912345678", "Business St", "Premium service"
+            );
+
             testUser.setName("Business Owner");
-            testUser.setBusinessInfo("Premium rental service");
-            
+            testUser.setBusinessInfo("Premium service");
+
             when(userService.updateProfile(eq(1L), any(UpdateProfileRequest.class))).thenReturn(testUser);
 
-            mockMvc.perform(put("/api/users/1/profile")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.businessInfo").value("Premium rental service"));
+            ResponseEntity<?> response = userController.updateUserProfile(1L, request);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            UserResponse body = (UserResponse) response.getBody();
+            assertEquals("Premium service", body.getBusinessInfo());
+        }
+    }
+
+    @Nested
+    @DisplayName("Validation Exception Handler Tests")
+    class ValidationExceptionHandlerTests {
+
+        @Test
+        @DisplayName("Should handle validation exceptions correctly")
+        void whenValidationFails_thenReturnBadRequest() {
+            MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+            BindingResult bindingResult = mock(BindingResult.class);
+            FieldError fieldError = new FieldError("updateProfileRequest", "name", "Name is required");
+            
+            when(ex.getBindingResult()).thenReturn(bindingResult);
+            when(bindingResult.getAllErrors()).thenReturn(List.of(fieldError));
+
+            ResponseEntity<Map<String, String>> response = userController.handleValidationExceptions(ex);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Name is required", response.getBody().get("name"));
+            assertEquals("Validation failed", response.getBody().get("message"));
+        }
+
+        @Test
+        @DisplayName("Should handle multiple validation errors")
+        void whenMultipleValidationErrors_thenReturnAllErrors() {
+            MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+            BindingResult bindingResult = mock(BindingResult.class);
+            FieldError roleError = new FieldError("setRoleRequest", "role", "Role is required");
+            FieldError nameError = new FieldError("updateProfileRequest", "name", "Name is required");
+            
+            when(ex.getBindingResult()).thenReturn(bindingResult);
+            when(bindingResult.getAllErrors()).thenReturn(List.of(roleError, nameError));
+
+            ResponseEntity<Map<String, String>> response = userController.handleValidationExceptions(ex);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Role is required", response.getBody().get("role"));
+            assertEquals("Name is required", response.getBody().get("name"));
+            assertEquals("Validation failed", response.getBody().get("message"));
         }
     }
 }

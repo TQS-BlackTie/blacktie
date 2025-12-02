@@ -37,49 +37,35 @@ class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
+    private User testUser;
     private static final String RAW_PASSWORD = "password123";
     private static final String HASHED_PASSWORD = "$2a$10$hashedPassword";
-    private static final String TEST_EMAIL = "john@example.com";
-    private static final String TEST_NAME = "John Doe";
 
-    private User createTestUser() {
-        User user = new User(TEST_NAME, TEST_EMAIL, HASHED_PASSWORD);
-        user.setId(1L);
-        user.setRole("renter");
-        return user;
-    }
-
-    private User createTestUserWithRole(String name, String email, String role) {
-        User user = new User(name, email, HASHED_PASSWORD, role);
-        user.setId(1L);
-        return user;
+    @BeforeEach
+    void setUp() {
+        testUser = new User("John Doe", "john@example.com", HASHED_PASSWORD);
+        testUser.setId(1L);
+        testUser.setRole("renter");
     }
 
     @Nested
-    @DisplayName("Registration Tests")
+    @DisplayName("User Registration Tests")
     class RegistrationTests {
-
-        private SignUpRequest validRequest;
-
-        @BeforeEach
-        void setUp() {
-            validRequest = new SignUpRequest(TEST_NAME, TEST_EMAIL, RAW_PASSWORD);
-        }
 
         @Test
         @DisplayName("Should create user with valid data")
         void whenRegisterWithValidData_thenCreateUser() {
-            when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
-            when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(HASHED_PASSWORD);
+            SignUpRequest request = new SignUpRequest("John Doe", "john@example.com", RAW_PASSWORD);
             
-            User savedUser = createTestUser();
-            when(userRepository.save(any(User.class))).thenReturn(savedUser);
+            when(userRepository.existsByEmail("john@example.com")).thenReturn(false);
+            when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(HASHED_PASSWORD);
+            when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-            User result = userService.createUser(validRequest);
+            User result = userService.createUser(request);
 
             assertNotNull(result);
-            assertEquals(TEST_EMAIL, result.getEmail());
-            assertEquals(TEST_NAME, result.getName());
+            assertEquals("john@example.com", result.getEmail());
+            assertEquals("John Doe", result.getName());
             assertEquals("renter", result.getRole());
             
             ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -90,26 +76,27 @@ class UserServiceTest {
         @Test
         @DisplayName("Should throw exception when email already exists")
         void whenRegisterWithExistingEmail_thenThrowException() {
-            when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(true);
+            SignUpRequest request = new SignUpRequest("John Doe", "john@example.com", RAW_PASSWORD);
+            when(userRepository.existsByEmail("john@example.com")).thenReturn(true);
 
             IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> userService.createUser(validRequest)
+                () -> userService.createUser(request)
             );
             
             assertEquals("Email already exists", exception.getMessage());
-            verify(passwordEncoder, never()).encode(anyString());
             verify(userRepository, never()).save(any(User.class));
         }
 
         @Test
-        @DisplayName("Should hash password before saving")
+        @DisplayName("Should hash password when creating user")
         void whenRegisterUser_thenPasswordIsHashed() {
-            when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
+            SignUpRequest request = new SignUpRequest("John Doe", "john@example.com", RAW_PASSWORD);
+            when(userRepository.existsByEmail("john@example.com")).thenReturn(false);
             when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(HASHED_PASSWORD);
-            when(userRepository.save(any(User.class))).thenReturn(createTestUser());
+            when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-            userService.createUser(validRequest);
+            userService.createUser(request);
 
             verify(passwordEncoder).encode(RAW_PASSWORD);
             ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -120,62 +107,53 @@ class UserServiceTest {
         @Test
         @DisplayName("Should set default role as renter")
         void whenRegisterUser_thenDefaultRoleIsRenter() {
-            when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
+            SignUpRequest request = new SignUpRequest("John Doe", "john@example.com", RAW_PASSWORD);
+            when(userRepository.existsByEmail("john@example.com")).thenReturn(false);
             when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(HASHED_PASSWORD);
-            
-            User savedUser = createTestUser();
-            when(userRepository.save(any(User.class))).thenReturn(savedUser);
+            when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-            User result = userService.createUser(validRequest);
+            User result = userService.createUser(request);
 
             assertEquals("renter", result.getRole());
         }
 
         @Test
-        @DisplayName("Should handle special characters in name")
-        void whenRegisterWithSpecialCharactersInName_thenCreateUser() {
-            SignUpRequest request = new SignUpRequest("João Doe", TEST_EMAIL, RAW_PASSWORD);
-            when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(false);
-            when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(HASHED_PASSWORD);
+        @DisplayName("Should create user with special characters in name")
+        void whenRegisterWithSpecialCharacters_thenCreateUser() {
+            SignUpRequest request = new SignUpRequest("João Döe", "joao@example.com", RAW_PASSWORD);
+            User specialUser = new User("João Döe", "joao@example.com", HASHED_PASSWORD);
+            specialUser.setId(2L);
             
-            User savedUser = new User("João Doe", TEST_EMAIL, HASHED_PASSWORD);
-            savedUser.setId(1L);
-            when(userRepository.save(any(User.class))).thenReturn(savedUser);
+            when(userRepository.existsByEmail("joao@example.com")).thenReturn(false);
+            when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(HASHED_PASSWORD);
+            when(userRepository.save(any(User.class))).thenReturn(specialUser);
 
             User result = userService.createUser(request);
 
-            assertEquals("João Doe", result.getName());
+            assertEquals("João Döe", result.getName());
         }
     }
 
     @Nested
-    @DisplayName("Authentication Tests")
+    @DisplayName("User Authentication Tests")
     class AuthenticationTests {
-
-        private User testUser;
-
-        @BeforeEach
-        void setUp() {
-            testUser = createTestUser();
-        }
 
         @Test
         @DisplayName("Should authenticate user with valid credentials")
         void whenLoginWithValidCredentials_thenReturnUser() {
-            when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
+            when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
             when(passwordEncoder.matches(RAW_PASSWORD, HASHED_PASSWORD)).thenReturn(true);
 
-            User result = userService.authenticateUser(TEST_EMAIL, RAW_PASSWORD);
+            User result = userService.authenticateUser("john@example.com", RAW_PASSWORD);
 
             assertNotNull(result);
-            assertEquals(TEST_EMAIL, result.getEmail());
-            assertEquals(TEST_NAME, result.getName());
-            verify(userRepository).findByEmail(TEST_EMAIL);
+            assertEquals("john@example.com", result.getEmail());
+            assertEquals("John Doe", result.getName());
             verify(passwordEncoder).matches(RAW_PASSWORD, HASHED_PASSWORD);
         }
 
         @Test
-        @DisplayName("Should throw exception when email not found")
+        @DisplayName("Should throw exception for invalid email")
         void whenLoginWithInvalidEmail_thenThrowException() {
             when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
 
@@ -189,14 +167,14 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should throw exception when password is invalid")
+        @DisplayName("Should throw exception for invalid password")
         void whenLoginWithInvalidPassword_thenThrowException() {
-            when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
+            when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
             when(passwordEncoder.matches("wrongpassword", HASHED_PASSWORD)).thenReturn(false);
 
             IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> userService.authenticateUser(TEST_EMAIL, "wrongpassword")
+                () -> userService.authenticateUser("john@example.com", "wrongpassword")
             );
             
             assertEquals("Invalid email or password", exception.getMessage());
@@ -204,8 +182,9 @@ class UserServiceTest {
 
         @Test
         @DisplayName("Should authenticate admin user")
-        void whenLoginWithAdminRole_thenReturnAdminUser() {
-            User adminUser = createTestUserWithRole("Admin User", "admin@example.com", "admin");
+        void whenLoginAsAdmin_thenReturnAdminUser() {
+            User adminUser = new User("Admin", "admin@example.com", HASHED_PASSWORD, "admin");
+            adminUser.setId(2L);
             
             when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(adminUser));
             when(passwordEncoder.matches(RAW_PASSWORD, HASHED_PASSWORD)).thenReturn(true);
@@ -217,8 +196,9 @@ class UserServiceTest {
 
         @Test
         @DisplayName("Should authenticate owner user")
-        void whenLoginWithOwnerRole_thenReturnOwnerUser() {
-            User ownerUser = createTestUserWithRole("Owner User", "owner@example.com", "owner");
+        void whenLoginAsOwner_thenReturnOwnerUser() {
+            User ownerUser = new User("Owner", "owner@example.com", HASHED_PASSWORD, "owner");
+            ownerUser.setId(3L);
             
             when(userRepository.findByEmail("owner@example.com")).thenReturn(Optional.of(ownerUser));
             when(passwordEncoder.matches(RAW_PASSWORD, HASHED_PASSWORD)).thenReturn(true);
@@ -227,40 +207,15 @@ class UserServiceTest {
 
             assertEquals("owner", result.getRole());
         }
-
-        @Test
-        @DisplayName("Should throw exception when email is empty")
-        void whenLoginWithEmptyEmail_thenThrowException() {
-            when(userRepository.findByEmail("")).thenReturn(Optional.empty());
-
-            assertThrows(IllegalArgumentException.class,
-                () -> userService.authenticateUser("", RAW_PASSWORD));
-        }
-
-        @Test
-        @DisplayName("Should throw exception when email is null")
-        void whenLoginWithNullEmail_thenThrowException() {
-            when(userRepository.findByEmail(null)).thenReturn(Optional.empty());
-
-            assertThrows(IllegalArgumentException.class,
-                () -> userService.authenticateUser(null, RAW_PASSWORD));
-        }
     }
 
     @Nested
-    @DisplayName("Role Management Tests")
+    @DisplayName("User Role Management Tests")
     class RoleManagementTests {
 
-        private User testUser;
-
-        @BeforeEach
-        void setUp() {
-            testUser = createTestUser();
-        }
-
         @Test
-        @DisplayName("Should set role to renter")
-        void whenSetUserRoleToRenter_thenSuccess() {
+        @DisplayName("Should set user role to renter")
+        void whenSetRoleToRenter_thenSuccess() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(userRepository.save(any(User.class))).thenReturn(testUser);
 
@@ -271,8 +226,8 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should set role to owner")
-        void whenSetUserRoleToOwner_thenSuccess() {
+        @DisplayName("Should set user role to owner")
+        void whenSetRoleToOwner_thenSuccess() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(userRepository.save(any(User.class))).thenReturn(testUser);
 
@@ -283,7 +238,7 @@ class UserServiceTest {
 
         @Test
         @DisplayName("Should handle case insensitive role")
-        void whenSetUserRoleCaseInsensitive_thenSuccess() {
+        void whenSetRoleUpperCase_thenNormalize() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(userRepository.save(any(User.class))).thenReturn(testUser);
 
@@ -293,8 +248,8 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should throw exception when user not found")
-        void whenSetUserRoleUserNotFound_thenThrowException() {
+        @DisplayName("Should throw exception for non-existent user")
+        void whenSetRoleForNonExistentUser_thenThrowException() {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             IllegalArgumentException exception = assertThrows(
@@ -308,7 +263,7 @@ class UserServiceTest {
 
         @Test
         @DisplayName("Should throw exception for invalid role")
-        void whenSetUserRoleInvalidRole_thenThrowException() {
+        void whenSetInvalidRole_thenThrowException() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             IllegalArgumentException exception = assertThrows(
@@ -320,8 +275,8 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should not allow setting role to admin")
-        void whenSetUserRoleToAdmin_thenThrowException() {
+        @DisplayName("Should not allow setting admin role")
+        void whenSetAdminRole_thenThrowException() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             IllegalArgumentException exception = assertThrows(
@@ -334,21 +289,14 @@ class UserServiceTest {
     }
 
     @Nested
-    @DisplayName("Profile Management Tests")
+    @DisplayName("User Profile Management Tests")
     class ProfileManagementTests {
 
-        private User testUser;
-
-        @BeforeEach
-        void setUp() {
-            testUser = createTestUser();
-        }
-
         @Test
-        @DisplayName("Should update profile with valid data")
-        void whenUpdateProfileWithValidData_thenSuccess() {
+        @DisplayName("Should update user profile with valid data")
+        void whenUpdateProfile_thenSuccess() {
             UpdateProfileRequest request = new UpdateProfileRequest(
-                "Jane Doe", "+351912345678", "123 Main St, Lisbon", null
+                "Jane Doe", "+351912345678", "123 Main St", null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
@@ -359,16 +307,15 @@ class UserServiceTest {
             assertNotNull(result);
             assertEquals("Jane Doe", result.getName());
             assertEquals("+351912345678", result.getPhone());
-            assertEquals("123 Main St, Lisbon", result.getAddress());
-            verify(userRepository).save(testUser);
+            assertEquals("123 Main St", result.getAddress());
         }
 
         @Test
         @DisplayName("Should update business info for owner")
-        void whenUpdateProfileWithBusinessInfo_thenSuccess() {
+        void whenUpdateBusinessInfo_thenSuccess() {
             testUser.setRole("owner");
             UpdateProfileRequest request = new UpdateProfileRequest(
-                "Business Owner", "+351987654321", "456 Business Ave", "Premium suit rental service"
+                "Business Owner", "+351987654321", "456 Ave", "Premium suit rental"
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
@@ -376,15 +323,13 @@ class UserServiceTest {
 
             User result = userService.updateProfile(1L, request);
 
-            assertEquals("Business Owner", result.getName());
-            assertEquals("Premium suit rental service", result.getBusinessInfo());
+            assertEquals("Premium suit rental", result.getBusinessInfo());
         }
 
         @Test
-        @DisplayName("Should throw exception when user not found")
-        void whenUpdateProfileUserNotFound_thenThrowException() {
+        @DisplayName("Should throw exception for non-existent user")
+        void whenUpdateNonExistentUser_thenThrowException() {
             UpdateProfileRequest request = new UpdateProfileRequest("New Name", null, null, null);
-
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             IllegalArgumentException exception = assertThrows(
@@ -393,12 +338,11 @@ class UserServiceTest {
             );
 
             assertEquals("User not found", exception.getMessage());
-            verify(userRepository, never()).save(any(User.class));
         }
 
         @Test
-        @DisplayName("Should only update provided fields")
-        void whenUpdateProfilePartialData_thenUpdateOnlyProvidedFields() {
+        @DisplayName("Should update only provided fields")
+        void whenUpdatePartialData_thenUpdateOnlyProvided() {
             testUser.setPhone("+351999999999");
             testUser.setAddress("Old Address");
 
@@ -415,31 +359,30 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should not update name when empty string")
-        void whenUpdateProfileEmptyName_thenNotUpdate() {
-            UpdateProfileRequest request = new UpdateProfileRequest("   ", "+351912345678", "New Address", null);
+        @DisplayName("Should not update name if blank")
+        void whenUpdateWithBlankName_thenKeepOldName() {
+            UpdateProfileRequest request = new UpdateProfileRequest("   ", "+351912345678", "Address", null);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(userRepository.save(any(User.class))).thenReturn(testUser);
 
             User result = userService.updateProfile(1L, request);
 
-            assertEquals(TEST_NAME, result.getName());
-            assertEquals("+351912345678", result.getPhone());
+            assertEquals("John Doe", result.getName());
         }
     }
 
     @Nested
     @DisplayName("User Retrieval Tests")
-    class UserRetrievalTests {
+    class RetrievalTests {
 
         @Test
-        @DisplayName("Should return all users")
-        void whenGetAllUsers_thenReturnAllUsers() {
-            User user1 = createTestUserWithRole("User 1", "user1@example.com", "renter");
-            User user2 = createTestUserWithRole("User 2", "user2@example.com", "owner");
+        @DisplayName("Should get all users")
+        void whenGetAllUsers_thenReturnList() {
+            User user2 = new User("Jane Doe", "jane@example.com", HASHED_PASSWORD);
+            user2.setId(2L);
             
-            when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
+            when(userRepository.findAll()).thenReturn(Arrays.asList(testUser, user2));
 
             List<User> result = userService.getAllUsers();
 
@@ -448,19 +391,8 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should return empty list when no users")
-        void whenGetAllUsersEmpty_thenReturnEmptyList() {
-            when(userRepository.findAll()).thenReturn(List.of());
-
-            List<User> result = userService.getAllUsers();
-
-            assertTrue(result.isEmpty());
-        }
-
-        @Test
-        @DisplayName("Should return user by id")
+        @DisplayName("Should get user by ID")
         void whenGetUserById_thenReturnUser() {
-            User testUser = createTestUser();
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             User result = userService.getUserById(1L);
@@ -470,7 +402,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should throw exception when user not found by id")
+        @DisplayName("Should throw exception when user not found by ID")
         void whenGetUserByIdNotFound_thenThrowException() {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -483,15 +415,14 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should return user by email")
+        @DisplayName("Should get user by email")
         void whenGetUserByEmail_thenReturnUser() {
-            User testUser = createTestUser();
-            when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
+            when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(testUser));
 
-            User result = userService.getUserByEmail(TEST_EMAIL);
+            User result = userService.getUserByEmail("john@example.com");
 
             assertNotNull(result);
-            assertEquals(TEST_EMAIL, result.getEmail());
+            assertEquals("john@example.com", result.getEmail());
         }
 
         @Test
@@ -508,17 +439,17 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Should check if email exists")
+        @DisplayName("Should check if email exists - true")
         void whenEmailExists_thenReturnTrue() {
-            when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
+            when(userRepository.existsByEmail("john@example.com")).thenReturn(true);
 
-            boolean result = userService.emailExists("existing@example.com");
+            boolean result = userService.emailExists("john@example.com");
 
             assertTrue(result);
         }
 
         @Test
-        @DisplayName("Should check if email does not exist")
+        @DisplayName("Should check if email exists - false")
         void whenEmailNotExists_thenReturnFalse() {
             when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
 

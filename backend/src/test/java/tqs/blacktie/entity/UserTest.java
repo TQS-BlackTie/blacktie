@@ -16,17 +16,18 @@ class UserTest {
     class ConstructorTests {
 
         @Test
-        @DisplayName("Should create user with default constructor")
-        void whenDefaultConstructor_thenCreateUser() {
+        @DisplayName("Should create user with no-args constructor")
+        void whenNoArgsConstructor_thenCreateUser() {
             User user = new User();
 
-            assertNotNull(user.getCreatedAt());
+            assertNotNull(user);
             assertEquals("renter", user.getRole());
+            assertNotNull(user.getCreatedAt());
         }
 
         @Test
-        @DisplayName("Should create user with name, email, password")
-        void whenThreeArgConstructor_thenCreateUser() {
+        @DisplayName("Should create user with 3-args constructor")
+        void whenThreeArgsConstructor_thenCreateUser() {
             User user = new User("John Doe", "john@example.com", "password123");
 
             assertEquals("John Doe", user.getName());
@@ -37,12 +38,12 @@ class UserTest {
         }
 
         @Test
-        @DisplayName("Should create user with name, email, password, role")
-        void whenFourArgConstructor_thenCreateUser() {
-            User user = new User("John Doe", "john@example.com", "password123", "admin");
+        @DisplayName("Should create user with 4-args constructor")
+        void whenFourArgsConstructor_thenCreateUser() {
+            User user = new User("Admin", "admin@example.com", "password123", "admin");
 
-            assertEquals("John Doe", user.getName());
-            assertEquals("john@example.com", user.getEmail());
+            assertEquals("Admin", user.getName());
+            assertEquals("admin@example.com", user.getEmail());
             assertEquals("password123", user.getPassword());
             assertEquals("admin", user.getRole());
             assertNotNull(user.getCreatedAt());
@@ -117,12 +118,12 @@ class UserTest {
         }
 
         @Test
-        @DisplayName("Should get and set business info")
+        @DisplayName("Should get and set businessInfo")
         void whenSetBusinessInfo_thenGetBusinessInfo() {
             User user = new User();
-            user.setBusinessInfo("Premium rental service");
+            user.setBusinessInfo("Premium suit rental service");
 
-            assertEquals("Premium rental service", user.getBusinessInfo());
+            assertEquals("Premium suit rental service", user.getBusinessInfo());
         }
 
         @Test
@@ -133,6 +134,42 @@ class UserTest {
             user.setCreatedAt(now);
 
             assertEquals(now, user.getCreatedAt());
+        }
+    }
+
+    @Nested
+    @DisplayName("Default Values Tests")
+    class DefaultValuesTests {
+
+        @Test
+        @DisplayName("Default role should be renter")
+        void whenNewUser_thenDefaultRoleIsRenter() {
+            User user = new User("Test", "test@example.com", "password");
+
+            assertEquals("renter", user.getRole());
+        }
+
+        @Test
+        @DisplayName("CreatedAt should be set on construction")
+        void whenNewUser_thenCreatedAtIsSet() {
+            LocalDateTime before = LocalDateTime.now().minusSeconds(1);
+            User user = new User("Test", "test@example.com", "password");
+            LocalDateTime after = LocalDateTime.now().plusSeconds(1);
+
+            assertNotNull(user.getCreatedAt());
+            assertTrue(user.getCreatedAt().isAfter(before));
+            assertTrue(user.getCreatedAt().isBefore(after));
+        }
+
+        @Test
+        @DisplayName("Optional fields should be null initially")
+        void whenNewUser_thenOptionalFieldsAreNull() {
+            User user = new User("Test", "test@example.com", "password");
+
+            assertNull(user.getId());
+            assertNull(user.getPhone());
+            assertNull(user.getAddress());
+            assertNull(user.getBusinessInfo());
         }
     }
 }

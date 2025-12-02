@@ -1,171 +1,181 @@
 package tqs.blacktie.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import tqs.blacktie.entity.Product;
 import tqs.blacktie.service.ProductService;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProductController.class)
+@ExtendWith(MockitoExtension.class)
 @DisplayName("ProductController Tests")
 class ProductControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
+    @Mock
     private ProductService productService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    private Product testProduct;
-
-    @BeforeEach
-    void setUp() {
-        testProduct = new Product("Smoking", "Premium smoking suit", 80.0);
-        testProduct.setId(1L);
-        testProduct.setAvailable(true);
-    }
+    @InjectMocks
+    private ProductController productController;
 
     @Nested
-    @DisplayName("GET /api/products")
+    @DisplayName("Get Products Tests")
     class GetProductsTests {
 
         @Test
-        @DisplayName("Should return all available products without filters")
-        void whenGetProductsNoFilters_thenReturnAll() throws Exception {
-            Product product2 = new Product("Tuxedo", "Classic tuxedo", 120.0);
+        @DisplayName("Should return all available products")
+        void whenGetProducts_thenReturnList() {
+            Product product1 = new Product("Smoking", "Classic black", 80.0);
+            product1.setId(1L);
+            product1.setAvailable(true);
+            
+            Product product2 = new Product("Tuxedo", "Navy blue", 120.0);
             product2.setId(2L);
             product2.setAvailable(true);
 
-            when(productService.getAvailableProducts(isNull(), isNull()))
-                .thenReturn(Arrays.asList(testProduct, product2));
+            when(productService.getAvailableProducts(null, null))
+                    .thenReturn(Arrays.asList(product1, product2));
 
-            mockMvc.perform(get("/api/products"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("Smoking"))
-                .andExpect(jsonPath("$[0].price").value(80.0))
-                .andExpect(jsonPath("$[1].id").value(2))
-                .andExpect(jsonPath("$[1].name").value("Tuxedo"));
+            List<Product> result = productController.getProducts(null, null);
+
+            assertEquals(2, result.size());
+            assertEquals(1L, result.get(0).getId());
+            assertEquals("Smoking", result.get(0).getName());
+            assertEquals(80.0, result.get(0).getPrice());
+            assertEquals(2L, result.get(1).getId());
+            assertEquals("Tuxedo", result.get(1).getName());
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no products")
+        void whenNoProducts_thenReturnEmptyList() {
+            when(productService.getAvailableProducts(null, null))
+                    .thenReturn(Collections.emptyList());
+
+            List<Product> result = productController.getProducts(null, null);
+
+            assertTrue(result.isEmpty());
         }
 
         @Test
         @DisplayName("Should filter products by name")
-        void whenGetProductsWithNameFilter_thenReturnFiltered() throws Exception {
-            when(productService.getAvailableProducts(eq("smoking"), isNull()))
-                .thenReturn(List.of(testProduct));
+        void whenFilterByName_thenReturnFilteredList() {
+            Product product = new Product("Smoking", "Classic black", 80.0);
+            product.setId(1L);
+            product.setAvailable(true);
 
-            mockMvc.perform(get("/api/products")
-                    .param("name", "smoking"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].name").value("Smoking"));
+            when(productService.getAvailableProducts("smoking", null))
+                    .thenReturn(Collections.singletonList(product));
+
+            List<Product> result = productController.getProducts("smoking", null);
+
+            assertEquals(1, result.size());
+            assertEquals("Smoking", result.get(0).getName());
         }
 
         @Test
         @DisplayName("Should filter products by max price")
-        void whenGetProductsWithMaxPriceFilter_thenReturnFiltered() throws Exception {
-            when(productService.getAvailableProducts(isNull(), eq(100.0)))
-                .thenReturn(List.of(testProduct));
+        void whenFilterByMaxPrice_thenReturnFilteredList() {
+            Product product = new Product("Smoking", "Classic black", 80.0);
+            product.setId(1L);
+            product.setAvailable(true);
 
-            mockMvc.perform(get("/api/products")
-                    .param("maxPrice", "100.0"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].price").value(80.0));
+            when(productService.getAvailableProducts(null, 100.0))
+                    .thenReturn(Collections.singletonList(product));
+
+            List<Product> result = productController.getProducts(null, 100.0);
+
+            assertEquals(1, result.size());
+            assertEquals(80.0, result.get(0).getPrice());
         }
 
         @Test
         @DisplayName("Should filter products by name and max price")
-        void whenGetProductsWithBothFilters_thenReturnFiltered() throws Exception {
-            when(productService.getAvailableProducts(eq("smoking"), eq(100.0)))
-                .thenReturn(List.of(testProduct));
+        void whenFilterByNameAndMaxPrice_thenReturnFilteredList() {
+            Product product = new Product("Smoking", "Classic black", 80.0);
+            product.setId(1L);
+            product.setAvailable(true);
 
-            mockMvc.perform(get("/api/products")
-                    .param("name", "smoking")
-                    .param("maxPrice", "100.0"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].name").value("Smoking"));
-        }
+            when(productService.getAvailableProducts("smoking", 100.0))
+                    .thenReturn(Collections.singletonList(product));
 
-        @Test
-        @DisplayName("Should return empty list when no products match")
-        void whenGetProductsNoMatch_thenReturnEmptyList() throws Exception {
-            when(productService.getAvailableProducts(eq("nonexistent"), isNull()))
-                .thenReturn(List.of());
+            List<Product> result = productController.getProducts("smoking", 100.0);
 
-            mockMvc.perform(get("/api/products")
-                    .param("name", "nonexistent"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isEmpty());
+            assertEquals(1, result.size());
+            assertEquals("Smoking", result.get(0).getName());
+            assertEquals(80.0, result.get(0).getPrice());
         }
     }
 
     @Nested
-    @DisplayName("POST /api/products")
+    @DisplayName("Create Product Tests")
     class CreateProductTests {
 
         @Test
         @DisplayName("Should create product successfully")
-        void whenCreateProduct_thenReturn201() throws Exception {
-            Product newProduct = new Product("New Suit", "A new suit", 150.0);
-            
-            Product savedProduct = new Product("New Suit", "A new suit", 150.0);
+        void whenCreateProduct_thenReturnCreated() {
+            Product product = new Product("Smoking", "Classic black", 80.0);
+            Product savedProduct = new Product("Smoking", "Classic black", 80.0);
             savedProduct.setId(1L);
             savedProduct.setAvailable(true);
-            
+
             when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
 
-            mockMvc.perform(post("/api/products")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(newProduct)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("New Suit"))
-                .andExpect(jsonPath("$.description").value("A new suit"))
-                .andExpect(jsonPath("$.price").value(150.0))
-                .andExpect(jsonPath("$.available").value(true));
+            ResponseEntity<Product> response = productController.createProduct(product);
+
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(1L, response.getBody().getId());
+            assertEquals("Smoking", response.getBody().getName());
+            assertEquals("Classic black", response.getBody().getDescription());
+            assertEquals(80.0, response.getBody().getPrice());
+            assertTrue(response.getBody().getAvailable());
         }
 
         @Test
-        @DisplayName("Should create product with explicit availability")
-        void whenCreateProductWithAvailability_thenReturn201() throws Exception {
-            Product newProduct = new Product("New Suit", "A new suit", 150.0);
-            newProduct.setAvailable(false);
-            
-            Product savedProduct = new Product("New Suit", "A new suit", 150.0);
-            savedProduct.setId(1L);
-            savedProduct.setAvailable(false);
-            
+        @DisplayName("Should create product with availability set to true by default")
+        void whenCreateProductWithoutAvailability_thenSetTrue() {
+            Product product = new Product("Tuxedo", "Navy blue", 120.0);
+            Product savedProduct = new Product("Tuxedo", "Navy blue", 120.0);
+            savedProduct.setId(2L);
+            savedProduct.setAvailable(true);
+
             when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
 
-            mockMvc.perform(post("/api/products")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(newProduct)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.available").value(false));
+            ResponseEntity<Product> response = productController.createProduct(product);
+
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertTrue(response.getBody().getAvailable());
+        }
+
+        @Test
+        @DisplayName("Should create product with explicit availability false")
+        void whenCreateProductWithAvailabilityFalse_thenKeepFalse() {
+            Product product = new Product("Suit", "Gray", 90.0);
+            product.setAvailable(false);
+            
+            Product savedProduct = new Product("Suit", "Gray", 90.0);
+            savedProduct.setId(3L);
+            savedProduct.setAvailable(false);
+
+            when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
+
+            ResponseEntity<Product> response = productController.createProduct(product);
+
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertFalse(response.getBody().getAvailable());
         }
     }
 }
