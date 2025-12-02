@@ -21,6 +21,21 @@ jobs:
           cache: "maven"
       - name: Build & unit tests
         run: mvn clean test
+      - name: Upload results to Xray
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: 'backend/target/surefire-reports/TEST-*.xml'
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload test results to Xray
+        if: always()
+        uses: xray-actions/upload-test-execution@v1
+        with:
+          client-id: ${{ secrets.XRAY_CLIENT_ID }}
+          client-secret: ${{ secrets.XRAY_CLIENT_SECRET }}
+          test-format: junit
+          test-paths: 'backend/target/surefire-reports/*.xml'
+          project-key: BT
 
   frontend:
     runs-on: ubuntu-latest
