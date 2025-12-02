@@ -30,19 +30,19 @@ jobs:
       - name: Upload test results to Xray
         if: always()
         run: |
-          echo "🔐 Authenticating with Xray..."
+          echo "Authenticating with Xray..."
           TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
             --data "{ \"client_id\": \"${{ secrets.XRAY_CLIENT_ID }}\", \"client_secret\": \"${{ secrets.XRAY_CLIENT_SECRET }}\" }" \
             https://xray.cloud.getxray.app/api/v2/authenticate | tr -d '"')
           
           if [ -z "$TOKEN" ] || [ "$TOKEN" == "null" ]; then
-            echo "❌ Failed to authenticate with Xray"
+            echo "Failed to authenticate with Xray"
             exit 1
           fi
-          echo "✅ Authentication successful"
+          echo "Authentication successful"
           
           # Upload test results
-          echo "📤 Uploading test results..."
+          echo "Uploading test results..."
           for file in backend/target/surefire-reports/TEST-*.xml; do
             if [ -f "$file" ]; then
               echo "Uploading: $file"
@@ -58,14 +58,14 @@ jobs:
               echo "Response body: $BODY"
               
               if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                echo "✅ Successfully uploaded: $file"
+                echo "Successfully uploaded: $file"
               else
-                echo "❌ Failed to upload: $file"
+                echo "Failed to upload: $file"
                 echo "Error details: $BODY"
               fi
             fi
           done
-          echo "🎉 Upload process completed"
+          echo "Upload process completed"
 
   frontend:
     runs-on: ubuntu-latest
