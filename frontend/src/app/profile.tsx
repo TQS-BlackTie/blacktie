@@ -105,7 +105,7 @@ export default function ProfilePage() {
     }
   }
 
-  const handleRoleSelected = (_newRole: string) => {
+  const handleRoleSelected = () => {
     setShowRoleModal(false)
     const userData = localStorage.getItem('user')
     if (userData) {
