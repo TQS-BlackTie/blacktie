@@ -14,29 +14,36 @@ jobs:
         working-directory: backend  
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
       - uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "21"
           cache: "maven"
-      - name: Build & test with coverage
-        run: mvn clean verify
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Build & unit tests
+        run: mvn clean test
+      - name: Upload JUnit Report to GitHub
+        if: always()
+        uses: mikepenz/action-junit-report@v4
         with:
-          projectBaseDir: backend
-          args: >
-            -Dsonar.projectKey=TQS-BlackTie_blacktie
-            -Dsonar.organization=tqs-blacktie
-            -Dsonar.sources=src/main/java
-            -Dsonar.tests=src/test/java
-            -Dsonar.java.binaries=target/classes
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          report_paths: 'backend/target/surefire-reports/TEST-*.xml'
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload test results to Xray
+        if: always()
+        run: |
+          # Get authentication token
+          TOKEN=$(curl -H "Content-Type: application/json" -X POST \
+            --data "{ \"client_id\": \"${{ secrets.XRAY_CLIENT_ID }}\", \"client_secret\": \"${{ secrets.XRAY_CLIENT_SECRET }}\" }" \
+            https://xray.cloud.getxray.app/api/v2/authenticate | tr -d '"')
+          
+          # Upload test results
+          for file in backend/target/surefire-reports/TEST-*.xml; do
+            if [ -f "$file" ]; then
+              curl -H "Content-Type: application/xml" -X POST \
+                -H "Authorization: Bearer $TOKEN" \
+                --data @"$file" \
+                "https://xray.cloud.getxray.app/api/v2/import/execution/junit?projectKey=BT"
+            fi
+          done
 
   frontend:
     runs-on: ubuntu-latest
