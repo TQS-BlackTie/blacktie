@@ -30,20 +30,42 @@ jobs:
       - name: Upload test results to Xray
         if: always()
         run: |
-          # Get authentication token
-          TOKEN=$(curl -H "Content-Type: application/json" -X POST \
+          echo "Authenticating with Xray..."
+          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
             --data "{ \"client_id\": \"${{ secrets.XRAY_CLIENT_ID }}\", \"client_secret\": \"${{ secrets.XRAY_CLIENT_SECRET }}\" }" \
             https://xray.cloud.getxray.app/api/v2/authenticate | tr -d '"')
           
+          if [ -z "$TOKEN" ] || [ "$TOKEN" == "null" ]; then
+            echo "Failed to authenticate with Xray"
+            exit 1
+          fi
+          echo "Authentication successful"
+          
           # Upload test results
+          echo "Uploading test results..."
           for file in backend/target/surefire-reports/TEST-*.xml; do
             if [ -f "$file" ]; then
-              curl -H "Content-Type: application/xml" -X POST \
+              echo "Uploading: $file"
+              RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" -H "Content-Type: application/xml" -X POST \
                 -H "Authorization: Bearer $TOKEN" \
                 --data @"$file" \
-                "https://xray.cloud.getxray.app/api/v2/import/execution/junit?projectKey=BT"
+                "https://xray.cloud.getxray.app/api/v2/import/execution/junit?projectKey=BT")
+              
+              HTTP_CODE=$(echo "$RESPONSE" | grep HTTP_CODE | cut -d: -f2)
+              BODY=$(echo "$RESPONSE" | sed '/HTTP_CODE/d')
+              
+              echo "Response code: $HTTP_CODE"
+              echo "Response body: $BODY"
+              
+              if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                echo "Successfully uploaded: $file"
+              else
+                echo "Failed to upload: $file"
+                echo "Error details: $BODY"
+              fi
             fi
           done
+          echo "Upload process completed"
 
   frontend:
     runs-on: ubuntu-latest
