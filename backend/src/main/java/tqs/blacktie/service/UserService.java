@@ -3,6 +3,7 @@ package tqs.blacktie.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tqs.blacktie.dto.SignUpRequest;
+import tqs.blacktie.dto.UpdateProfileRequest;
 import tqs.blacktie.entity.User;
 import tqs.blacktie.repository.UserRepository;
 
@@ -23,7 +24,6 @@ public class UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
         }
-
         // Hash the password using BCrypt
         String hashedPassword = passwordEncoder.encode(request.getPassword());
 
@@ -53,5 +53,56 @@ public class UserService {
         }
 
         return user;
+    }
+
+    public User setUserRole(Long userId, String newRole) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String normalizedRole = newRole.toLowerCase().trim();
+
+        if (normalizedRole.equals("admin")) {
+            throw new IllegalArgumentException("Cannot set role to admin");
+        }
+
+        if (!normalizedRole.equals("renter") && !normalizedRole.equals("owner")) {
+            throw new IllegalArgumentException("Invalid role. Only 'renter' or 'owner' are allowed");
+        }
+
+        user.setRole(normalizedRole);
+        return userRepository.save(user);
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    public User updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            user.setName(request.getName().trim());
+        }
+
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone().trim());
+        }
+
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress().trim());
+        }
+
+        if (request.getBusinessInfo() != null) {
+            user.setBusinessInfo(request.getBusinessInfo().trim());
+        }
+
+        return userRepository.save(user);
     }
 }

@@ -40,19 +40,27 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen p-6 bg-slate-50">
-      <header className="flex items-center justify-between max-w-5xl mx-auto">
+      <header className="flex items-center justify-between max-w-5xl mx-auto mb-6">
         <div>
           <h1 className="text-2xl font-bold">BlackTie Catalog</h1>
           <p className="text-sm text-muted-foreground">
             Welcome, {user.name} ({user.role})
           </p>
         </div>
-        <button
-          onClick={handleLogout}
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 text-sm"
-        >
-          Logout
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => window.location.href = '/profile'}
+            className="rounded-md bg-slate-200 px-4 py-2 text-slate-900 hover:bg-slate-300 text-sm"
+          >
+            Manage Profile
+          </button>
+          <button
+            onClick={handleLogout}
+            className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 text-sm"
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <ProductCatalog />

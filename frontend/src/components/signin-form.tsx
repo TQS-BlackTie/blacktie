@@ -45,6 +45,7 @@ export function SigninForm({ ...props }: React.ComponentProps<typeof Card>) {
         setSuccess("Logged in successfully!")
         
         // Store user data in localStorage
+        localStorage.setItem("userId", data.id)
         localStorage.setItem("user", JSON.stringify({
           id: data.id,
           name: data.name,
@@ -52,8 +53,9 @@ export function SigninForm({ ...props }: React.ComponentProps<typeof Card>) {
           role: data.role
         }))
 
+        // Always redirect to role setup after login
         setTimeout(() => {
-          window.location.href = "/"
+          window.location.href = "/role-setup"
         }, 1000)
       } else {
         const errorData = await response.json()
