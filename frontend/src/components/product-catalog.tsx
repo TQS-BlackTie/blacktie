@@ -177,7 +177,7 @@ export function ProductCatalog() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-700 mb-2">{p.description}</p>
-              <p className="font-semibold">{p.price.toFixed(2)} € / day_1</p>
+              <p className="font-semibold">{p.price.toFixed(2)} € / day</p>
             </CardContent>
           </Card>
         ))}
