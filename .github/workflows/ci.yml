@@ -29,58 +29,53 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload test results to Xray
         if: always()
+        continue-on-error: true
         run: |
-          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
-            --data "{ \"client_id\": \"${{ secrets.XRAY_CLIENT_ID }}\", \"client_secret\": \"${{ secrets.XRAY_CLIENT_SECRET }}\" }" \
-            https://xray.cloud.getxray.app/api/v2/authenticate | tr -d '"')
+          echo "Verifying Xray credentials..."
+          AUTH_RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            --data "{\"client_id\":\"${{ secrets.XRAY_CLIENT_ID }}\",\"client_secret\":\"${{ secrets.XRAY_CLIENT_SECRET }}\"}" \
+            https://xray.cloud.getxray.app/api/v2/authenticate)
+          
+          AUTH_CODE=$(echo "$AUTH_RESPONSE" | grep "HTTP_CODE" | cut -d: -f2)
+          TOKEN=$(echo "$AUTH_RESPONSE" | sed '/HTTP_CODE/d' | tr -d '"')
+          
+          echo "Authentication response code: $AUTH_CODE"
+          
+          if [ "$AUTH_CODE" != "200" ]; then
+            echo "ERROR: Authentication failed. Please verify XRAY_CLIENT_ID and XRAY_CLIENT_SECRET"
+            echo "Response: $TOKEN"
+            exit 0
+          fi
           
           if [ -z "$TOKEN" ] || [ "$TOKEN" == "null" ]; then
-            echo "Failed to authenticate with Xray"
-            exit 1
+            echo "ERROR: No token received"
+            exit 0
           fi
           
-          mkdir -p merged-reports
-          cat target/surefire-reports/TEST-*.xml | head -1 > merged-reports/all-tests.xml
-          echo "<testsuites>" >> merged-reports/all-tests.xml
+          echo "Authentication successful"
+          echo "Uploading test results..."
+          
           for file in target/surefire-reports/TEST-*.xml; do
             if [ -f "$file" ]; then
-              sed -n '/<testsuite/,/<\/testsuite>/p' "$file" >> merged-reports/all-tests.xml
+              RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+                -H "Content-Type: application/xml" \
+                -H "Authorization: Bearer $TOKEN" \
+                -X POST \
+                --data-binary @"$file" \
+                "https://xray.cloud.getxray.app/api/v2/import/execution/junit?projectKey=BT")
+              
+              HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE" | cut -d: -f2)
+              
+              if [ "$HTTP_CODE" == "200" ] || [ "$HTTP_CODE" == "201" ]; then
+                echo "Successfully uploaded: $(basename $file)"
+                break
+              else
+                echo "Failed to upload $(basename $file): HTTP $HTTP_CODE"
+              fi
             fi
           done
-          echo "</testsuites>" >> merged-reports/all-tests.xml
-          
-          MAX_RETRIES=3
-          RETRY_COUNT=0
-          SUCCESS=0
-          
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ $SUCCESS -eq 0 ]; do
-            if [ $RETRY_COUNT -gt 0 ]; then
-              sleep 5
-            fi
-            
-            RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
-              -H "Content-Type: text/xml" \
-              -H "Authorization: Bearer $TOKEN" \
-              -X POST \
-              --data-binary @merged-reports/all-tests.xml \
-              "https://xray.cloud.getxray.app/api/v2/import/execution/junit?projectKey=BT")
-            
-            HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE" | cut -d: -f2)
-            BODY=$(echo "$RESPONSE" | sed '/HTTP_CODE/d')
-            
-            echo "Response code: $HTTP_CODE"
-            echo "Response body: $BODY"
-            
-            if [ "$HTTP_CODE" == "200" ] || [ "$HTTP_CODE" == "201" ]; then
-              SUCCESS=1
-            else
-              RETRY_COUNT=$((RETRY_COUNT + 1))
-            fi
-          done
-          
-          if [ $SUCCESS -eq 0 ]; then
-            echo "Failed to upload after $MAX_RETRIES attempts"
-          fi
 
   frontend:
     runs-on: ubuntu-latest
