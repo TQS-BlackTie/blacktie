@@ -30,22 +30,28 @@ jobs:
       - name: Upload test results to Xray
         if: always()
         run: |
-          echo "Authenticating with Xray..."
+          echo "🔐 Authenticating with Xray..."
           TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
             --data "{ \"client_id\": \"${{ secrets.XRAY_CLIENT_ID }}\", \"client_secret\": \"${{ secrets.XRAY_CLIENT_SECRET }}\" }" \
             https://xray.cloud.getxray.app/api/v2/authenticate | tr -d '"')
           
           if [ -z "$TOKEN" ] || [ "$TOKEN" == "null" ]; then
-            echo "Failed to authenticate with Xray"
+            echo "❌ Failed to authenticate with Xray"
             exit 1
           fi
-          echo "Authentication successful"
+          echo "✅ Authentication successful"
+          
+          # List test files
+          echo "📂 Looking for test files in target/surefire-reports/..."
+          ls -la target/surefire-reports/ || echo "Directory not found"
           
           # Upload test results
-          echo "Uploading test results..."
-          for file in backend/target/surefire-reports/TEST-*.xml; do
+          echo "📤 Uploading test results..."
+          FOUND_FILES=0
+          for file in target/surefire-reports/TEST-*.xml; do
             if [ -f "$file" ]; then
-              echo "Uploading: $file"
+              FOUND_FILES=1
+              echo "📄 Uploading: $file"
               RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" -H "Content-Type: application/xml" -X POST \
                 -H "Authorization: Bearer $TOKEN" \
                 --data @"$file" \
@@ -54,18 +60,23 @@ jobs:
               HTTP_CODE=$(echo "$RESPONSE" | grep HTTP_CODE | cut -d: -f2)
               BODY=$(echo "$RESPONSE" | sed '/HTTP_CODE/d')
               
-              echo "Response code: $HTTP_CODE"
-              echo "Response body: $BODY"
+              echo "📊 Response code: $HTTP_CODE"
+              echo "📋 Response body: $BODY"
               
               if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                echo "Successfully uploaded: $file"
+                echo "✅ Successfully uploaded: $file"
               else
-                echo "Failed to upload: $file"
+                echo "❌ Failed to upload: $file"
                 echo "Error details: $BODY"
               fi
             fi
           done
-          echo "Upload process completed"
+          
+          if [ $FOUND_FILES -eq 0 ]; then
+            echo "⚠️  No test files found in target/surefire-reports/TEST-*.xml"
+          else
+            echo "🎉 Upload process completed"
+          fi
 
   frontend:
     runs-on: ubuntu-latest
