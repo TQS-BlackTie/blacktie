@@ -32,11 +32,22 @@ jobs:
         continue-on-error: true
         run: |
           echo "Verifying Xray credentials..."
+          
+          # Create JSON file with credentials to avoid escaping issues
+          cat > auth.json <<EOF
+          {
+            "client_id": "${{ secrets.XRAY_CLIENT_ID }}",
+            "client_secret": "${{ secrets.XRAY_CLIENT_SECRET }}"
+          }
+          EOF
+          
           AUTH_RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
             -H "Content-Type: application/json" \
             -X POST \
-            --data "{\"client_id\":\"${{ secrets.XRAY_CLIENT_ID }}\",\"client_secret\":\"${{ secrets.XRAY_CLIENT_SECRET }}\"}" \
+            --data @auth.json \
             https://xray.cloud.getxray.app/api/v2/authenticate)
+          
+          rm -f auth.json
           
           AUTH_CODE=$(echo "$AUTH_RESPONSE" | grep "HTTP_CODE" | cut -d: -f2)
           TOKEN=$(echo "$AUTH_RESPONSE" | sed '/HTTP_CODE/d' | tr -d '"')
