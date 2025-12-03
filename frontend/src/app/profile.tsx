@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { RoleSelectionModal } from '@/components/role-selection-modal'
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
@@ -11,6 +12,7 @@ export default function ProfilePage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showRoleModal, setShowRoleModal] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -103,8 +105,19 @@ export default function ProfilePage() {
     }
   }
 
-  const handleChangeRole = () => {
-    window.location.href = '/role-setup'
+  const handleRoleSelected = () => {
+    setShowRoleModal(false)
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      try {
+        const updatedUser = JSON.parse(userData)
+        setUser(updatedUser)
+        setSuccess("Role updated successfully!")
+      } catch {
+        // reload user from API
+        getCurrentUser(userId).then(setUser).catch(console.error)
+      }
+    }
   }
 
   const handleBack = () => {
@@ -196,17 +209,25 @@ export default function ProfilePage() {
                 </Field>
               )}
 
+              <Field>
+                <FieldLabel>Current Role</FieldLabel>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="px-3 py-2 bg-gray-100 rounded-md font-medium capitalize">
+                    {user?.role || "Not set"}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRoleModal(true)}
+                  >
+                    Change Role
+                  </Button>
+                </div>
+              </Field>
+
               <div className="flex gap-3 mt-6">
                 <Button type="submit" disabled={isSubmitting} className="flex-1">
                   {isSubmitting ? "Saving..." : "Save Changes"}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleChangeRole}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Change Role
                 </Button>
               </div>
 
@@ -224,6 +245,13 @@ export default function ProfilePage() {
           </form>
         </CardContent>
       </Card>
+
+      {showRoleModal && userId && (
+        <RoleSelectionModal
+          userId={userId}
+          onRoleSelected={handleRoleSelected}
+        />
+      )}
     </div>
   )
 }
