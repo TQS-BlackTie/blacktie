@@ -21,6 +21,12 @@ jobs:
           cache: "maven"
       - name: Build & unit tests
         run: mvn clean test
+      - name: List generated test reports
+        if: always()
+        run: |
+          echo "Test report files generated:"
+          ls -lh target/surefire-reports/TEST-*.xml || echo "No test reports found"
+          echo "Total test files: $(ls target/surefire-reports/TEST-*.xml 2>/dev/null | wc -l)"
       - name: Upload JUnit Report to GitHub
         if: always()
         uses: mikepenz/action-junit-report@v4
@@ -68,8 +74,12 @@ jobs:
           echo "Authentication successful"
           echo "Uploading test results..."
           
+          SUCCESS_COUNT=0
+          FAIL_COUNT=0
+          
           for file in target/surefire-reports/TEST-*.xml; do
             if [ -f "$file" ]; then
+              echo "Uploading: $(basename $file)"
               RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
                 -H "Content-Type: application/xml" \
                 -H "Authorization: Bearer $TOKEN" \
@@ -80,13 +90,16 @@ jobs:
               HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE" | cut -d: -f2)
               
               if [ "$HTTP_CODE" == "200" ] || [ "$HTTP_CODE" == "201" ]; then
-                echo "Successfully uploaded: $(basename $file)"
-                break
+                echo "Success: $(basename $file)"
+                SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
               else
-                echo "Failed to upload $(basename $file): HTTP $HTTP_CODE"
+                echo "Failed: $(basename $file) - HTTP $HTTP_CODE"
+                FAIL_COUNT=$((FAIL_COUNT + 1))
               fi
             fi
           done
+          
+          echo "Upload summary: $SUCCESS_COUNT succeeded, $FAIL_COUNT failed"
 
   frontend:
     runs-on: ubuntu-latest
