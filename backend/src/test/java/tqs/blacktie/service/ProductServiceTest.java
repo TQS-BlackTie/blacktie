@@ -95,6 +95,32 @@ class ProductServiceTest {
     }
 
     @Test
+    void shouldThrowWhenRequesterNotFound() {
+        when(userRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+            () -> productService.getAvailableProducts(null, null, 99L));
+    }
+
+    @Test
+    void shouldThrowWhenNonOwnerCreatesProduct() {
+        User renter = new User("Renter", "r@example.com", "pass", "renter");
+        renter.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(renter));
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+            () -> productService.createProduct(new Product("Name", "Desc", 10.0), 1L));
+    }
+
+    @Test
+    void shouldThrowWhenOwnerMissingOnCreate() {
+        when(userRepository.findById(5L)).thenReturn(java.util.Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+            () -> productService.createProduct(new Product("Name", "Desc", 10.0), 5L));
+    }
+
+    @Test
     void createProductDefaultsAvailableToTrueWhenNull() {
         Product toSave = new Product("Smoking", "Desc", 80.0);
         toSave.setAvailable(null);

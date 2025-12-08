@@ -259,6 +259,19 @@ class BookingServiceTest {
         }
 
         @Test
+        @DisplayName("Renter can view bookings for product")
+        void renterCanViewBookingsForProduct() {
+            when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser)); // renter
+            when(bookingRepository.findByProduct(testProduct)).thenReturn(Arrays.asList(testBooking));
+
+            List<BookingResponse> responses = bookingService.getBookingsByProduct(1L, 1L);
+
+            assertEquals(1, responses.size());
+            verify(bookingRepository, times(1)).findByProduct(testProduct);
+        }
+
+        @Test
         @DisplayName("Should get booking by id")
         void shouldGetBookingById() {
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
@@ -337,6 +350,40 @@ class BookingServiceTest {
         }
 
         @Test
+        @DisplayName("Should allow owner to cancel own product booking")
+        void shouldAllowOwnerToCancelOwnProductBooking() {
+            User owner = new User("Owner", "owner@example.com", "pass", "owner");
+            owner.setId(10L);
+            testProduct.setOwner(owner);
+            testBooking.setProduct(testProduct);
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
+            when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+
+            bookingService.cancelBooking(1L, 10L);
+
+            verify(bookingRepository, times(1)).delete(testBooking);
+        }
+
+        @Test
+        @DisplayName("Owner cannot cancel booking for product they do not own")
+        void ownerCannotCancelOthersProductBooking() {
+            User owner = new User("Owner", "owner@example.com", "pass", "owner");
+            owner.setId(10L);
+            User otherOwner = new User("Other", "other@example.com", "pass", "owner");
+            otherOwner.setId(20L);
+            testProduct.setOwner(otherOwner);
+
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
+            when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+
+            IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> bookingService.cancelBooking(1L, 10L));
+
+            assertEquals("User is not authorized to cancel this booking", ex.getMessage());
+            verify(bookingRepository, never()).delete(any());
+        }
+
+        @Test
         @DisplayName("Should throw exception when booking already started")
         void shouldThrowExceptionWhenBookingAlreadyStarted() {
             LocalDateTime pastDate = LocalDateTime.now().minusDays(1);
@@ -356,6 +403,8 @@ class BookingServiceTest {
         void shouldAllowOwnerToCancelOthersBooking() {
             User owner = new User("Owner", "owner@example.com", "pass", "owner");
             owner.setId(10L);
+            testProduct.setOwner(owner); // Set the owner of the product
+            
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
             when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
 
