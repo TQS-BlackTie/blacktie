@@ -1,0 +1,221 @@
+package tqs.blacktie.controller;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import tqs.blacktie.dto.BookingRequest;
+import tqs.blacktie.dto.BookingResponse;
+import tqs.blacktie.service.BookingService;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("BookingController Tests")
+class BookingControllerTest {
+
+    @Mock
+    private BookingService bookingService;
+
+    @InjectMocks
+    private BookingController bookingController;
+
+    private BookingRequest testRequest;
+    private BookingResponse testResponse;
+
+    @BeforeEach
+    void setUp() {
+        LocalDateTime bookingDate = LocalDateTime.now().plusDays(1);
+        LocalDateTime returnDate = LocalDateTime.now().plusDays(3);
+
+        testRequest = new BookingRequest(1L, bookingDate, returnDate);
+
+        testResponse = new BookingResponse(
+            1L, 1L, "John Doe", 1L, "Tuxedo",
+            bookingDate, returnDate, 100.0
+        );
+    }
+
+    @Nested
+    @DisplayName("Create Booking Tests")
+    class CreateBookingTests {
+
+        @Test
+        @DisplayName("Should create booking successfully")
+        void shouldCreateBookingSuccessfully() {
+            when(bookingService.createBooking(eq(1L), any(BookingRequest.class)))
+                .thenReturn(testResponse);
+
+            ResponseEntity<?> response = bookingController.createBooking(1L, testRequest);
+
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody() instanceof BookingResponse);
+            BookingResponse body = (BookingResponse) response.getBody();
+            assertEquals(1L, body.getId());
+            verify(bookingService, times(1)).createBooking(eq(1L), any(BookingRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should return bad request when IllegalArgumentException thrown")
+        void shouldReturnBadRequestOnIllegalArgumentException() {
+            when(bookingService.createBooking(eq(1L), any(BookingRequest.class)))
+                .thenThrow(new IllegalArgumentException("User not found"));
+
+            ResponseEntity<?> response = bookingController.createBooking(1L, testRequest);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("User not found", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return conflict when IllegalStateException thrown")
+        void shouldReturnConflictOnIllegalStateException() {
+            when(bookingService.createBooking(eq(1L), any(BookingRequest.class)))
+                .thenThrow(new IllegalStateException("Product not available"));
+
+            ResponseEntity<?> response = bookingController.createBooking(1L, testRequest);
+
+            assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+            assertEquals("Product not available", response.getBody());
+        }
+    }
+
+    @Nested
+    @DisplayName("Get Bookings Tests")
+    class GetBookingsTests {
+
+        @Test
+        @DisplayName("Should get user bookings")
+        void shouldGetUserBookings() {
+            List<BookingResponse> bookings = Arrays.asList(testResponse);
+            when(bookingService.getUserBookings(1L)).thenReturn(bookings);
+
+            ResponseEntity<List<BookingResponse>> response = bookingController.getUserBookings(1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(1, response.getBody().size());
+            assertEquals(1L, response.getBody().get(0).getId());
+            verify(bookingService, times(1)).getUserBookings(1L);
+        }
+
+        @Test
+        @DisplayName("Should get all bookings")
+        void shouldGetAllBookings() {
+            List<BookingResponse> bookings = Arrays.asList(testResponse);
+            when(bookingService.getAllBookings()).thenReturn(bookings);
+
+            ResponseEntity<List<BookingResponse>> response = bookingController.getAllBookings();
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(1, response.getBody().size());
+            verify(bookingService, times(1)).getAllBookings();
+        }
+
+        @Test
+        @DisplayName("Should get booking by id")
+        void shouldGetBookingById() {
+            when(bookingService.getBookingById(1L)).thenReturn(testResponse);
+
+            ResponseEntity<?> response = bookingController.getBookingById(1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody() instanceof BookingResponse);
+            BookingResponse body = (BookingResponse) response.getBody();
+            assertEquals(1L, body.getId());
+            verify(bookingService, times(1)).getBookingById(1L);
+        }
+
+        @Test
+        @DisplayName("Should return not found when booking not found")
+        void shouldReturnNotFoundWhenBookingNotFound() {
+            when(bookingService.getBookingById(1L))
+                .thenThrow(new IllegalArgumentException("Booking not found"));
+
+            ResponseEntity<?> response = bookingController.getBookingById(1L);
+
+            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should get bookings by product id")
+        void shouldGetBookingsByProductId() {
+            List<BookingResponse> bookings = Arrays.asList(testResponse);
+            when(bookingService.getBookingsByProduct(1L)).thenReturn(bookings);
+
+            ResponseEntity<?> response = bookingController.getBookingsByProduct(1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            List<BookingResponse> body = (List<BookingResponse>) response.getBody();
+            assertEquals(1, body.size());
+            verify(bookingService, times(1)).getBookingsByProduct(1L);
+        }
+
+        @Test
+        @DisplayName("Should return not found when product not found for bookings")
+        void shouldReturnNotFoundWhenProductMissing() {
+            when(bookingService.getBookingsByProduct(1L))
+                .thenThrow(new IllegalArgumentException("Product not found"));
+
+            ResponseEntity<?> response = bookingController.getBookingsByProduct(1L);
+
+            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("Cancel Booking Tests")
+    class CancelBookingTests {
+
+        @Test
+        @DisplayName("Should cancel booking successfully")
+        void shouldCancelBookingSuccessfully() {
+            doNothing().when(bookingService).cancelBooking(1L, 1L);
+
+            ResponseEntity<?> response = bookingController.cancelBooking(1L, 1L);
+
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+            verify(bookingService, times(1)).cancelBooking(1L, 1L);
+        }
+
+        @Test
+        @DisplayName("Should return not found when booking not found")
+        void shouldReturnNotFoundWhenBookingNotFound() {
+            doThrow(new IllegalArgumentException("Booking not found"))
+                .when(bookingService).cancelBooking(1L, 1L);
+
+            ResponseEntity<?> response = bookingController.cancelBooking(1L, 1L);
+
+            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when user not authorized")
+        void shouldReturnForbiddenWhenUserNotAuthorized() {
+            doThrow(new IllegalStateException("User is not authorized"))
+                .when(bookingService).cancelBooking(1L, 1L);
+
+            ResponseEntity<?> response = bookingController.cancelBooking(1L, 1L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertEquals("User is not authorized", response.getBody());
+        }
+    }
+}

@@ -117,3 +117,73 @@ export async function updateUserProfile(userId: number, data: UpdateProfileInput
 
   return res.json()
 }
+
+// Booking types and functions
+export type Booking = {
+  id: number
+  renterId: number
+  renterName: string
+  productId: number
+  productName: string
+  bookingDate: string
+  returnDate: string
+  totalPrice: number
+}
+
+export type CreateBookingInput = {
+  productId: number
+  bookingDate: string
+  returnDate: string
+}
+
+export async function createBooking(userId: number, input: CreateBookingInput): Promise<Booking> {
+  const res = await fetch("/api/bookings", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Id": String(userId),
+    },
+    body: JSON.stringify(input),
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to create booking")
+  }
+
+  return res.json()
+}
+
+export async function getUserBookings(userId: number): Promise<Booking[]> {
+  const res = await fetch(`/api/bookings/user/${userId}`)
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch bookings")
+  }
+
+  return res.json()
+}
+
+export async function cancelBooking(userId: number, bookingId: number): Promise<void> {
+  const res = await fetch(`/api/bookings/${bookingId}`, {
+    method: "DELETE",
+    headers: {
+      "X-User-Id": String(userId),
+    },
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to cancel booking")
+  }
+}
+
+export async function getBookingsByProduct(productId: number): Promise<Booking[]> {
+  const res = await fetch(`/api/bookings/product/${productId}`)
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch bookings for product")
+  }
+
+  return res.json()
+}
