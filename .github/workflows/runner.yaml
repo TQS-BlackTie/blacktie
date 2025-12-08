@@ -1,1 +1,9 @@
-runs-on: self-hosted
+name: Self-hosted check
+on:
+  workflow_dispatch:
+jobs:
+  echo:
+    runs-on: self-hosted # add extra labels if your runner uses them
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Hello from self-hosted runner"
