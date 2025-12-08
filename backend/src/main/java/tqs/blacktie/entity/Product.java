@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
-
 public class Product {
     
     @Id
@@ -26,6 +25,10 @@ public class Product {
 
     @Column(name = "available")
     private Boolean available;
+
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
     public Product() {
         this.createdAt = LocalDateTime.now();
@@ -84,5 +87,13 @@ public class Product {
 
     public void setAvailable(Boolean available) {
         this.available = available;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 }

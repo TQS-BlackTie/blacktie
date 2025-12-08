@@ -97,12 +97,17 @@ export default function ProfilePage() {
       }
 
       setSuccess("Profile updated successfully!")
+      window.location.href = '/'
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update profile"
       setError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleBack = () => {
+    window.location.href = '/'
   }
 
   const handleRoleSelected = () => {
@@ -118,10 +123,6 @@ export default function ProfilePage() {
         getCurrentUser(userId).then(setUser).catch(console.error)
       }
     }
-  }
-
-  const handleBack = () => {
-    window.location.href = '/'
   }
 
   if (loading) {

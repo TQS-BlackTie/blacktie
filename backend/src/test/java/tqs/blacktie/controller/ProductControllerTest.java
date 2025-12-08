@@ -45,10 +45,10 @@ class ProductControllerTest {
             product2.setId(2L);
             product2.setAvailable(true);
 
-            when(productService.getAvailableProducts(null, null))
+            when(productService.getAvailableProducts(null, null, 1L))
                     .thenReturn(Arrays.asList(product1, product2));
 
-            List<Product> result = productController.getProducts(null, null);
+            List<Product> result = productController.getProducts(null, null, 1L);
 
             assertEquals(2, result.size());
             assertEquals(1L, result.get(0).getId());
@@ -61,10 +61,10 @@ class ProductControllerTest {
         @Test
         @DisplayName("Should return empty list when no products")
         void whenNoProducts_thenReturnEmptyList() {
-            when(productService.getAvailableProducts(null, null))
+            when(productService.getAvailableProducts(null, null, 1L))
                     .thenReturn(Collections.emptyList());
 
-            List<Product> result = productController.getProducts(null, null);
+            List<Product> result = productController.getProducts(null, null, 1L);
 
             assertTrue(result.isEmpty());
         }
@@ -76,10 +76,10 @@ class ProductControllerTest {
             product.setId(1L);
             product.setAvailable(true);
 
-            when(productService.getAvailableProducts("smoking", null))
+            when(productService.getAvailableProducts("smoking", null, 1L))
                     .thenReturn(Collections.singletonList(product));
 
-            List<Product> result = productController.getProducts("smoking", null);
+            List<Product> result = productController.getProducts("smoking", null, 1L);
 
             assertEquals(1, result.size());
             assertEquals("Smoking", result.get(0).getName());
@@ -92,10 +92,10 @@ class ProductControllerTest {
             product.setId(1L);
             product.setAvailable(true);
 
-            when(productService.getAvailableProducts(null, 100.0))
+            when(productService.getAvailableProducts(null, 100.0, 1L))
                     .thenReturn(Collections.singletonList(product));
 
-            List<Product> result = productController.getProducts(null, 100.0);
+            List<Product> result = productController.getProducts(null, 100.0, 1L);
 
             assertEquals(1, result.size());
             assertEquals(80.0, result.get(0).getPrice());
@@ -108,10 +108,10 @@ class ProductControllerTest {
             product.setId(1L);
             product.setAvailable(true);
 
-            when(productService.getAvailableProducts("smoking", 100.0))
+            when(productService.getAvailableProducts("smoking", 100.0, 1L))
                     .thenReturn(Collections.singletonList(product));
 
-            List<Product> result = productController.getProducts("smoking", 100.0);
+            List<Product> result = productController.getProducts("smoking", 100.0, 1L);
 
             assertEquals(1, result.size());
             assertEquals("Smoking", result.get(0).getName());
@@ -131,17 +131,18 @@ class ProductControllerTest {
             savedProduct.setId(1L);
             savedProduct.setAvailable(true);
 
-            when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
+            when(productService.createProduct(any(Product.class), org.mockito.ArgumentMatchers.eq(1L))).thenReturn(savedProduct);
 
-            ResponseEntity<Product> response = productController.createProduct(product);
+            ResponseEntity<?> response = productController.createProduct(product, 1L);
 
             assertEquals(HttpStatus.CREATED, response.getStatusCode());
             assertNotNull(response.getBody());
-            assertEquals(1L, response.getBody().getId());
-            assertEquals("Smoking", response.getBody().getName());
-            assertEquals("Classic black", response.getBody().getDescription());
-            assertEquals(80.0, response.getBody().getPrice());
-            assertTrue(response.getBody().getAvailable());
+            Product body = (Product) response.getBody();
+            assertEquals(1L, body.getId());
+            assertEquals("Smoking", body.getName());
+            assertEquals("Classic black", body.getDescription());
+            assertEquals(80.0, body.getPrice());
+            assertTrue(body.getAvailable());
         }
 
         @Test
@@ -152,12 +153,12 @@ class ProductControllerTest {
             savedProduct.setId(2L);
             savedProduct.setAvailable(true);
 
-            when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
+            when(productService.createProduct(any(Product.class), org.mockito.ArgumentMatchers.eq(1L))).thenReturn(savedProduct);
 
-            ResponseEntity<Product> response = productController.createProduct(product);
+            ResponseEntity<?> response = productController.createProduct(product, 1L);
 
             assertEquals(HttpStatus.CREATED, response.getStatusCode());
-            assertTrue(response.getBody().getAvailable());
+            assertTrue(((Product) response.getBody()).getAvailable());
         }
 
         @Test
@@ -170,12 +171,12 @@ class ProductControllerTest {
             savedProduct.setId(3L);
             savedProduct.setAvailable(false);
 
-            when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
+            when(productService.createProduct(any(Product.class), org.mockito.ArgumentMatchers.eq(1L))).thenReturn(savedProduct);
 
-            ResponseEntity<Product> response = productController.createProduct(product);
+            ResponseEntity<?> response = productController.createProduct(product, 1L);
 
             assertEquals(HttpStatus.CREATED, response.getStatusCode());
-            assertFalse(response.getBody().getAvailable());
+            assertFalse(((Product) response.getBody()).getAvailable());
         }
     }
 }

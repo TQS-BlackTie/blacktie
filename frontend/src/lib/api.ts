@@ -4,14 +4,20 @@ export type Product = {
   description: string
   price: number
   available: boolean
+  owner?: {
+    id: number
+    name?: string
+    email?: string
+  }
 }
 
 export type GetProductsParams = {
   name?: string
   maxPrice?: number
+  userId: number
 }
 
-export async function getProducts(params: GetProductsParams = {}): Promise<Product[]> {
+export async function getProducts(params: GetProductsParams): Promise<Product[]> {
   const query = new URLSearchParams()
 
   if (params.name && params.name.trim() !== "") {
@@ -23,7 +29,9 @@ export async function getProducts(params: GetProductsParams = {}): Promise<Produ
 
   const url = "/api/products" + (query.toString() ? `?${query.toString()}` : "")
 
-  const res = await fetch(url)
+  const res = await fetch(url, {
+    headers: { "X-User-Id": String(params.userId) },
+  })
   if (!res.ok) {
     throw new Error("Failed to fetch products")
   }
@@ -36,10 +44,10 @@ export type CreateProductInput = {
   price: number
 }
 
-export async function createProduct(input: CreateProductInput): Promise<Product> {
+export async function createProduct(userId: number, input: CreateProductInput): Promise<Product> {
   const res = await fetch("/api/products", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-User-Id": String(userId) },
     body: JSON.stringify(input),
   })
 
@@ -178,8 +186,10 @@ export async function cancelBooking(userId: number, bookingId: number): Promise<
   }
 }
 
-export async function getBookingsByProduct(productId: number): Promise<Booking[]> {
-  const res = await fetch(`/api/bookings/product/${productId}`)
+export async function getBookingsByProduct(productId: number, userId: number): Promise<Booking[]> {
+  const res = await fetch(`/api/bookings/product/${productId}`, {
+    headers: { "X-User-Id": String(userId) },
+  })
 
   if (!res.ok) {
     throw new Error("Failed to fetch bookings for product")

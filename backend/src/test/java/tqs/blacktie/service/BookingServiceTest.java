@@ -179,7 +179,7 @@ class BookingServiceTest {
     }
 
     @Nested
-        @DisplayName("Get Bookings Tests")
+    @DisplayName("Get Bookings Tests")
     class GetBookingsTests {
 
         @Test
@@ -210,10 +210,14 @@ class BookingServiceTest {
         @Test
         @DisplayName("Should get bookings by product")
         void shouldGetBookingsByProduct() {
+            User owner = new User("Owner", "owner@example.com", "pass", "owner");
+            owner.setId(10L);
+            testProduct.setOwner(owner);
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
+            when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
             when(bookingRepository.findByProduct(testProduct)).thenReturn(Arrays.asList(testBooking));
 
-            List<BookingResponse> responses = bookingService.getBookingsByProduct(1L);
+            List<BookingResponse> responses = bookingService.getBookingsByProduct(1L, 10L);
 
             assertNotNull(responses);
             assertEquals(1, responses.size());
@@ -226,12 +230,45 @@ class BookingServiceTest {
         @DisplayName("Should throw exception when product not found while fetching bookings")
         void shouldThrowWhenProductNotFound() {
             when(productRepository.findById(99L)).thenReturn(Optional.empty());
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> bookingService.getBookingsByProduct(99L));
+                () -> bookingService.getBookingsByProduct(99L, 1L));
 
             assertEquals("Product not found with id: 99", exception.getMessage());
             verify(bookingRepository, never()).findByProduct(any());
+        }
+
+        @Test
+        @DisplayName("Should forbid owner from fetching bookings of another owner's product")
+        void shouldForbidOwnerOnOtherProduct() {
+            User owner = new User("Owner", "owner@example.com", "pass", "owner");
+            owner.setId(10L);
+            User otherOwner = new User("Other", "o@example.com", "pass", "owner");
+            otherOwner.setId(20L);
+            testProduct.setOwner(otherOwner);
+
+            when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
+            when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> bookingService.getBookingsByProduct(1L, 10L));
+
+            assertEquals("User is not authorized to view bookings for this product", exception.getMessage());
+            verify(bookingRepository, never()).findByProduct(any());
+        }
+
+        @Test
+        @DisplayName("Renter can view bookings for product")
+        void renterCanViewBookingsForProduct() {
+            when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser)); // renter
+            when(bookingRepository.findByProduct(testProduct)).thenReturn(Arrays.asList(testBooking));
+
+            List<BookingResponse> responses = bookingService.getBookingsByProduct(1L, 1L);
+
+            assertEquals(1, responses.size());
+            verify(bookingRepository, times(1)).findByProduct(testProduct);
         }
 
         @Test
@@ -259,13 +296,15 @@ class BookingServiceTest {
     }
 
     @Nested
-    @DisplayName("Cancel Booking Tests")
+        @DisplayName("Cancel Booking Tests")
     class CancelBookingTests {
 
         @Test
         @DisplayName("Should cancel booking successfully")
         void shouldCancelBookingSuccessfully() {
+            testUser.setRole("renter");
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             bookingService.cancelBooking(1L, 1L);
 
@@ -276,6 +315,7 @@ class BookingServiceTest {
         @DisplayName("Should throw exception when booking not found")
         void shouldThrowExceptionWhenBookingNotFound() {
             when(bookingRepository.findById(1L)).thenReturn(Optional.empty());
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> bookingService.cancelBooking(1L, 1L));
@@ -285,9 +325,22 @@ class BookingServiceTest {
         }
 
         @Test
+        @DisplayName("Should throw exception when user not found")
+        void shouldThrowExceptionWhenUserNotFound() {
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> bookingService.cancelBooking(1L, 1L));
+
+            assertEquals("User not found with id: 1", exception.getMessage());
+            verify(bookingRepository, never()).delete(any());
+        }
+
+        @Test
         @DisplayName("Should throw exception when user not authorized")
         void shouldThrowExceptionWhenUserNotAuthorized() {
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
+            when(userRepository.findById(999L)).thenReturn(Optional.of(testUser));
 
             IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> bookingService.cancelBooking(1L, 999L));
@@ -297,17 +350,67 @@ class BookingServiceTest {
         }
 
         @Test
+        @DisplayName("Should allow owner to cancel own product booking")
+        void shouldAllowOwnerToCancelOwnProductBooking() {
+            User owner = new User("Owner", "owner@example.com", "pass", "owner");
+            owner.setId(10L);
+            testProduct.setOwner(owner);
+            testBooking.setProduct(testProduct);
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
+            when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+
+            bookingService.cancelBooking(1L, 10L);
+
+            verify(bookingRepository, times(1)).delete(testBooking);
+        }
+
+        @Test
+        @DisplayName("Owner cannot cancel booking for product they do not own")
+        void ownerCannotCancelOthersProductBooking() {
+            User owner = new User("Owner", "owner@example.com", "pass", "owner");
+            owner.setId(10L);
+            User otherOwner = new User("Other", "other@example.com", "pass", "owner");
+            otherOwner.setId(20L);
+            testProduct.setOwner(otherOwner);
+
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
+            when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+
+            IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> bookingService.cancelBooking(1L, 10L));
+
+            assertEquals("User is not authorized to cancel this booking", ex.getMessage());
+            verify(bookingRepository, never()).delete(any());
+        }
+
+        @Test
         @DisplayName("Should throw exception when booking already started")
         void shouldThrowExceptionWhenBookingAlreadyStarted() {
             LocalDateTime pastDate = LocalDateTime.now().minusDays(1);
             testBooking.setBookingDate(pastDate);
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> bookingService.cancelBooking(1L, 1L));
 
             assertEquals("Cannot cancel a booking that has already started", exception.getMessage());
             verify(bookingRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("Should allow owner to cancel another user's booking")
+        void shouldAllowOwnerToCancelOthersBooking() {
+            User owner = new User("Owner", "owner@example.com", "pass", "owner");
+            owner.setId(10L);
+            testProduct.setOwner(owner); // Set the owner of the product
+            
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
+            when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+
+            bookingService.cancelBooking(1L, 10L);
+
+            verify(bookingRepository, times(1)).delete(testBooking);
         }
     }
 }

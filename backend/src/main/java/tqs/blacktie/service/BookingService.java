@@ -90,9 +90,18 @@ public class BookingService {
             .collect(Collectors.toList());
     }
 
-    public List<BookingResponse> getBookingsByProduct(Long productId) {
+    public List<BookingResponse> getBookingsByProduct(Long productId, Long requesterId) {
+        User requester = userRepository.findById(requesterId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + requesterId));
+
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+
+        if ("owner".equalsIgnoreCase(requester.getRole())
+            && product.getOwner() != null
+            && !product.getOwner().getId().equals(requester.getId())) {
+            throw new IllegalStateException("User is not authorized to view bookings for this product");
+        }
 
         List<Booking> bookings = bookingRepository.findByProduct(product);
         return bookings.stream()
@@ -107,11 +116,19 @@ public class BookingService {
     }
 
     public void cancelBooking(Long bookingId, Long userId) {
+        User requester = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
-        // Verify the booking belongs to the user
-        if (!booking.getRenter().getId().equals(userId)) {
+        boolean isRenter = booking.getRenter().getId().equals(userId);
+        boolean isOwner = "owner".equalsIgnoreCase(requester.getRole()) &&
+            booking.getProduct().getOwner() != null &&
+            booking.getProduct().getOwner().getId().equals(requester.getId());
+
+        // Verify the booking belongs to the user or requester is an owner (managing products)
+        if (!isRenter && !isOwner) {
             throw new IllegalStateException("User is not authorized to cancel this booking");
         }
 

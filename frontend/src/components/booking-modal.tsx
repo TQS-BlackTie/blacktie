@@ -54,7 +54,7 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
       try {
         setCalendarLoading(true)
         setError(null)
-        const bookings = await getBookingsByProduct(product.id)
+        const bookings = await getBookingsByProduct(product.id, userId)
         setProductBookings(bookings)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load existing bookings")
@@ -64,7 +64,7 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
     }
 
     void loadBookings()
-  }, [product.id])
+  }, [product.id,userId])
 
   const disabledRanges: DisabledRange[] = useMemo(
     () =>
