@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BookingModal } from "@/components/booking-modal"
+import { ProductBookingsModal } from "@/components/product-bookings-modal"
 
 type ProductCatalogProps = {
   userRole: string
@@ -25,6 +26,7 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
   const [addError, setAddError] = useState<string | null>(null)
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [manageProduct, setManageProduct] = useState<Product | null>(null)
 
   const canCreateProduct = userRole === "owner"
 
@@ -42,6 +44,7 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
           numericMaxPrice !== undefined && !Number.isNaN(numericMaxPrice)
             ? numericMaxPrice
             : undefined,
+        userId,
       })
 
       setProducts(data)
@@ -74,7 +77,7 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
 
     try {
       setAdding(true)
-      await createProduct({
+      await createProduct(userId, {
         name: newName.trim(),
         description: newDescription.trim(),
         price: priceNumber,
@@ -190,13 +193,25 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
             <CardContent>
               <p className="text-sm text-gray-700 mb-2">{p.description}</p>
               <p className="font-semibold mb-3">{p.price.toFixed(2)} € / day</p>
-              <Button 
-                onClick={() => setSelectedProduct(p)} 
-                className="w-full"
-                disabled={!p.available}
-              >
-                {p.available ? "Reserve" : "Unavailable"}
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={() => (canCreateProduct ? setManageProduct(p) : setSelectedProduct(p))}
+                  className="w-full"
+                  disabled={
+                    (canCreateProduct && false) ||
+                    (!canCreateProduct && (!p.available || p.owner?.id === userId))
+                  }
+                  variant={canCreateProduct ? "outline" : "default"}
+                >
+                  {canCreateProduct
+                    ? "View bookings"
+                    : p.owner?.id === userId
+                      ? "Your listing"
+                      : p.available
+                        ? "Reserve"
+                        : "Unavailable"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -211,6 +226,14 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
             setSelectedProduct(null)
             alert("Booking created successfully!")
           }}
+        />
+      )}
+
+      {manageProduct && (
+        <ProductBookingsModal
+          product={manageProduct}
+          userId={userId}
+          onClose={() => setManageProduct(null)}
         />
       )}
     </div>

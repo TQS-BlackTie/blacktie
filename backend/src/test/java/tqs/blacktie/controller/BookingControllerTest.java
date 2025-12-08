@@ -157,26 +157,38 @@ class BookingControllerTest {
         @DisplayName("Should get bookings by product id")
         void shouldGetBookingsByProductId() {
             List<BookingResponse> bookings = Arrays.asList(testResponse);
-            when(bookingService.getBookingsByProduct(1L)).thenReturn(bookings);
+            when(bookingService.getBookingsByProduct(1L, 1L)).thenReturn(bookings);
 
-            ResponseEntity<?> response = bookingController.getBookingsByProduct(1L);
+            ResponseEntity<?> response = bookingController.getBookingsByProduct(1L, 1L);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             List<BookingResponse> body = (List<BookingResponse>) response.getBody();
             assertEquals(1, body.size());
-            verify(bookingService, times(1)).getBookingsByProduct(1L);
+            verify(bookingService, times(1)).getBookingsByProduct(1L, 1L);
         }
 
         @Test
         @DisplayName("Should return not found when product not found for bookings")
         void shouldReturnNotFoundWhenProductMissing() {
-            when(bookingService.getBookingsByProduct(1L))
+            when(bookingService.getBookingsByProduct(1L, 1L))
                 .thenThrow(new IllegalArgumentException("Product not found"));
 
-            ResponseEntity<?> response = bookingController.getBookingsByProduct(1L);
+            ResponseEntity<?> response = bookingController.getBookingsByProduct(1L, 1L);
 
             assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when owner not authorized for product bookings")
+        void shouldReturnForbiddenWhenOwnerUnauthorized() {
+            when(bookingService.getBookingsByProduct(1L, 1L))
+                .thenThrow(new IllegalStateException("User is not authorized to view bookings for this product"));
+
+            ResponseEntity<?> response = bookingController.getBookingsByProduct(1L, 1L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertEquals("User is not authorized to view bookings for this product", response.getBody());
         }
     }
 
@@ -216,6 +228,17 @@ class BookingControllerTest {
 
             assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
             assertEquals("User is not authorized", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should allow owner cancel flow (service succeeds)")
+        void shouldAllowOwnerCancelFlow() {
+            doNothing().when(bookingService).cancelBooking(1L, 10L);
+
+            ResponseEntity<?> response = bookingController.cancelBooking(1L, 10L);
+
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+            verify(bookingService, times(1)).cancelBooking(1L, 10L);
         }
     }
 }

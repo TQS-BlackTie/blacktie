@@ -21,14 +21,24 @@ public class ProductController {
 	@GetMapping
 	public List<Product> getProducts(
 			@RequestParam(required = false) String name,
-			@RequestParam(required = false) Double maxPrice
+			@RequestParam(required = false) Double maxPrice,
+			@RequestHeader("X-User-Id") Long userId
 	) {
-		return productService.getAvailableProducts(name, maxPrice);
+		return productService.getAvailableProducts(name, maxPrice, userId);
 	}
 
 	@PostMapping
-	public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-		Product created = productService.createProduct(product);
-		return ResponseEntity.status(HttpStatus.CREATED).body(created);
+	public ResponseEntity<?> createProduct(
+		@RequestBody Product product,
+		@RequestHeader("X-User-Id") Long userId
+	) {
+		try {
+			Product created = productService.createProduct(product, userId);
+			return ResponseEntity.status(HttpStatus.CREATED).body(created);
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (IllegalStateException e) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+		}
 	}
 }

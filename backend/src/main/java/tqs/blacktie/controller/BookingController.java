@@ -47,12 +47,16 @@ public class BookingController {
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<?> getBookingsByProduct(@PathVariable Long productId) {
+    public ResponseEntity<?> getBookingsByProduct(
+            @PathVariable Long productId,
+            @RequestHeader("X-User-Id") Long userId) {
         try {
-            List<BookingResponse> bookings = bookingService.getBookingsByProduct(productId);
+            List<BookingResponse> bookings = bookingService.getBookingsByProduct(productId, userId);
             return ResponseEntity.ok(bookings);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 

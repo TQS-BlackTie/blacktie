@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -129,11 +128,6 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
               </div>
             </Field>
 
-            <div className="mt-6">
-              <Button type="button" onClick={() => window.location.href = '/'} className="w-full">
-                Go to Home
-              </Button>
-            </div>
           </FieldGroup>
         </CardContent>
       </Card>
