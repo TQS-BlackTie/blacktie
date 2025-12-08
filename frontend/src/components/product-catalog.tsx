@@ -4,7 +4,11 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export function ProductCatalog() {
+type ProductCatalogProps = {
+  userRole: string
+}
+
+export function ProductCatalog({ userRole }: ProductCatalogProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -17,6 +21,8 @@ export function ProductCatalog() {
   const [newPrice, setNewPrice] = useState("")
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+
+  const canCreateProduct = userRole === "owner"
 
   const loadProducts = async () => {
     try {
@@ -119,43 +125,45 @@ export function ProductCatalog() {
         </Button>
       </form>
 
-      <form
-        onSubmit={handleAdd}
-        className="flex flex-col gap-2 bg-white/60 p-4 rounded-lg shadow"
-      >
-        <h2 className="font-semibold text-lg">Add product</h2>
-        {addError && (
-          <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
-            {addError}
+      {canCreateProduct && (
+        <form
+          onSubmit={handleAdd}
+          className="flex flex-col gap-2 bg-white/60 p-4 rounded-lg shadow"
+        >
+          <h2 className="font-semibold text-lg">Add product</h2>
+          {addError && (
+            <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
+              {addError}
+            </div>
+          )}
+          <div className="flex flex-col md:flex-row gap-2">
+            <Input
+              placeholder="Name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="flex-1"
+            />
+            <Input
+              placeholder="Description"
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              className="flex-1"
+            />
+            <Input
+              type="number"
+              min={0}
+              step={1}
+              placeholder="Price"
+              value={newPrice}
+              onChange={(e) => setNewPrice(e.target.value)}
+              className="w-32"
+            />
+            <Button type="submit" disabled={adding}>
+              {adding ? "Adding..." : "Add"}
+            </Button>
           </div>
-        )}
-        <div className="flex flex-col md:flex-row gap-2">
-          <Input
-            placeholder="Name"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            className="flex-1"
-          />
-          <Input
-            placeholder="Description"
-            value={newDescription}
-            onChange={(e) => setNewDescription(e.target.value)}
-            className="flex-1"
-          />
-          <Input
-            type="number"
-            min={0}
-            step={1}
-            placeholder="Price"
-            value={newPrice}
-            onChange={(e) => setNewPrice(e.target.value)}
-            className="w-32"
-          />
-          <Button type="submit" disabled={adding}>
-            {adding ? "Adding..." : "Add"}
-          </Button>
-        </div>
-      </form>
+        </form>
+      )}
 
       {error && (
         <div className="text-red-600 text-sm bg-red-50 p-2 rounded">

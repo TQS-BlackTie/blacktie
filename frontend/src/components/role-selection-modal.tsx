@@ -40,26 +40,26 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
     loadCurrentRole()
   }, [userId])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const saveRole = async (role: "renter" | "owner") => {
+    if (isSubmitting) return
     setError("")
-
-    if (!selectedRole) {
-      setError("Por favor, escolha um papel")
-      return
-    }
-
     setIsSubmitting(true)
 
     try {
-      const updatedUser = await setUserRole(userId, selectedRole)
+      const updatedUser = await setUserRole(userId, role)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
       onRoleSelected(updatedUser.role)
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Erro ao definir papel"
+      const errorMessage = err instanceof Error ? err.message : "Failed to set role"
       setError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleRoleChange = (role: "renter" | "owner") => {
+    setSelectedRole(role)
+    void saveRole(role)
   }
 
   return (
@@ -74,61 +74,67 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            <FieldGroup>
-              {error && (
-                <div className="text-red-600 text-sm mb-4 p-2 bg-red-50 rounded">
-                  {error}
-                </div>
-              )}
-
-              <Field>
-                <FieldLabel>Select your role:</FieldLabel>
-                
-                <div className="space-y-3 mt-2">
-                  <label className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="renter"
-                      checked={selectedRole === "renter"}
-                      onChange={() => setSelectedRole("renter")}
-                      className="mt-1 mr-3"
-                    />
-                    <div>
-                      <div className="font-medium">Renter</div>
-                      <div className="text-sm text-gray-600">
-                        I want to rent suits for events
-                      </div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="owner"
-                      checked={selectedRole === "owner"}
-                      onChange={() => setSelectedRole("owner")}
-                      className="mt-1 mr-3"
-                    />
-                    <div>
-                      <div className="font-medium">Owner</div>
-                      <div className="text-sm text-gray-600">
-                        I want to make my suits available for rent
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </Field>
-
-              <div className="mt-6">
-                <Button type="submit" disabled={isSubmitting || !selectedRole} className="w-full">
-                  {isSubmitting ? "Saving..." : "Confirm"}
-                </Button>
+          <FieldGroup>
+            {error && (
+              <div className="text-red-600 text-sm mb-4 p-2 bg-red-50 rounded">
+                {error}
               </div>
-            </FieldGroup>
-          </form>
+            )}
+
+            {isSubmitting && (
+              <div className="text-blue-600 text-sm mb-4 p-2 bg-blue-50 rounded">
+                Saving...
+              </div>
+            )}
+
+            <Field>
+              <FieldLabel>Select your role:</FieldLabel>
+              
+              <div className="space-y-3 mt-2">
+                <label className={`flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${selectedRole === "renter" ? "border-primary bg-primary/5" : ""}`}>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="renter"
+                    checked={selectedRole === "renter"}
+                    onChange={() => handleRoleChange("renter")}
+                    disabled={isSubmitting}
+                    className="mr-3"
+                  />
+                  <div className="text-left">
+                    <div className="font-medium">Renter</div>
+                    <div className="text-sm text-gray-600">
+                      I want to rent suits for events
+                    </div>
+                  </div>
+                </label>
+
+                <label className={`flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${selectedRole === "owner" ? "border-primary bg-primary/5" : ""}`}>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="owner"
+                    checked={selectedRole === "owner"}
+                    onChange={() => handleRoleChange("owner")}
+                    disabled={isSubmitting}
+                    className="mr-3"
+                  />
+                  <div className="text-left">
+                    <div className="font-medium">Owner</div>
+                    <div className="text-sm text-gray-600">
+                      I want to make my suits available for rent
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </Field>
+
+            <div className="mt-6">
+              <Button type="button" onClick={() => window.location.href = '/'} className="w-full">
+                Go to Home
+              </Button>
+            </div>
+          </FieldGroup>
         </CardContent>
       </Card>
     </div>

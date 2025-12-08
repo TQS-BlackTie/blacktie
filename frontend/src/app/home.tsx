@@ -63,7 +63,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <ProductCatalog />
+      <ProductCatalog userRole={user.role} />
     </div>
   )
 }
