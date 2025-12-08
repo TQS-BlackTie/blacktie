@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { cancelBooking, getBookingsByProduct, type Booking, type Product } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 
@@ -14,7 +14,7 @@ export function ProductBookingsModal({ product, userId, onClose }: ProductBookin
   const [error, setError] = useState<string | null>(null)
   const [canceling, setCanceling] = useState<number | null>(null)
 
-  const loadBookings = async () => {
+  const loadBookings = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -25,11 +25,11 @@ export function ProductBookingsModal({ product, userId, onClose }: ProductBookin
     } finally {
       setLoading(false)
     }
-  }
+  }, [product.id, userId])
 
   useEffect(() => {
     void loadBookings()
-  }, [])
+  }, [loadBookings])
 
   const handleCancel = async (bookingId: number) => {
     try {

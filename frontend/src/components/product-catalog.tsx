@@ -198,8 +198,7 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
                   onClick={() => (canCreateProduct ? setManageProduct(p) : setSelectedProduct(p))}
                   className="w-full"
                   disabled={
-                    (canCreateProduct && false) ||
-                    (!canCreateProduct && (!p.available || p.owner?.id === userId))
+                    !canCreateProduct && (!p.available || p.owner?.id === userId)
                   }
                   variant={canCreateProduct ? "outline" : "default"}
                 >

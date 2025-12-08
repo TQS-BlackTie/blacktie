@@ -64,7 +64,7 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
     }
 
     void loadBookings()
-  }, [product.id])
+  }, [product.id,userId])
 
   const disabledRanges: DisabledRange[] = useMemo(
     () =>
