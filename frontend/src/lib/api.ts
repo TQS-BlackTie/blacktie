@@ -177,3 +177,13 @@ export async function cancelBooking(userId: number, bookingId: number): Promise<
     throw new Error(error || "Failed to cancel booking")
   }
 }
+
+export async function getBookingsByProduct(productId: number): Promise<Booking[]> {
+  const res = await fetch(`/api/bookings/product/${productId}`)
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch bookings for product")
+  }
+
+  return res.json()
+}

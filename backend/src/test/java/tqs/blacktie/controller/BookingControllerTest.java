@@ -152,6 +152,32 @@ class BookingControllerTest {
 
             assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         }
+
+        @Test
+        @DisplayName("Should get bookings by product id")
+        void shouldGetBookingsByProductId() {
+            List<BookingResponse> bookings = Arrays.asList(testResponse);
+            when(bookingService.getBookingsByProduct(1L)).thenReturn(bookings);
+
+            ResponseEntity<?> response = bookingController.getBookingsByProduct(1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            List<BookingResponse> body = (List<BookingResponse>) response.getBody();
+            assertEquals(1, body.size());
+            verify(bookingService, times(1)).getBookingsByProduct(1L);
+        }
+
+        @Test
+        @DisplayName("Should return not found when product not found for bookings")
+        void shouldReturnNotFoundWhenProductMissing() {
+            when(bookingService.getBookingsByProduct(1L))
+                .thenThrow(new IllegalArgumentException("Product not found"));
+
+            ResponseEntity<?> response = bookingController.getBookingsByProduct(1L);
+
+            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        }
     }
 
     @Nested

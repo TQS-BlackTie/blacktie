@@ -179,7 +179,7 @@ class BookingServiceTest {
     }
 
     @Nested
-    @DisplayName("Get Bookings Tests")
+        @DisplayName("Get Bookings Tests")
     class GetBookingsTests {
 
         @Test
@@ -205,6 +205,33 @@ class BookingServiceTest {
             assertNotNull(responses);
             assertEquals(1, responses.size());
             verify(bookingRepository, times(1)).findAll();
+        }
+
+        @Test
+        @DisplayName("Should get bookings by product")
+        void shouldGetBookingsByProduct() {
+            when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
+            when(bookingRepository.findByProduct(testProduct)).thenReturn(Arrays.asList(testBooking));
+
+            List<BookingResponse> responses = bookingService.getBookingsByProduct(1L);
+
+            assertNotNull(responses);
+            assertEquals(1, responses.size());
+            assertEquals(1L, responses.get(0).getProductId());
+            verify(productRepository, times(1)).findById(1L);
+            verify(bookingRepository, times(1)).findByProduct(testProduct);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when product not found while fetching bookings")
+        void shouldThrowWhenProductNotFound() {
+            when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> bookingService.getBookingsByProduct(99L));
+
+            assertEquals("Product not found with id: 99", exception.getMessage());
+            verify(bookingRepository, never()).findByProduct(any());
         }
 
         @Test

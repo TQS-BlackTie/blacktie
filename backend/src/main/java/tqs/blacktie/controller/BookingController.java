@@ -46,6 +46,16 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<?> getBookingsByProduct(@PathVariable Long productId) {
+        try {
+            List<BookingResponse> bookings = bookingService.getBookingsByProduct(productId);
+            return ResponseEntity.ok(bookings);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/{bookingId}")
     public ResponseEntity<?> getBookingById(@PathVariable Long bookingId) {
         try {

@@ -90,6 +90,16 @@ public class BookingService {
             .collect(Collectors.toList());
     }
 
+    public List<BookingResponse> getBookingsByProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+
+        List<Booking> bookings = bookingRepository.findByProduct(product);
+        return bookings.stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+    }
+
     public BookingResponse getBookingById(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
