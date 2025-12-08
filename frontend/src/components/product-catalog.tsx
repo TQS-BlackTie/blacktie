@@ -3,12 +3,14 @@ import { getProducts, createProduct, type Product } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BookingModal } from "@/components/booking-modal"
 
 type ProductCatalogProps = {
   userRole: string
+  userId: number
 }
 
-export function ProductCatalog({ userRole }: ProductCatalogProps) {
+export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -21,6 +23,8 @@ export function ProductCatalog({ userRole }: ProductCatalogProps) {
   const [newPrice, setNewPrice] = useState("")
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   const canCreateProduct = userRole === "owner"
 
@@ -185,11 +189,30 @@ export function ProductCatalog({ userRole }: ProductCatalogProps) {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-700 mb-2">{p.description}</p>
-              <p className="font-semibold">{p.price.toFixed(2)} € / day</p>
+              <p className="font-semibold mb-3">{p.price.toFixed(2)} € / day</p>
+              <Button 
+                onClick={() => setSelectedProduct(p)} 
+                className="w-full"
+                disabled={!p.available}
+              >
+                {p.available ? "Reserve" : "Unavailable"}
+              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {selectedProduct && (
+        <BookingModal
+          product={selectedProduct}
+          userId={userId}
+          onClose={() => setSelectedProduct(null)}
+          onSuccess={() => {
+            setSelectedProduct(null)
+            alert("Booking created successfully!")
+          }}
+        />
+      )}
     </div>
   )
 }
