@@ -12,6 +12,7 @@ public class BookingResponse {
     private LocalDateTime bookingDate;
     private LocalDateTime returnDate;
     private Double totalPrice;
+    private String status;
 
     public BookingResponse() {
     }
@@ -26,6 +27,19 @@ public class BookingResponse {
         this.bookingDate = bookingDate;
         this.returnDate = returnDate;
         this.totalPrice = totalPrice;
+    }
+
+    public BookingResponse(Long id, Long renterId, String renterName, Long productId, String productName, 
+                          LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice, String status) {
+        this.id = id;
+        this.renterId = renterId;
+        this.renterName = renterName;
+        this.productId = productId;
+        this.productName = productName;
+        this.bookingDate = bookingDate;
+        this.returnDate = returnDate;
+        this.totalPrice = totalPrice;
+        this.status = status;
     }
 
     public Long getId() {
@@ -90,5 +104,13 @@ public class BookingResponse {
 
     public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

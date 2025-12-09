@@ -83,4 +83,11 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
+
+    @GetMapping("/owner/history")
+    public ResponseEntity<List<BookingResponse>> getOwnerBookings(
+            @RequestHeader("X-User-Id") Long ownerId) {
+        List<BookingResponse> bookings = bookingService.getOwnerBookings(ownerId);
+        return ResponseEntity.ok(bookings);
+    }
 }
