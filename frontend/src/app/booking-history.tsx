@@ -45,7 +45,7 @@ export default function BookingHistoryPage() {
     window.location.href = '/'
   }
 
-  const handleViewProduct = (_productId: number) => {
+  const handleViewProduct = () => {
     // Navigate to product details - for now just go to home
     window.location.href = '/'
   }
@@ -138,7 +138,7 @@ export default function BookingHistoryPage() {
                   </div>
                   <div className="flex items-end">
                     <Button 
-                      onClick={() => handleViewProduct(booking.productId)} 
+                      onClick={() => handleViewProduct()} 
                       variant="outline" 
                       size="sm"
                     >
