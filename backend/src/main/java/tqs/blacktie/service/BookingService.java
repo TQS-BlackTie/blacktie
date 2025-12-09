@@ -24,7 +24,7 @@ public class BookingService {
 
     public BookingService(BookingRepository bookingRepository, 
                          ProductRepository productRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository) {\
         this.bookingRepository = bookingRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
@@ -78,6 +78,13 @@ public class BookingService {
 
     public List<BookingResponse> getUserBookings(Long userId) {
         List<Booking> bookings = bookingRepository.findByRenterId(userId);
+        return bookings.stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+    }
+
+    public List<BookingResponse> getOwnerBookings(Long ownerId) {
+        List<Booking> bookings = bookingRepository.findByProductOwnerId(ownerId);
         return bookings.stream()
             .map(this::convertToResponse)
             .collect(Collectors.toList());
@@ -140,31 +147,8 @@ public class BookingService {
         bookingRepository.delete(booking);
     }
 
-    public List<BookingResponse> getOwnerBookings(Long ownerId) {
-        List<Booking> bookings = bookingRepository.findByProductOwnerId(ownerId);
-        return bookings.stream()
-            .map(this::convertToResponseWithStatus)
-            .collect(Collectors.toList());
-    }
-
     private BookingResponse convertToResponse(Booking booking) {
-        return new BookingResponse(
-            booking.getId(),
-            booking.getRenter().getId(),
-            booking.getRenter().getName(),
-            booking.getProduct().getId(),
-            booking.getProduct().getName(),
-            booking.getBookingDate(),
-            booking.getReturnDate(),
-            booking.getTotalPrice()
-        );
-    }
-
-    private BookingResponse convertToResponseWithStatus(Booking booking) {
-        String status = LocalDateTime.now().isAfter(booking.getReturnDate()) 
-            ? "Concluída" 
-            : "Confirmada";
-        
+        String status = LocalDateTime.now().isAfter(booking.getReturnDate()) ? "Concluída" : "Confirmada";
         return new BookingResponse(
             booking.getId(),
             booking.getRenter().getId(),
