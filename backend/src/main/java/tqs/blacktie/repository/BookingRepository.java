@@ -1,6 +1,8 @@
 package tqs.blacktie.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tqs.blacktie.entity.Booking;
 import tqs.blacktie.entity.User;
@@ -27,4 +29,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Find active bookings for a product (overlapping dates)
     List<Booking> findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
         Product product, LocalDateTime returnDate, LocalDateTime bookingDate);
+    
+    // Find all bookings for products owned by a specific owner
+    @Query("SELECT b FROM Booking b WHERE b.product.owner.id = :ownerId ORDER BY b.bookingDate DESC")
+    List<Booking> findByProductOwnerId(@Param("ownerId") Long ownerId);
 }
