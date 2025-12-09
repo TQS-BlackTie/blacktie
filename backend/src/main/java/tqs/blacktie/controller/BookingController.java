@@ -41,7 +41,7 @@ public class BookingController {
     }
 
     @GetMapping("/user/{userId}/history")
-    public ResponseEntity<?> getRenterHistory(@PathVariable Long userId) {
+    public ResponseEntity<List<BookingResponse>> getRenterHistory(@PathVariable Long userId) {
         try {
             List<BookingResponse> history = bookingService.getRenterHistory(userId);
             return ResponseEntity.ok(history);

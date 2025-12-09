@@ -13,10 +13,11 @@ import tqs.blacktie.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
+
+    private static final String ROLE_OWNER = "owner";
 
     private final BookingRepository bookingRepository;
     private final ProductRepository productRepository;
@@ -80,14 +81,14 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findByRenterId(userId);
         return bookings.stream()
             .map(this::convertToResponse)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public List<BookingResponse> getAllBookings() {
         List<Booking> bookings = bookingRepository.findAll();
         return bookings.stream()
             .map(this::convertToResponse)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public List<BookingResponse> getBookingsByProduct(Long productId, Long requesterId) {
@@ -97,7 +98,7 @@ public class BookingService {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
 
-        if ("owner".equalsIgnoreCase(requester.getRole())
+        if (ROLE_OWNER.equalsIgnoreCase(requester.getRole())
             && product.getOwner() != null
             && !product.getOwner().getId().equals(requester.getId())) {
             throw new IllegalStateException("User is not authorized to view bookings for this product");
@@ -106,7 +107,7 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findByProduct(product);
         return bookings.stream()
             .map(this::convertToResponse)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public BookingResponse getBookingById(Long bookingId) {
@@ -128,7 +129,7 @@ public class BookingService {
         }
 
         boolean isRenter = booking.getRenter().getId().equals(userId);
-        boolean isOwner = "owner".equalsIgnoreCase(requester.getRole()) &&
+        boolean isOwner = ROLE_OWNER.equalsIgnoreCase(requester.getRole()) &&
             booking.getProduct().getOwner() != null &&
             booking.getProduct().getOwner().getId().equals(requester.getId());
 
@@ -158,7 +159,7 @@ public class BookingService {
         return allBookings.stream()
             .filter(booking -> Booking.STATUS_COMPLETED.equals(booking.getStatus()) || Booking.STATUS_CANCELLED.equals(booking.getStatus()))
             .map(this::convertToResponse)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private BookingResponse convertToResponse(Booking booking) {
