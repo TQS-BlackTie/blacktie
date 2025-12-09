@@ -115,6 +115,15 @@ class BookingTest {
 
             assertEquals(320.0, booking.getTotalPrice());
         }
+
+        @Test
+        @DisplayName("Should get and set status")
+        void whenSetStatus_thenGetStatus() {
+            Booking booking = new Booking();
+            booking.setStatus("COMPLETED");
+
+            assertEquals("COMPLETED", booking.getStatus());
+        }
     }
 
     @Nested
@@ -190,7 +199,7 @@ class BookingTest {
     class DefaultValuesTests {
 
         @Test
-        @DisplayName("All fields should be null initially")
+        @DisplayName("All fields should be null initially except status")
         void whenNewBooking_thenAllFieldsAreNull() {
             Booking booking = new Booking();
 
@@ -200,6 +209,27 @@ class BookingTest {
             assertNull(booking.getBookingDate());
             assertNull(booking.getReturnDate());
             assertNull(booking.getTotalPrice());
+        }
+
+        @Test
+        @DisplayName("Default status should be ACTIVE with no-args constructor")
+        void whenNoArgsConstructor_thenStatusIsActive() {
+            Booking booking = new Booking();
+
+            assertEquals("ACTIVE", booking.getStatus());
+        }
+
+        @Test
+        @DisplayName("Default status should be ACTIVE with all-args constructor")
+        void whenAllArgsConstructor_thenStatusIsActive() {
+            User renter = new User("John Doe", "john@example.com", "password");
+            Product product = new Product("Suit", "Black", 100.0);
+            LocalDateTime bookingDate = LocalDateTime.now();
+            LocalDateTime returnDate = bookingDate.plusDays(3);
+
+            Booking booking = new Booking(renter, product, bookingDate, returnDate, 300.0);
+
+            assertEquals("ACTIVE", booking.getStatus());
         }
     }
 }

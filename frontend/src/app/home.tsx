@@ -48,6 +48,14 @@ export default function HomePage() {
           </p>
         </div>
         <div className="flex gap-3">
+          {user.role === 'renter' && (
+            <button
+              onClick={() => window.location.href = '/history'}
+              className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 text-sm"
+            >
+              My History
+            </button>
+          )}
           <button
             onClick={() => window.location.href = '/profile'}
             className="rounded-md bg-slate-200 px-4 py-2 text-slate-900 hover:bg-slate-300 text-sm"

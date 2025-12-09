@@ -4,10 +4,111 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("DTO Tests")
 class DtoTest {
+
+    @Nested
+    @DisplayName("BookingResponse Tests")
+    class BookingResponseTests {
+
+        @Test
+        @DisplayName("Should create with no-args constructor")
+        void whenNoArgsConstructor_thenCreate() {
+            BookingResponse response = new BookingResponse();
+            assertNotNull(response);
+        }
+
+        @Test
+        @DisplayName("Should create with all-args constructor")
+        void whenAllArgsConstructor_thenCreate() {
+            LocalDateTime bookingDate = LocalDateTime.of(2024, 12, 1, 10, 0);
+            LocalDateTime returnDate = LocalDateTime.of(2024, 12, 5, 10, 0);
+
+            BookingResponse response = new BookingResponse(
+                1L, 2L, "John Doe", 3L, "Tuxedo",
+                4L, "Jane Owner", bookingDate, returnDate, 500.0, "ACTIVE"
+            );
+
+            assertEquals(1L, response.getId());
+            assertEquals(2L, response.getRenterId());
+            assertEquals("John Doe", response.getRenterName());
+            assertEquals(3L, response.getProductId());
+            assertEquals("Tuxedo", response.getProductName());
+            assertEquals(4L, response.getOwnerId());
+            assertEquals("Jane Owner", response.getOwnerName());
+            assertEquals(bookingDate, response.getBookingDate());
+            assertEquals(returnDate, response.getReturnDate());
+            assertEquals(500.0, response.getTotalPrice());
+            assertEquals("ACTIVE", response.getStatus());
+        }
+
+        @Test
+        @DisplayName("Should get and set all fields")
+        void whenSetFields_thenGetFields() {
+            LocalDateTime bookingDate = LocalDateTime.of(2024, 12, 10, 14, 30);
+            LocalDateTime returnDate = LocalDateTime.of(2024, 12, 15, 14, 30);
+
+            BookingResponse response = new BookingResponse();
+            response.setId(10L);
+            response.setRenterId(20L);
+            response.setRenterName("Alice");
+            response.setProductId(30L);
+            response.setProductName("Suit");
+            response.setOwnerId(40L);
+            response.setOwnerName("Bob");
+            response.setBookingDate(bookingDate);
+            response.setReturnDate(returnDate);
+            response.setTotalPrice(750.0);
+            response.setStatus("COMPLETED");
+
+            assertEquals(10L, response.getId());
+            assertEquals(20L, response.getRenterId());
+            assertEquals("Alice", response.getRenterName());
+            assertEquals(30L, response.getProductId());
+            assertEquals("Suit", response.getProductName());
+            assertEquals(40L, response.getOwnerId());
+            assertEquals("Bob", response.getOwnerName());
+            assertEquals(bookingDate, response.getBookingDate());
+            assertEquals(returnDate, response.getReturnDate());
+            assertEquals(750.0, response.getTotalPrice());
+            assertEquals("COMPLETED", response.getStatus());
+        }
+
+        @Test
+        @DisplayName("Should handle null owner fields")
+        void whenOwnerIsNull_thenHandleGracefully() {
+            LocalDateTime bookingDate = LocalDateTime.now();
+            LocalDateTime returnDate = bookingDate.plusDays(3);
+
+            BookingResponse response = new BookingResponse(
+                1L, 2L, "John", 3L, "Product",
+                null, null, bookingDate, returnDate, 100.0, "ACTIVE"
+            );
+
+            assertNull(response.getOwnerId());
+            assertNull(response.getOwnerName());
+        }
+
+        @Test
+        @DisplayName("Should handle different status values")
+        void whenDifferentStatus_thenSetCorrectly() {
+            BookingResponse active = new BookingResponse();
+            active.setStatus("ACTIVE");
+            assertEquals("ACTIVE", active.getStatus());
+
+            BookingResponse completed = new BookingResponse();
+            completed.setStatus("COMPLETED");
+            assertEquals("COMPLETED", completed.getStatus());
+
+            BookingResponse cancelled = new BookingResponse();
+            cancelled.setStatus("CANCELLED");
+            assertEquals("CANCELLED", cancelled.getStatus());
+        }
+    }
 
     @Nested
     @DisplayName("LoginRequest Tests")

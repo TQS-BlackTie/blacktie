@@ -308,7 +308,8 @@ class BookingServiceTest {
 
             bookingService.cancelBooking(1L, 1L);
 
-            verify(bookingRepository, times(1)).delete(testBooking);
+            verify(bookingRepository, times(1)).save(testBooking);
+            assertEquals("CANCELLED", testBooking.getStatus());
         }
 
         @Test
@@ -361,7 +362,8 @@ class BookingServiceTest {
 
             bookingService.cancelBooking(1L, 10L);
 
-            verify(bookingRepository, times(1)).delete(testBooking);
+            verify(bookingRepository, times(1)).save(testBooking);
+            assertEquals("CANCELLED", testBooking.getStatus());
         }
 
         @Test
@@ -410,7 +412,113 @@ class BookingServiceTest {
 
             bookingService.cancelBooking(1L, 10L);
 
-            verify(bookingRepository, times(1)).delete(testBooking);
+            verify(bookingRepository, times(1)).save(testBooking);
+            assertEquals("CANCELLED", testBooking.getStatus());
+        }
+    }
+
+    @Nested
+    @DisplayName("Renter History Tests")
+    class RenterHistoryTests {
+
+        @Test
+        @DisplayName("Should return completed and cancelled bookings only")
+        void shouldReturnCompletedAndCancelledBookingsOnly() {
+            LocalDateTime bookingDate = LocalDateTime.now().minusDays(10);
+            LocalDateTime returnDate = LocalDateTime.now().minusDays(7);
+
+            Booking completedBooking = new Booking(testUser, testProduct, bookingDate, returnDate, 150.0);
+            completedBooking.setId(1L);
+            completedBooking.setStatus("COMPLETED");
+
+            Booking cancelledBooking = new Booking(testUser, testProduct, bookingDate, returnDate, 200.0);
+            cancelledBooking.setId(2L);
+            cancelledBooking.setStatus("CANCELLED");
+
+            Booking activeBooking = new Booking(testUser, testProduct, 
+                LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(3), 100.0);
+            activeBooking.setId(3L);
+            activeBooking.setStatus("ACTIVE");
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(bookingRepository.findByRenterId(1L))
+                .thenReturn(Arrays.asList(completedBooking, cancelledBooking, activeBooking));
+
+            List<BookingResponse> history = bookingService.getRenterHistory(1L);
+
+            assertEquals(2, history.size());
+            assertTrue(history.stream().anyMatch(b -> b.getId().equals(1L) && "COMPLETED".equals(b.getStatus())));
+            assertTrue(history.stream().anyMatch(b -> b.getId().equals(2L) && "CANCELLED".equals(b.getStatus())));
+            assertFalse(history.stream().anyMatch(b -> b.getId().equals(3L)));
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no history exists")
+        void shouldReturnEmptyListWhenNoHistoryExists() {
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(bookingRepository.findByRenterId(1L)).thenReturn(Collections.emptyList());
+
+            List<BookingResponse> history = bookingService.getRenterHistory(1L);
+
+            assertTrue(history.isEmpty());
+        }
+
+        @Test
+        @DisplayName("Should throw exception when user not found")
+        void shouldThrowExceptionWhenUserNotFound() {
+            when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(IllegalArgumentException.class, () -> {
+                bookingService.getRenterHistory(999L);
+            });
+        }
+
+        @Test
+        @DisplayName("Should include owner information in history")
+        void shouldIncludeOwnerInformationInHistory() {
+            User owner = new User("Owner Name", "owner@example.com", "pass", "owner");
+            owner.setId(5L);
+            testProduct.setOwner(owner);
+
+            LocalDateTime bookingDate = LocalDateTime.now().minusDays(10);
+            LocalDateTime returnDate = LocalDateTime.now().minusDays(7);
+
+            Booking completedBooking = new Booking(testUser, testProduct, bookingDate, returnDate, 150.0);
+            completedBooking.setId(1L);
+            completedBooking.setStatus("COMPLETED");
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(bookingRepository.findByRenterId(1L)).thenReturn(Arrays.asList(completedBooking));
+
+            List<BookingResponse> history = bookingService.getRenterHistory(1L);
+
+            assertEquals(1, history.size());
+            BookingResponse response = history.get(0);
+            assertEquals(5L, response.getOwnerId());
+            assertEquals("Owner Name", response.getOwnerName());
+        }
+
+        @Test
+        @DisplayName("Should handle bookings with null owner")
+        void shouldHandleBookingsWithNullOwner() {
+            testProduct.setOwner(null);
+
+            LocalDateTime bookingDate = LocalDateTime.now().minusDays(10);
+            LocalDateTime returnDate = LocalDateTime.now().minusDays(7);
+
+            Booking completedBooking = new Booking(testUser, testProduct, bookingDate, returnDate, 150.0);
+            completedBooking.setId(1L);
+            completedBooking.setStatus("COMPLETED");
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(bookingRepository.findByRenterId(1L)).thenReturn(Arrays.asList(completedBooking));
+
+            List<BookingResponse> history = bookingService.getRenterHistory(1L);
+
+            assertEquals(1, history.size());
+            BookingResponse response = history.get(0);
+            assertNull(response.getOwnerId());
+            assertEquals("Unknown", response.getOwnerName());
         }
     }
 }

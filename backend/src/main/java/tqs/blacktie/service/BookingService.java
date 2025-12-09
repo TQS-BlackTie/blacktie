@@ -122,6 +122,11 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
+        // Check if booking is already cancelled
+        if ("CANCELLED".equals(booking.getStatus())) {
+            throw new IllegalArgumentException("Booking not found with id: " + bookingId);
+        }
+
         boolean isRenter = booking.getRenter().getId().equals(userId);
         boolean isOwner = "owner".equalsIgnoreCase(requester.getRole()) &&
             booking.getProduct().getOwner() != null &&
@@ -137,19 +142,41 @@ public class BookingService {
             throw new IllegalStateException("Cannot cancel a booking that has already started");
         }
 
-        bookingRepository.delete(booking);
+        // Update status to CANCELLED instead of deleting
+        booking.setStatus("CANCELLED");
+        bookingRepository.save(booking);
+    }
+
+    public List<BookingResponse> getRenterHistory(Long userId) {
+        // Verify user exists
+        userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        // Get all bookings for the renter (COMPLETED and CANCELLED)
+        List<Booking> allBookings = bookingRepository.findByRenterId(userId);
+        
+        return allBookings.stream()
+            .filter(booking -> "COMPLETED".equals(booking.getStatus()) || "CANCELLED".equals(booking.getStatus()))
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
     }
 
     private BookingResponse convertToResponse(Booking booking) {
+        Long ownerId = booking.getProduct().getOwner() != null ? booking.getProduct().getOwner().getId() : null;
+        String ownerName = booking.getProduct().getOwner() != null ? booking.getProduct().getOwner().getName() : "Unknown";
+        
         return new BookingResponse(
             booking.getId(),
             booking.getRenter().getId(),
             booking.getRenter().getName(),
             booking.getProduct().getId(),
             booking.getProduct().getName(),
+            ownerId,
+            ownerName,
             booking.getBookingDate(),
             booking.getReturnDate(),
-            booking.getTotalPrice()
+            booking.getTotalPrice(),
+            booking.getStatus()
         );
     }
 }

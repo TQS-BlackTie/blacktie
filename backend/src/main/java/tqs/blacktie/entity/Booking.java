@@ -23,14 +23,20 @@ public class Booking {
     private LocalDateTime returnDate;
     private Double totalPrice;
 
+    @Column(nullable = false)
+    private String status = "ACTIVE"; // ACTIVE, COMPLETED, CANCELLED
+
     public Booking() {
+        this.status = "ACTIVE";
     }
+    
     public Booking(User renter, Product product, LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice) {
         this.renter = renter;
         this.product = product;
         this.bookingDate = bookingDate;
         this.returnDate = returnDate;
         this.totalPrice = totalPrice;
+        this.status = "ACTIVE";
     }
 
     public Long getId() {
@@ -68,5 +74,13 @@ public class Booking {
     }
     public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
-    }   
+    }
+    
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
