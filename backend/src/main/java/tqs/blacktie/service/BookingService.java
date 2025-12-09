@@ -123,7 +123,7 @@ public class BookingService {
             .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         // Check if booking is already cancelled
-        if ("CANCELLED".equals(booking.getStatus())) {
+        if (Booking.STATUS_CANCELLED.equals(booking.getStatus())) {
             throw new IllegalArgumentException("Booking not found with id: " + bookingId);
         }
 
@@ -143,7 +143,7 @@ public class BookingService {
         }
 
         // Update status to CANCELLED instead of deleting
-        booking.setStatus("CANCELLED");
+        booking.setStatus(Booking.STATUS_CANCELLED);
         bookingRepository.save(booking);
     }
 
@@ -156,7 +156,7 @@ public class BookingService {
         List<Booking> allBookings = bookingRepository.findByRenterId(userId);
         
         return allBookings.stream()
-            .filter(booking -> "COMPLETED".equals(booking.getStatus()) || "CANCELLED".equals(booking.getStatus()))
+            .filter(booking -> Booking.STATUS_COMPLETED.equals(booking.getStatus()) || Booking.STATUS_CANCELLED.equals(booking.getStatus()))
             .map(this::convertToResponse)
             .collect(Collectors.toList());
     }

@@ -7,6 +7,10 @@ import java.time.LocalDateTime;
 @Table(name = "bookings")
 public class Booking {
     
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_COMPLETED = "COMPLETED";
+    public static final String STATUS_CANCELLED = "CANCELLED";
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,10 +28,10 @@ public class Booking {
     private Double totalPrice;
 
     @Column(nullable = false)
-    private String status = "ACTIVE"; // ACTIVE, COMPLETED, CANCELLED
+    private String status = STATUS_ACTIVE; // ACTIVE, COMPLETED, CANCELLED
 
     public Booking() {
-        this.status = "ACTIVE";
+        this.status = STATUS_ACTIVE;
     }
     
     public Booking(User renter, Product product, LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice) {
@@ -36,7 +40,7 @@ public class Booking {
         this.bookingDate = bookingDate;
         this.returnDate = returnDate;
         this.totalPrice = totalPrice;
-        this.status = "ACTIVE";
+        this.status = STATUS_ACTIVE;
     }
 
     public Long getId() {
