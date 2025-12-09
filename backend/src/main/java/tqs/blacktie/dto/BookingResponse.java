@@ -30,6 +30,12 @@ public class BookingResponse {
         this.status = status;
     }
 
+    // Backwards-compatible constructor used in older tests/code (without status)
+    public BookingResponse(Long id, Long renterId, String renterName, Long productId, String productName,
+                          LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice) {
+        this(id, renterId, renterName, productId, productName, bookingDate, returnDate, totalPrice, null);
+    }
+
     public Long getId() {
         return id;
     }
