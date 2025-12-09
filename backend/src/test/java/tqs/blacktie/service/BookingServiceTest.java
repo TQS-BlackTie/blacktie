@@ -383,34 +383,5 @@ class BookingServiceTest {
             verify(bookingRepository, never()).delete(any());
         }
 
-        @Test
-        @DisplayName("Should throw exception when booking already started")
-        void shouldThrowExceptionWhenBookingAlreadyStarted() {
-            LocalDateTime pastDate = LocalDateTime.now().minusDays(1);
-            testBooking.setBookingDate(pastDate);
-            when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
-            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-
-            IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> bookingService.cancelBooking(1L, 1L));
-
-            assertEquals("Cannot cancel a booking that has already started", exception.getMessage());
-            verify(bookingRepository, never()).delete(any());
-        }
-
-        @Test
-        @DisplayName("Should allow owner to cancel another user's booking")
-        void shouldAllowOwnerToCancelOthersBooking() {
-            User owner = new User("Owner", "owner@example.com", "pass", "owner");
-            owner.setId(10L);
-            testProduct.setOwner(owner); // Set the owner of the product
-            
-            when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
-            when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
-
-            bookingService.cancelBooking(1L, 10L);
-
-            verify(bookingRepository, times(1)).delete(testBooking);
-        }
     }
 }

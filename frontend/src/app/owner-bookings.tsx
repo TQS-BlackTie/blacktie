@@ -49,7 +49,7 @@ export default function OwnerBookingsPage() {
   const fetchBookings = async (ownerId: number) => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:8080/api/bookings/owner/history', {
+      const response = await fetch('/api/bookings/owner/history', {
         headers: {
           'X-User-Id': ownerId.toString()
         }
