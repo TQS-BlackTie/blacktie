@@ -1,42 +1,82 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: initial;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.18), transparent 30%),
+    radial-gradient(circle at 90% 10%, rgba(59, 130, 246, 0.16), transparent 32%),
+    radial-gradient(circle at 50% 80%, rgba(14, 116, 144, 0.18), transparent 28%),
+    linear-gradient(135deg, #0b1224 0%, #0f172a 45%, #0b1224 100%);
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+#root::before,
+#root::after {
+  content: "";
+  position: fixed;
+  inset: -20% auto auto -10%;
+  width: 40vw;
+  height: 40vw;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.18), transparent 50%);
+  filter: blur(60px);
+  opacity: 0.9;
+  z-index: 0;
+  animation: aurora-move 16s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
-@keyframes logo-spin {
+#root::after {
+  inset: auto -15% -20% auto;
+  width: 45vw;
+  height: 45vw;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.18), transparent 55%);
+  animation-delay: 4s;
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.5;
+  animation: aurora-move 18s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.aurora-blob.delay-1 {
+  animation-delay: 6s;
+}
+
+.aurora-blob.delay-2 {
+  animation-delay: 10s;
+}
+
+.fade-up {
+  opacity: 0;
+  animation: fade-up 0.9s ease forwards;
+}
+
+@keyframes aurora-move {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(28px, -42px, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(-32px, 26px, 0) scale(1);
+  }
+}
+
+@keyframes fade-up {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(14px);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
   }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }
