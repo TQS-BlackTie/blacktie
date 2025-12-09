@@ -60,6 +60,12 @@ public class BookingController {
         }
     }
 
+    @GetMapping("/owner/history")
+    public ResponseEntity<List<BookingResponse>> getOwnerBookings(@RequestHeader("X-User-Id") Long ownerId) {
+        List<BookingResponse> bookings = bookingService.getOwnerBookings(ownerId);
+        return ResponseEntity.ok(bookings);
+    }
+
     @GetMapping("/{bookingId}")
     public ResponseEntity<?> getBookingById(@PathVariable Long bookingId) {
         try {
@@ -82,12 +88,5 @@ public class BookingController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
-    }
-
-    @GetMapping("/owner/history")
-    public ResponseEntity<List<BookingResponse>> getOwnerBookings(
-            @RequestHeader("X-User-Id") Long ownerId) {
-        List<BookingResponse> bookings = bookingService.getOwnerBookings(ownerId);
-        return ResponseEntity.ok(bookings);
     }
 }

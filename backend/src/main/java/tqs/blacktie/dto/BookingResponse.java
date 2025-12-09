@@ -18,18 +18,6 @@ public class BookingResponse {
     }
 
     public BookingResponse(Long id, Long renterId, String renterName, Long productId, String productName, 
-                          LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice) {
-        this.id = id;
-        this.renterId = renterId;
-        this.renterName = renterName;
-        this.productId = productId;
-        this.productName = productName;
-        this.bookingDate = bookingDate;
-        this.returnDate = returnDate;
-        this.totalPrice = totalPrice;
-    }
-
-    public BookingResponse(Long id, Long renterId, String renterName, Long productId, String productName, 
                           LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice, String status) {
         this.id = id;
         this.renterId = renterId;
@@ -40,6 +28,12 @@ public class BookingResponse {
         this.returnDate = returnDate;
         this.totalPrice = totalPrice;
         this.status = status;
+    }
+
+    // Backwards-compatible constructor used in older tests/code (without status)
+    public BookingResponse(Long id, Long renterId, String renterName, Long productId, String productName,
+                          LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice) {
+        this(id, renterId, renterName, productId, productName, bookingDate, returnDate, totalPrice, null);
     }
 
     public Long getId() {
