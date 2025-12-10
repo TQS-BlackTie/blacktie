@@ -84,6 +84,13 @@ public class BookingService {
             .toList();
     }
 
+    public List<BookingResponse> getOwnerBookings(Long ownerId) {
+        List<Booking> bookings = bookingRepository.findByProductOwnerId(ownerId);
+        return bookings.stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+    }
+
     public List<BookingResponse> getAllBookings() {
         List<Booking> bookings = bookingRepository.findAll();
         return bookings.stream()

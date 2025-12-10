@@ -70,6 +70,12 @@ public class BookingController {
         }
     }
 
+    @GetMapping("/owner/history")
+    public ResponseEntity<List<BookingResponse>> getOwnerBookings(@RequestHeader("X-User-Id") Long ownerId) {
+        List<BookingResponse> bookings = bookingService.getOwnerBookings(ownerId);
+        return ResponseEntity.ok(bookings);
+    }
+
     @GetMapping("/{bookingId}")
     public ResponseEntity<?> getBookingById(@PathVariable Long bookingId) {
         try {

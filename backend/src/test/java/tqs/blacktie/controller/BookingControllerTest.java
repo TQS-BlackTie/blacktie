@@ -169,6 +169,20 @@ class BookingControllerTest {
         }
 
         @Test
+        @DisplayName("Should get owner booking history")
+        void shouldGetOwnerBookingHistory() {
+            List<BookingResponse> bookings = Arrays.asList(testResponse);
+            when(bookingService.getOwnerBookings(10L)).thenReturn(bookings);
+
+            ResponseEntity<List<BookingResponse>> response = bookingController.getOwnerBookings(10L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(1, response.getBody().size());
+            verify(bookingService, times(1)).getOwnerBookings(10L);
+        }
+
+        @Test
         @DisplayName("Should return not found when product not found for bookings")
         void shouldReturnNotFoundWhenProductMissing() {
             when(bookingService.getBookingsByProduct(1L, 1L))
