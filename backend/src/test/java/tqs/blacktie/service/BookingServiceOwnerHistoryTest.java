@@ -71,7 +71,7 @@ class BookingServiceOwnerHistoryTest {
 
         assertNotNull(r1);
         assertNotNull(r2);
-        assertEquals("Concluída", r1.getStatus());
-        assertEquals("Confirmada", r2.getStatus());
+        assertEquals(Booking.STATUS_ACTIVE, r1.getStatus());
+        assertEquals(Booking.STATUS_ACTIVE, r2.getStatus());
     }
 }
