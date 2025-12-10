@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 @Service
 public class BookingService {
 
+    private static final String ROLE_OWNER = "owner";
+
     private final BookingRepository bookingRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
@@ -80,7 +82,7 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findByRenterId(userId);
         return bookings.stream()
             .map(this::convertToResponse)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public List<BookingResponse> getOwnerBookings(Long ownerId) {
@@ -94,7 +96,7 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findAll();
         return bookings.stream()
             .map(this::convertToResponse)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public List<BookingResponse> getBookingsByProduct(Long productId, Long requesterId) {
@@ -104,7 +106,7 @@ public class BookingService {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
 
-        if ("owner".equalsIgnoreCase(requester.getRole())
+        if (ROLE_OWNER.equalsIgnoreCase(requester.getRole())
             && product.getOwner() != null
             && !product.getOwner().getId().equals(requester.getId())) {
             throw new IllegalStateException("User is not authorized to view bookings for this product");
@@ -113,7 +115,7 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findByProduct(product);
         return bookings.stream()
             .map(this::convertToResponse)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public BookingResponse getBookingById(Long bookingId) {
@@ -129,8 +131,13 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
+        // Check if booking is already cancelled
+        if (Booking.STATUS_CANCELLED.equals(booking.getStatus())) {
+            throw new IllegalArgumentException("Booking not found with id: " + bookingId);
+        }
+
         boolean isRenter = booking.getRenter().getId().equals(userId);
-        boolean isOwner = "owner".equalsIgnoreCase(requester.getRole()) &&
+        boolean isOwner = ROLE_OWNER.equalsIgnoreCase(requester.getRole()) &&
             booking.getProduct().getOwner() != null &&
             booking.getProduct().getOwner().getId().equals(requester.getId());
 
@@ -144,21 +151,41 @@ public class BookingService {
             throw new IllegalStateException("Cannot cancel a booking that has already started");
         }
 
-        bookingRepository.delete(booking);
+        // Update status to CANCELLED instead of deleting
+        booking.setStatus(Booking.STATUS_CANCELLED);
+        bookingRepository.save(booking);
+    }
+
+    public List<BookingResponse> getRenterHistory(Long userId) {
+        // Verify user exists
+        userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        // Get all bookings for the renter (COMPLETED and CANCELLED)
+        List<Booking> allBookings = bookingRepository.findByRenterId(userId);
+        
+        return allBookings.stream()
+            .filter(booking -> Booking.STATUS_COMPLETED.equals(booking.getStatus()) || Booking.STATUS_CANCELLED.equals(booking.getStatus()))
+            .map(this::convertToResponse)
+            .toList();
     }
 
     private BookingResponse convertToResponse(Booking booking) {
-        String status = LocalDateTime.now().isAfter(booking.getReturnDate()) ? "Concluída" : "Confirmada";
+        Long ownerId = booking.getProduct().getOwner() != null ? booking.getProduct().getOwner().getId() : null;
+        String ownerName = booking.getProduct().getOwner() != null ? booking.getProduct().getOwner().getName() : "Unknown";
+        
         return new BookingResponse(
             booking.getId(),
             booking.getRenter().getId(),
             booking.getRenter().getName(),
             booking.getProduct().getId(),
             booking.getProduct().getName(),
+            ownerId,
+            ownerName,
             booking.getBookingDate(),
             booking.getReturnDate(),
             booking.getTotalPrice(),
-            status
+            booking.getStatus()
         );
     }
 }
