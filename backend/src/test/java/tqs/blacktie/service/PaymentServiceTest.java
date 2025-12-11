@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,10 +80,13 @@ class PaymentServiceTest {
 
     @Test
     void createPaymentIntentShouldFailForUnknownBooking() {
-        when(bookingRepository.findById(eq(999L))).thenReturn(Optional.empty());
+        when(bookingRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () ->
-            paymentService.createPaymentIntent(1L, new PaymentIntentRequest(999L, 1000L)));
+        PaymentIntentRequest request = new PaymentIntentRequest(999L, 1000L);
+
+        assertThrows(IllegalArgumentException.class,
+            () -> paymentService.createPaymentIntent(1L, request)
+        );
     }
 
     @Test
@@ -92,9 +94,13 @@ class PaymentServiceTest {
         Booking booking = buildBooking(2L, 15L);
         when(bookingRepository.findById(15L)).thenReturn(Optional.of(booking));
 
-        assertThrows(IllegalStateException.class, () ->
-            paymentService.createPaymentIntent(1L, new PaymentIntentRequest(15L, 1000L)));
+        PaymentIntentRequest request = new PaymentIntentRequest(15L, 1000L);
+
+        assertThrows(IllegalStateException.class,
+            () -> paymentService.createPaymentIntent(1L, request)
+        );
     }
+
 
     @Test
     void confirmPaymentShouldReturnTrueWhenSucceeded() throws StripeException {

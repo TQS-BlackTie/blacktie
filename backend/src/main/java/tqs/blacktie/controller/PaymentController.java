@@ -21,7 +21,7 @@ public class PaymentController {
     }
 
     @PostMapping("/create-payment-intent")
-    public ResponseEntity<?> createPaymentIntent(
+    public ResponseEntity<Object> createPaymentIntent(
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody PaymentIntentRequest request) {
         try {
@@ -38,7 +38,7 @@ public class PaymentController {
     }
 
     @GetMapping("/status/{paymentIntentId}")
-    public ResponseEntity<?> getPaymentStatus(@PathVariable String paymentIntentId) {
+    public ResponseEntity<Object> getPaymentStatus(@PathVariable String paymentIntentId) {
         try {
             boolean confirmed = paymentService.confirmPayment(paymentIntentId);
             return ResponseEntity.ok(new PaymentStatusResponse(confirmed ? "succeeded" : "pending"));
