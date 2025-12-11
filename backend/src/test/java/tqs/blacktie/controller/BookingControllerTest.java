@@ -319,4 +319,62 @@ class BookingControllerTest {
             assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         }
     }
+
+    @Nested
+    @DisplayName("Active Bookings Tests")
+    class ActiveBookingsTests {
+
+        @Test
+        @DisplayName("Should return active bookings successfully")
+        void shouldReturnActiveBookingsSuccessfully() {
+            LocalDateTime futureBookingDate = LocalDateTime.now().plusDays(1);
+            LocalDateTime futureReturnDate = LocalDateTime.now().plusDays(3);
+
+            BookingResponse activeBooking = new BookingResponse(
+                1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                futureBookingDate, futureReturnDate, 100.0, "ACTIVE"
+            );
+
+            List<BookingResponse> activeBookings = Arrays.asList(activeBooking);
+
+            when(bookingService.getActiveBookingsByRenter(1L)).thenReturn(activeBookings);
+
+            ResponseEntity<?> response = bookingController.getActiveBookings(1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody() instanceof List);
+            @SuppressWarnings("unchecked")
+            List<BookingResponse> body = (List<BookingResponse>) response.getBody();
+            assertEquals(1, body.size());
+            assertEquals("ACTIVE", body.get(0).getStatus());
+            verify(bookingService, times(1)).getActiveBookingsByRenter(1L);
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no active bookings")
+        void shouldReturnEmptyListWhenNoActiveBookings() {
+            when(bookingService.getActiveBookingsByRenter(1L)).thenReturn(Arrays.asList());
+
+            ResponseEntity<?> response = bookingController.getActiveBookings(1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody() instanceof List);
+            @SuppressWarnings("unchecked")
+            List<BookingResponse> body = (List<BookingResponse>) response.getBody();
+            assertTrue(body.isEmpty());
+        }
+
+        @Test
+        @DisplayName("Should return not found when user does not exist")
+        void shouldReturnNotFoundWhenUserDoesNotExistForActiveBookings() {
+            when(bookingService.getActiveBookingsByRenter(999L))
+                .thenThrow(new IllegalArgumentException("User not found"));
+
+            ResponseEntity<?> response = bookingController.getActiveBookings(999L);
+
+            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        }
+    }
 }

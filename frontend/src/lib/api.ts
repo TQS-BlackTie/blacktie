@@ -210,3 +210,13 @@ export async function getRenterHistory(userId: number): Promise<Booking[]> {
 
   return res.json()
 }
+
+export async function getActiveBookings(userId: number): Promise<Booking[]> {
+  const res = await fetch(`/api/bookings/user/${userId}/active`)
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch active bookings")
+  }
+
+  return res.json()
+}

@@ -4,7 +4,7 @@ import SignUpPage from './app/signup'
 import SignInPage from './app/signin'
 import RoleSetupPage from './app/role-setup'
 import ProfilePage from './app/profile'
-import BookingHistoryPage from './app/booking-history'
+import MyBookingsPage from './app/my-bookings'
 import './App.css'
 
 function App() {
@@ -35,8 +35,8 @@ function App() {
     return <ProfilePage />
   }
 
-  if (currentPath === '/history') {
-    return <BookingHistoryPage />
+  if (currentPath === '/my-bookings' || currentPath === '/history' || currentPath === '/active-bookings') {
+    return <MyBookingsPage />
   }
 
   return <HomePage />

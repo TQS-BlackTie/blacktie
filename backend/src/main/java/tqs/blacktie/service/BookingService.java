@@ -55,10 +55,13 @@ public class BookingService {
             throw new IllegalArgumentException("Booking date cannot be in the past");
         }
 
-        // Check for overlapping bookings
+        // Check for overlapping bookings (exclude cancelled ones)
         List<Booking> overlappingBookings = bookingRepository
             .findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
-                product, request.getReturnDate(), request.getBookingDate());
+                product, request.getReturnDate(), request.getBookingDate())
+            .stream()
+            .filter(b -> !Booking.STATUS_CANCELLED.equals(b.getStatus()))
+            .toList();
 
         if (!overlappingBookings.isEmpty()) {
             throw new IllegalStateException("Product is already booked for the selected dates");
@@ -166,6 +169,20 @@ public class BookingService {
         
         return allBookings.stream()
             .filter(booking -> Booking.STATUS_COMPLETED.equals(booking.getStatus()) || Booking.STATUS_CANCELLED.equals(booking.getStatus()))
+            .map(this::convertToResponse)
+            .toList();
+    }
+
+    public List<BookingResponse> getActiveBookingsByRenter(Long userId) {
+        // Verify user exists
+        userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        // Get all bookings for the renter with ACTIVE status
+        List<Booking> allBookings = bookingRepository.findByRenterId(userId);
+        
+        return allBookings.stream()
+            .filter(booking -> Booking.STATUS_ACTIVE.equals(booking.getStatus()))
             .map(this::convertToResponse)
             .toList();
     }
