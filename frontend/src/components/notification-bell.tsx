@@ -81,20 +81,44 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   }
 
   useEffect(() => {
-    fetchUnreadCount()
+    const loadUnreadCount = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/api/notifications/unread/count?userId=${userId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setUnreadCount(data.count)
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error)
+      }
+    }
+
+    loadUnreadCount()
     // Poll for new notifications every 30 seconds
     const interval = setInterval(() => {
-      fetchUnreadCount()
+      loadUnreadCount()
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [fetchUnreadCount])
+  }, [userId])
 
   useEffect(() => {
-    if (isOpen) {
-      fetchNotifications()
+    const loadNotifications = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/api/notifications?userId=${userId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setNotifications(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error)
+      }
     }
-  }, [isOpen, fetchNotifications])
+
+    if (isOpen) {
+      loadNotifications()
+    }
+  }, [isOpen, userId])
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
