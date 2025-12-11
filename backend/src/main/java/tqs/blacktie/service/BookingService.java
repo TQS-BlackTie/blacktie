@@ -170,11 +170,9 @@ public class BookingService {
         bookingRepository.save(booking);
 
         // Create notification based on who cancelled
-        if (isRenter) {
+        if (isRenter && booking.getProduct().getOwner() != null) {
             // Renter cancelled - notify owner
-            if (booking.getProduct().getOwner() != null) {
-                notificationService.createBookingCancelledByRenterNotification(booking.getProduct().getOwner(), booking);
-            }
+            notificationService.createBookingCancelledByRenterNotification(booking.getProduct().getOwner(), booking);
         } else if (isOwner) {
             // Owner cancelled - notify renter
             notificationService.createBookingCancelledByOwnerNotification(booking.getRenter(), booking);

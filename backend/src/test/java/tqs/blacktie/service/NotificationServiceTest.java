@@ -128,8 +128,9 @@ class NotificationServiceTest {
 
         List<NotificationResponse> result = notificationService.getUnreadNotifications(1L);
 
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(n -> !n.getIsRead());
+        assertThat(result)
+            .hasSize(2)
+            .allMatch(n -> !n.getIsRead());
     }
 
     @Test

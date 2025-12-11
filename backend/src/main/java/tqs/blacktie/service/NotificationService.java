@@ -13,6 +13,8 @@ import java.util.List;
 @Service
 public class NotificationService {
 
+    private static final String USER_NOT_FOUND_MSG = "User not found with id: ";
+
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
@@ -49,7 +51,7 @@ public class NotificationService {
 
     public List<NotificationResponse> getUserNotifications(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+            .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG + userId));
         
         List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDesc(user);
         return notifications.stream()
@@ -59,7 +61,7 @@ public class NotificationService {
 
     public List<NotificationResponse> getUnreadNotifications(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+            .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG + userId));
         
         List<Notification> notifications = notificationRepository.findByUserAndIsReadOrderByCreatedAtDesc(user, false);
         return notifications.stream()
@@ -69,7 +71,7 @@ public class NotificationService {
 
     public long getUnreadCount(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+            .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG + userId));
         
         return notificationRepository.countByUserAndIsRead(user, false);
     }
@@ -88,7 +90,7 @@ public class NotificationService {
 
     public void markAllAsRead(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+            .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG + userId));
         
         List<Notification> unreadNotifications = notificationRepository.findByUserAndIsReadOrderByCreatedAtDesc(user, false);
         unreadNotifications.forEach(notification -> notification.setIsRead(true));

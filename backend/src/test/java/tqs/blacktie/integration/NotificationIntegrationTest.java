@@ -114,8 +114,9 @@ class NotificationIntegrationTest {
 
         List<NotificationResponse> notifications = notificationService.getUserNotifications(owner.getId());
 
-        assertThat(notifications).hasSize(2);
-        assertThat(notifications).allMatch(n -> !n.getIsRead());
+        assertThat(notifications)
+            .hasSize(2)
+            .allMatch(n -> !n.getIsRead());
     }
 
     @Test
@@ -164,7 +165,8 @@ class NotificationIntegrationTest {
         Notification notification = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Test message", booking);
         Notification savedNotification = notificationRepository.save(notification);
 
-        assertThatThrownBy(() -> notificationService.markAsRead(savedNotification.getId(), renter.getId()))
+        Long notificationId = savedNotification.getId();
+        assertThatThrownBy(() -> notificationService.markAsRead(notificationId, renter.getId()))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("not authorized");
     }
@@ -183,15 +185,16 @@ class NotificationIntegrationTest {
         assertThat(unreadCount).isZero();
 
         List<Notification> allNotifications = notificationRepository.findByUserOrderByCreatedAtDesc(owner);
-        assertThat(allNotifications).allMatch(Notification::getIsRead);
+        assertThat(allNotifications)
+            .isNotEmpty()
+            .allMatch(Notification::getIsRead);
     }
 
     @Test
-    void testNotificationOrderingIntegration() throws InterruptedException {
+    void testNotificationOrderingIntegration() {
         Notification notification1 = new Notification(owner, Notification.TYPE_NEW_BOOKING, "First", booking);
         notificationRepository.save(notification1);
-
-        Thread.sleep(100); // Ensure different timestamps
+        notificationRepository.flush();
 
         Notification notification2 = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Second", booking);
         notificationRepository.save(notification2);

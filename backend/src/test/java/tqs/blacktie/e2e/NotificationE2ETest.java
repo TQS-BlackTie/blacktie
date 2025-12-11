@@ -96,8 +96,7 @@ class NotificationE2ETest {
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().length).isEqualTo(2);
+        assertThat(response.getBody()).isNotNull().hasSize(2);
     }
 
     @Test
@@ -117,8 +116,7 @@ class NotificationE2ETest {
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().length).isEqualTo(1);
+        assertThat(response.getBody()).isNotNull().hasSize(1);
         assertThat(response.getBody()[0].getIsRead()).isFalse();
     }
 
@@ -137,8 +135,7 @@ class NotificationE2ETest {
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().get("count")).isEqualTo(3);
+        assertThat(response.getBody()).isNotNull().containsEntry("count", 3);
     }
 
     @Test
