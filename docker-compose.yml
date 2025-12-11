@@ -29,6 +29,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: blacktie123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "true"
+
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      FRONTEND_URL: ${FRONTEND_URL}
     ports:
       - "8080:8080"
     depends_on:
@@ -42,6 +45,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY}
+
     container_name: blacktie-frontend
     ports:
       - "80:80"

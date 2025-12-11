@@ -95,12 +95,12 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
   }
 
   return (
-    <div className="space-y-4 w-full max-w-3xl mx-auto mt-8">
+    <div className="mt-4 w-full space-y-6">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-wrap gap-2 items-end bg-white/60 p-4 rounded-lg shadow"
+        className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow-lg backdrop-blur md:p-5"
       >
-        <div className="flex flex-col flex-1 min-w-[180px]">
+        <div className="flex min-w-[220px] flex-1 flex-col">
           <label className="text-sm font-medium" htmlFor="search">
             Search by name
           </label>
@@ -112,7 +112,7 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
           />
         </div>
 
-        <div className="flex flex-col w-32">
+        <div className="flex w-32 flex-col">
           <label className="text-sm font-medium" htmlFor="maxPrice">
             Max price
           </label>
@@ -127,7 +127,7 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
           />
         </div>
 
-        <Button type="submit" disabled={loading} className="mt-1">
+        <Button type="submit" disabled={loading} className="mt-1 rounded-full px-6">
           {loading ? "Loading..." : "Search"}
         </Button>
       </form>
@@ -135,26 +135,31 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
       {canCreateProduct && (
         <form
           onSubmit={handleAdd}
-          className="flex flex-col gap-2 bg-white/60 p-4 rounded-lg shadow"
+          className="flex flex-col gap-3 rounded-2xl border border-emerald-100/70 bg-gradient-to-r from-emerald-50/80 via-white to-white p-4 shadow-lg backdrop-blur"
         >
-          <h2 className="font-semibold text-lg">Add product</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">Add product</h2>
+            <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-emerald-800 shadow-inner">
+              Owner tools
+            </span>
+          </div>
           {addError && (
             <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
               {addError}
             </div>
           )}
-          <div className="flex flex-col md:flex-row gap-2">
+          <div className="flex flex-col gap-2 md:flex-row">
             <Input
               placeholder="Name"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="flex-1"
+              className="flex-1 rounded-xl"
             />
             <Input
               placeholder="Description"
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
-              className="flex-1"
+              className="flex-1 rounded-xl"
             />
             <Input
               type="number"
@@ -163,9 +168,9 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
               placeholder="Price"
               value={newPrice}
               onChange={(e) => setNewPrice(e.target.value)}
-              className="w-32"
+              className="w-32 rounded-xl"
             />
-            <Button type="submit" disabled={adding}>
+            <Button type="submit" disabled={adding} className="rounded-full">
               {adding ? "Adding..." : "Add"}
             </Button>
           </div>
@@ -184,15 +189,19 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((p) => (
-          <Card key={p.id}>
+          <Card
+            key={p.id}
+            className="group relative overflow-hidden border-slate-200/80 shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
+          >
+            <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-50 via-transparent to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
             <CardHeader>
               <CardTitle>{p.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-700 mb-2">{p.description}</p>
-              <p className="font-semibold mb-3">{p.price.toFixed(2)} € / day</p>
+              <p className="mb-2 text-sm text-gray-700">{p.description}</p>
+              <p className="mb-3 font-semibold">{p.price.toFixed(2)} € / day</p>
               <div className="flex flex-col gap-2">
                 <Button
                   onClick={() => (canCreateProduct ? setManageProduct(p) : setSelectedProduct(p))}

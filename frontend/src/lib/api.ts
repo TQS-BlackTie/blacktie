@@ -201,6 +201,50 @@ export async function getBookingsByProduct(productId: number, userId: number): P
   return res.json()
 }
 
+// Payment types and functions
+export type PaymentIntentRequest = {
+  bookingId: number
+  amount: number // amount in cents
+}
+
+export type PaymentIntentResponse = {
+  clientSecret: string
+  paymentIntentId: string
+  amount: number
+  currency: string
+}
+
+export async function createPaymentIntent(
+  userId: number,
+  request: PaymentIntentRequest
+): Promise<PaymentIntentResponse> {
+  const res = await fetch("/api/payments/create-payment-intent", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Id": String(userId),
+    },
+    body: JSON.stringify(request),
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to create payment intent")
+  }
+
+  return res.json()
+}
+
+export async function getPaymentStatus(paymentIntentId: string): Promise<{ status: string }> {
+  const res = await fetch(`/api/payments/status/${paymentIntentId}`)
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch payment status")
+  }
+
+  return res.json()
+}
+
 export async function getRenterHistory(userId: number): Promise<Booking[]> {
   const res = await fetch(`/api/bookings/user/${userId}/history`)
 
