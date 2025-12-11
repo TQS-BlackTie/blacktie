@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Bell } from 'lucide-react'
 import { Button } from './ui/button'
 import {
@@ -26,7 +26,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:8080/api/notifications?userId=${userId}`)
       if (response.ok) {
@@ -36,9 +36,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
     }
-  }
+  }, [userId])
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:8080/api/notifications/unread/count?userId=${userId}`)
       if (response.ok) {
@@ -48,7 +48,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     } catch (error) {
       console.error('Failed to fetch unread count:', error)
     }
-  }
+  }, [userId])
 
   const markAsRead = async (notificationId: number) => {
     try {
@@ -88,13 +88,13 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [userId])
+  }, [fetchUnreadCount])
 
   useEffect(() => {
     if (isOpen) {
       fetchNotifications()
     }
-  }, [isOpen])
+  }, [isOpen, fetchNotifications])
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
