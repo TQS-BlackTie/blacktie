@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ProductCatalog } from '@/components/product-catalog'
+import { NotificationBell } from '@/components/notification-bell'
 
 interface User {
   id: number
@@ -47,7 +48,8 @@ export default function HomePage() {
             Welcome, {user.name} ({user.role})
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
+          <NotificationBell userId={user.id} />
           {user.role === 'renter' && (
             <button
               onClick={() => window.location.href = '/history'}

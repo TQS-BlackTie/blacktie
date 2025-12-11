@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { RoleSelectionModal } from '@/components/role-selection-modal'
+import { NotificationBell } from '@/components/notification-bell'
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
@@ -142,7 +143,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6 bg-slate-50">
+    <div className="min-h-screen p-6 bg-slate-50">
+      <div className="flex justify-end mb-4 max-w-2xl mx-auto">
+        <NotificationBell userId={userId!} />
+      </div>
+      <div className="flex items-center justify-center">
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle>Manage Profile</CardTitle>
@@ -253,6 +258,7 @@ export default function ProfilePage() {
           onRoleSelected={handleRoleSelected}
         />
       )}
+      </div>
     </div>
   )
 }
