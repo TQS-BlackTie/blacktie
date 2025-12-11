@@ -1,7 +1,6 @@
 package tqs.blacktie.dto;
 
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Future;
 
 import java.time.LocalDateTime;
 
@@ -14,7 +13,6 @@ public class BookingRequest {
     private LocalDateTime bookingDate;
     
     @NotNull(message = "Return date is required")
-    @Future(message = "Return date must be in the future")
     private LocalDateTime returnDate;
 
     public BookingRequest() {
