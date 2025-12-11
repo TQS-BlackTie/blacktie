@@ -56,6 +56,14 @@ export default function HomePage() {
               My History
             </button>
           )}
+          {user.role === 'owner' && (
+            <button
+              onClick={() => window.location.href = '/owner-bookings'}
+              className="rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 text-sm"
+            >
+              Histórico de Reservas
+            </button>
+          )}
           <button
             onClick={() => window.location.href = '/profile'}
             className="rounded-md bg-slate-200 px-4 py-2 text-slate-900 hover:bg-slate-300 text-sm"
