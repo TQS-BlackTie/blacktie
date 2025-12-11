@@ -23,13 +23,16 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public BookingService(BookingRepository bookingRepository, 
                          ProductRepository productRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository,
+                         NotificationService notificationService) {
         this.bookingRepository = bookingRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     public BookingResponse createBooking(Long userId, BookingRequest request) {
@@ -55,10 +58,13 @@ public class BookingService {
             throw new IllegalArgumentException("Booking date cannot be in the past");
         }
 
-        // Check for overlapping bookings
+        // Check for overlapping bookings (only ACTIVE bookings)
         List<Booking> overlappingBookings = bookingRepository
             .findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
-                product, request.getReturnDate(), request.getBookingDate());
+                product, request.getReturnDate(), request.getBookingDate())
+            .stream()
+            .filter(booking -> Booking.STATUS_ACTIVE.equals(booking.getStatus()))
+            .toList();
 
         if (!overlappingBookings.isEmpty()) {
             throw new IllegalStateException("Product is already booked for the selected dates");
@@ -75,12 +81,18 @@ public class BookingService {
         Booking booking = new Booking(user, product, request.getBookingDate(), request.getReturnDate(), totalPrice);
         Booking savedBooking = bookingRepository.save(booking);
 
+        // Create notification for product owner
+        if (product.getOwner() != null) {
+            notificationService.createNewBookingNotification(product.getOwner(), savedBooking);
+        }
+
         return convertToResponse(savedBooking);
     }
 
     public List<BookingResponse> getUserBookings(Long userId) {
         List<Booking> bookings = bookingRepository.findByRenterId(userId);
         return bookings.stream()
+            .filter(booking -> Booking.STATUS_ACTIVE.equals(booking.getStatus()))
             .map(this::convertToResponse)
             .toList();
     }
@@ -88,6 +100,7 @@ public class BookingService {
     public List<BookingResponse> getOwnerBookings(Long ownerId) {
         List<Booking> bookings = bookingRepository.findByProductOwnerId(ownerId);
         return bookings.stream()
+            .filter(booking -> Booking.STATUS_ACTIVE.equals(booking.getStatus()))
             .map(this::convertToResponse)
             .collect(Collectors.toList());
     }
@@ -114,6 +127,7 @@ public class BookingService {
 
         List<Booking> bookings = bookingRepository.findByProduct(product);
         return bookings.stream()
+            .filter(booking -> Booking.STATUS_ACTIVE.equals(booking.getStatus()))
             .map(this::convertToResponse)
             .toList();
     }
@@ -154,6 +168,15 @@ public class BookingService {
         // Update status to CANCELLED instead of deleting
         booking.setStatus(Booking.STATUS_CANCELLED);
         bookingRepository.save(booking);
+
+        // Create notification based on who cancelled
+        if (isRenter && booking.getProduct().getOwner() != null) {
+            // Renter cancelled - notify owner
+            notificationService.createBookingCancelledByRenterNotification(booking.getProduct().getOwner(), booking);
+        } else if (isOwner) {
+            // Owner cancelled - notify renter
+            notificationService.createBookingCancelledByOwnerNotification(booking.getRenter(), booking);
+        }
     }
 
     public List<BookingResponse> getRenterHistory(Long userId) {
