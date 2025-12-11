@@ -142,32 +142,8 @@ export default function ProfilePage() {
         userName={user?.name || "Profile"}
         userRole={user?.role}
         onLogout={handleLogout}
+        notificationBell={userId ? <NotificationBell userId={userId} /> : null}
       />
-    <div className="min-h-screen p-6 bg-slate-50">
-      <div className="flex justify-end mb-4 max-w-2xl mx-auto">
-        <NotificationBell userId={userId!} />
-      </div>
-      <div className="flex items-center justify-center">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle>Manage Profile</CardTitle>
-          <CardDescription>
-            Update your personal information and preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <FieldGroup>
-              {error && (
-                <div className="text-red-600 text-sm mb-4 p-2 bg-red-50 rounded">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="text-green-600 text-sm mb-4 p-2 bg-green-50 rounded">
-                  {success}
-                </div>
-              )}
 
       <main className="relative z-10 w-full px-6 pb-12 pt-10">
         {loading ? (
@@ -296,7 +272,6 @@ export default function ProfilePage() {
           onRoleSelected={handleRoleSelected}
         />
       )}
-      </div>
     </div>
   )
 }

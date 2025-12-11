@@ -5,9 +5,10 @@ type NavbarProps = {
   userName?: string
   userRole?: string
   onLogout?: () => void
+  notificationBell?: React.ReactNode
 }
 
-export function Navbar({ userName, userRole, onLogout }: NavbarProps) {
+export function Navbar({ userName, userRole, onLogout, notificationBell }: NavbarProps) {
   const [activePath, setActivePath] = useState<string>("")
 
   useEffect(() => {
@@ -63,6 +64,7 @@ export function Navbar({ userName, userRole, onLogout }: NavbarProps) {
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
+          {notificationBell}
           <div className="hidden text-right leading-tight sm:flex sm:flex-col">
             <span className="text-sm font-semibold text-white">
               {userName || "Guest"}
