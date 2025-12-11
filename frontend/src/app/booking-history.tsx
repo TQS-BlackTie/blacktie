@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getRenterHistory, type Booking } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { NotificationBell } from '@/components/notification-bell'
 
 export default function BookingHistoryPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -85,9 +86,12 @@ export default function BookingHistoryPage() {
               View your completed and cancelled bookings
             </p>
           </div>
-          <Button onClick={handleBack} variant="outline">
-            Back to Home
-          </Button>
+          <div className="flex items-center gap-3">
+            <NotificationBell userId={userId!} />
+            <Button onClick={handleBack} variant="outline">
+              Back to Home
+            </Button>
+          </div>
         </div>
 
         {error && (
