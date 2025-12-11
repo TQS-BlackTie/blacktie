@@ -240,6 +240,11 @@ export async function getPaymentStatus(paymentIntentId: string): Promise<{ statu
 
   if (!res.ok) {
     throw new Error("Failed to fetch payment status")
+  }
+
+  return res.json()
+}
+
 export async function getRenterHistory(userId: number): Promise<Booking[]> {
   const res = await fetch(`/api/bookings/user/${userId}/history`)
 
