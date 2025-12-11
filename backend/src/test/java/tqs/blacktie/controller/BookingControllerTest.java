@@ -44,8 +44,8 @@ class BookingControllerTest {
         testRequest = new BookingRequest(1L, bookingDate, returnDate);
 
         testResponse = new BookingResponse(
-            1L, 1L, "John Doe", 1L, "Tuxedo",
-            bookingDate, returnDate, 100.0
+            1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+            bookingDate, returnDate, 100.0, "ACTIVE"
         );
     }
 
@@ -169,6 +169,20 @@ class BookingControllerTest {
         }
 
         @Test
+        @DisplayName("Should get owner booking history")
+        void shouldGetOwnerBookingHistory() {
+            List<BookingResponse> bookings = Arrays.asList(testResponse);
+            when(bookingService.getOwnerBookings(10L)).thenReturn(bookings);
+
+            ResponseEntity<List<BookingResponse>> response = bookingController.getOwnerBookings(10L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(1, response.getBody().size());
+            verify(bookingService, times(1)).getOwnerBookings(10L);
+        }
+
+        @Test
         @DisplayName("Should return not found when product not found for bookings")
         void shouldReturnNotFoundWhenProductMissing() {
             when(bookingService.getBookingsByProduct(1L, 1L))
@@ -239,6 +253,70 @@ class BookingControllerTest {
 
             assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
             verify(bookingService, times(1)).cancelBooking(1L, 10L);
+        }
+    }
+
+    @Nested
+    @DisplayName("Renter History Tests")
+    class RenterHistoryTests {
+
+        @Test
+        @DisplayName("Should return renter history successfully")
+        void shouldReturnRenterHistorySuccessfully() {
+            LocalDateTime pastBookingDate = LocalDateTime.now().minusDays(10);
+            LocalDateTime pastReturnDate = LocalDateTime.now().minusDays(7);
+
+            BookingResponse completedBooking = new BookingResponse(
+                1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                pastBookingDate, pastReturnDate, 150.0, "COMPLETED"
+            );
+
+            BookingResponse cancelledBooking = new BookingResponse(
+                2L, 1L, "John Doe", 2L, "Suit", 5L, "Owner Name",
+                pastBookingDate, pastReturnDate, 200.0, "CANCELLED"
+            );
+
+            List<BookingResponse> history = Arrays.asList(completedBooking, cancelledBooking);
+
+            when(bookingService.getRenterHistory(1L)).thenReturn(history);
+
+            ResponseEntity<?> response = bookingController.getRenterHistory(1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody() instanceof List);
+            @SuppressWarnings("unchecked")
+            List<BookingResponse> body = (List<BookingResponse>) response.getBody();
+            assertEquals(2, body.size());
+            assertEquals("COMPLETED", body.get(0).getStatus());
+            assertEquals("CANCELLED", body.get(1).getStatus());
+            verify(bookingService, times(1)).getRenterHistory(1L);
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no history")
+        void shouldReturnEmptyListWhenNoHistory() {
+            when(bookingService.getRenterHistory(1L)).thenReturn(Arrays.asList());
+
+            ResponseEntity<?> response = bookingController.getRenterHistory(1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody() instanceof List);
+            @SuppressWarnings("unchecked")
+            List<BookingResponse> body = (List<BookingResponse>) response.getBody();
+            assertTrue(body.isEmpty());
+        }
+
+        @Test
+        @DisplayName("Should return not found when user does not exist")
+        void shouldReturnNotFoundWhenUserDoesNotExist() {
+            when(bookingService.getRenterHistory(999L))
+                .thenThrow(new IllegalArgumentException("User not found"));
+
+            ResponseEntity<?> response = bookingController.getRenterHistory(999L);
+
+            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         }
     }
 }

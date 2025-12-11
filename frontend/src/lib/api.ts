@@ -133,9 +133,12 @@ export type Booking = {
   renterName: string
   productId: number
   productName: string
+  ownerId?: number
+  ownerName?: string
   bookingDate: string
   returnDate: string
   totalPrice: number
+  status: string
 }
 
 export type CreateBookingInput = {
@@ -237,6 +240,11 @@ export async function getPaymentStatus(paymentIntentId: string): Promise<{ statu
 
   if (!res.ok) {
     throw new Error("Failed to fetch payment status")
+export async function getRenterHistory(userId: number): Promise<Booking[]> {
+  const res = await fetch(`/api/bookings/user/${userId}/history`)
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch booking history")
   }
 
   return res.json()
