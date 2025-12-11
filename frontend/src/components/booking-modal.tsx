@@ -79,7 +79,7 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
   )
 
   const isDateBlocked = (date: Date) => {
-    if (date < today) return true
+    if (date <= today) return true
     return disabledRanges.some((range) => date >= range.start && date <= range.end)
   }
 

@@ -9,23 +9,30 @@ public class BookingResponse {
     private String renterName;
     private Long productId;
     private String productName;
+    private Long ownerId;
+    private String ownerName;
     private LocalDateTime bookingDate;
     private LocalDateTime returnDate;
     private Double totalPrice;
+    private String status;
 
     public BookingResponse() {
     }
 
     public BookingResponse(Long id, Long renterId, String renterName, Long productId, String productName, 
-                          LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice) {
+                          Long ownerId, String ownerName, LocalDateTime bookingDate, LocalDateTime returnDate, 
+                          Double totalPrice, String status) {
         this.id = id;
         this.renterId = renterId;
         this.renterName = renterName;
         this.productId = productId;
         this.productName = productName;
+        this.ownerId = ownerId;
+        this.ownerName = ownerName;
         this.bookingDate = bookingDate;
         this.returnDate = returnDate;
         this.totalPrice = totalPrice;
+        this.status = status;
     }
 
     public Long getId() {
@@ -90,5 +97,29 @@ public class BookingResponse {
 
     public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
