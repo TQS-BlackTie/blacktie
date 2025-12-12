@@ -56,7 +56,7 @@ export default function HomePage() {
       <main className="relative z-10">
         <section className="w-full px-6 pb-12 mt-20 md:px-12 lg:px-20">
           <div className="rounded-3xl border border-white/15 bg-white/75 p-4 text-slate-900 shadow-2xl backdrop-blur md:p-8">
-            <ProductCatalog userRole={user.role} userId={user.id} />
+            <ProductCatalog userRole={user.role} userId={user.id} showReviews={false} />
           </div>
         </section>
       </main>
