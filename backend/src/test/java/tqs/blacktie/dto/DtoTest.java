@@ -396,4 +396,74 @@ class DtoTest {
             assertEquals("2024-12-01T12:00:00", response.getCreatedAt());
         }
     }
+
+    @Nested
+    @DisplayName("PaymentIntentRequest Tests")
+    class PaymentIntentRequestTests {
+
+        @Test
+        @DisplayName("Should create with no-args constructor")
+        void whenNoArgsConstructor_thenCreate() {
+            PaymentIntentRequest request = new PaymentIntentRequest();
+            assertNotNull(request);
+        }
+
+        @Test
+        @DisplayName("Should create with all-args constructor")
+        void whenAllArgsConstructor_thenCreate() {
+            PaymentIntentRequest request = new PaymentIntentRequest(10L, 5000L);
+
+            assertEquals(10L, request.getBookingId());
+            assertEquals(5000L, request.getAmount());
+        }
+
+        @Test
+        @DisplayName("Should get and set all fields")
+        void whenSetFields_thenGetFields() {
+            PaymentIntentRequest request = new PaymentIntentRequest();
+            request.setBookingId(20L);
+            request.setAmount(7500L);
+
+            assertEquals(20L, request.getBookingId());
+            assertEquals(7500L, request.getAmount());
+        }
+    }
+
+    @Nested
+    @DisplayName("PaymentIntentResponse Tests")
+    class PaymentIntentResponseTests {
+
+        @Test
+        @DisplayName("Should create with no-args constructor")
+        void whenNoArgsConstructor_thenCreate() {
+            PaymentIntentResponse response = new PaymentIntentResponse();
+            assertNotNull(response);
+        }
+
+        @Test
+        @DisplayName("Should create with all-args constructor")
+        void whenAllArgsConstructor_thenCreate() {
+            PaymentIntentResponse response = new PaymentIntentResponse("secret", "pi_123", 5000L, "eur");
+
+            assertEquals("secret", response.getClientSecret());
+            assertEquals("pi_123", response.getPaymentIntentId());
+            assertEquals(5000L, response.getAmount());
+            assertEquals("eur", response.getCurrency());
+        }
+
+        @Test
+        @DisplayName("Should get and set all fields")
+        void whenSetFields_thenGetFields() {
+            PaymentIntentResponse response = new PaymentIntentResponse();
+            response.setClientSecret("another_secret");
+            response.setPaymentIntentId("pi_456");
+            response.setAmount(12000L);
+            response.setCurrency("usd");
+
+            assertEquals("another_secret", response.getClientSecret());
+            assertEquals("pi_456", response.getPaymentIntentId());
+            assertEquals(12000L, response.getAmount());
+            assertEquals("usd", response.getCurrency());
+        }
+    }
 }

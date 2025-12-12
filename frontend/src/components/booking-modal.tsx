@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { createBooking, getBookingsByProduct, type Booking, type Product } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { PaymentModal } from "@/components/payment-modal"
 
 type DateRange = {
   start: string | null
@@ -46,6 +47,8 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
   const [calendarLoading, setCalendarLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [createdBooking, setCreatedBooking] = useState<Booking | null>(null)
+  const [showPayment, setShowPayment] = useState(false)
 
   const today = useMemo(() => startOfDay(new Date()), [])
 
@@ -165,12 +168,13 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
 
     try {
       setLoading(true)
-      await createBooking(userId, {
+      const booking = await createBooking(userId, {
         productId: product.id,
         bookingDate: toLocalDateTimeString(range.start),
         returnDate: toLocalDateTimeString(range.end),
       })
-      onSuccess()
+      setCreatedBooking(booking)
+      setShowPayment(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create booking")
     } finally {
@@ -345,11 +349,26 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
               disabled={loading || totalPrice === null}
               className="flex-1"
             >
-              {loading ? "Reserving..." : "Confirm Reservation"}
+              {loading ? "Reserving..." : "Continue to Payment"}
             </Button>
           </div>
         </form>
       </div>
+
+      {showPayment && createdBooking && (
+        <PaymentModal
+          booking={createdBooking}
+          userId={userId}
+          onSuccess={() => {
+            setShowPayment(false)
+            onSuccess()
+          }}
+          onCancel={() => {
+            setShowPayment(false)
+            onClose()
+          }}
+        />
+      )}
     </div>
   )
 }
