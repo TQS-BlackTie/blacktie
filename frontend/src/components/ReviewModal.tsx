@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { createReview } from '@/lib/api'
+import { createReview, type ReviewResponse } from '@/lib/api'
 
 type Props = {
   bookingId: number
   userId: number
   onClose: () => void
-  onSuccess: (review: any) => void
+  onSuccess: (review: ReviewResponse) => void
 }
 
 export default function ReviewModal({ bookingId, userId, onClose, onSuccess }: Props) {
@@ -22,8 +22,9 @@ export default function ReviewModal({ bookingId, userId, onClose, onSuccess }: P
       const review = await createReview(userId, bookingId, rating, comment || undefined)
       onSuccess(review)
       onClose()
-    } catch (e: any) {
-      setError(e.message || 'Failed to submit review')
+    } catch (e: unknown) {
+      if (e instanceof Error) setError(e.message || 'Failed to submit review')
+      else setError(String(e) || 'Failed to submit review')
     } finally {
       setLoading(false)
     }

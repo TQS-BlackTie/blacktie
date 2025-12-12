@@ -82,10 +82,10 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
   useEffect(() => {
     void loadProducts()
     // listen for reviews created elsewhere to refresh affected product rating
-    const handler = async (e: any) => {
+    const handler = async (e: Event) => {
       if (!showReviews) return
       try {
-        const pid = e?.detail?.productId
+        const pid = (e as CustomEvent<{ productId: number }>)?.detail?.productId
         if (!pid) return
         const revs = await getReviewsByProduct(pid)
         setRatingsMap(prev => ({ ...prev, [pid]: revs && revs.length > 0 ? { avg: revs.reduce((s, r) => s + r.rating, 0) / revs.length, count: revs.length } : { avg: 0, count: 0 } }))

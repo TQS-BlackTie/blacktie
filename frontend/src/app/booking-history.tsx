@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getRenterHistory, type Booking, getReviewByBooking } from '@/lib/api'
+import { getRenterHistory, type Booking, getReviewByBooking, type ReviewResponse } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import ReviewModal from '@/components/ReviewModal'
@@ -12,7 +12,7 @@ export default function BookingHistoryPage() {
   const [error, setError] = useState("")
   const [openReviewFor, setOpenReviewFor] = useState<number | null>(null)
   const [openReviewDisplayFor, setOpenReviewDisplayFor] = useState<number | null>(null)
-  const [reviewsMap, setReviewsMap] = useState<Record<number, any>>({})
+  const [reviewsMap, setReviewsMap] = useState<Record<number, ReviewResponse | undefined>>({})
 
   const userId = (() => {
     const userData = localStorage.getItem('user')
@@ -37,7 +37,7 @@ export default function BookingHistoryPage() {
         const history = await getRenterHistory(userId)
         setBookings(history)
         // fetch existing reviews for completed bookings
-        const map: Record<number, any> = {}
+        const map: Record<number, ReviewResponse | undefined> = {}
         await Promise.all(history.filter(h => h.status === 'COMPLETED').map(async (b) => {
           try {
             const r = await getReviewByBooking(b.id)
@@ -179,12 +179,12 @@ export default function BookingHistoryPage() {
           bookingId={openReviewFor}
           userId={userId}
           onClose={() => setOpenReviewFor(null)}
-          onSuccess={(r) => {
+            onSuccess={(r) => {
             setReviewsMap(prev => ({ ...prev, [r.bookingId ?? openReviewFor!]: r }))
             if (r.productId) {
               try {
                 window.dispatchEvent(new CustomEvent('review:created', { detail: { productId: r.productId } }))
-              } catch (e) {
+              } catch {
                 // ignore
               }
             }
