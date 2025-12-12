@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -46,11 +48,47 @@ public class ReviewControllerTest {
     }
 
     @Test
+    void postReview_badRequest_mapsTo400() throws Exception {
+        when(reviewService.createReview(anyLong(), anyLong(), anyInt(), any())).thenThrow(new IllegalArgumentException("bad"));
+
+        mockMvc.perform(post("/api/reviews")
+                .header("X-User-Id", "1")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("bookingId", "1")
+                .param("rating", "5")
+        )
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void postReview_forbidden_mapsTo403() throws Exception {
+        when(reviewService.createReview(anyLong(), anyLong(), anyInt(), any())).thenThrow(new IllegalStateException("forbidden"));
+
+        mockMvc.perform(post("/api/reviews")
+                .header("X-User-Id", "1")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("bookingId", "1")
+                .param("rating", "5")
+        )
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void getByBooking_notFound_returns404() throws Exception {
         when(reviewService.getReviewByBooking(99L)).thenReturn(null);
 
         mockMvc.perform(get("/api/reviews/booking/99"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getByBooking_returnsReview() throws Exception {
+        ReviewResponse resp = new ReviewResponse(5L, 42L, 10L, 4, "ok", LocalDateTime.now());
+        when(reviewService.getReviewByBooking(42L)).thenReturn(resp);
+
+        mockMvc.perform(get("/api/reviews/booking/42"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(5));
     }
 
     @Test

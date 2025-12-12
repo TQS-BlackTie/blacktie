@@ -3,7 +3,6 @@ package tqs.blacktie.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import tqs.blacktie.entity.Booking;
 import tqs.blacktie.entity.Product;
 import tqs.blacktie.entity.Review;
@@ -14,6 +13,7 @@ import tqs.blacktie.repository.ReviewRepository;
 import tqs.blacktie.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -108,5 +108,35 @@ public class ReviewServiceTest {
         Review passed = captor.getValue();
         assertEquals(Integer.valueOf(5), passed.getRating());
         assertEquals("great", passed.getComment());
+    }
+
+    @Test
+    void getReviewByBookingMapping() {
+        User renter = new User(); renter.setId(3L);
+        Booking booking = new Booking(); booking.setId(11L); booking.setRenter(renter);
+        Product prod = new Product(); prod.setId(22L); booking.setProduct(prod);
+        Review r = new Review(booking, 5, "ok"); r.setId(77L);
+
+        when(reviewRepository.findByBookingId(11L)).thenReturn(Optional.of(r));
+
+        ReviewResponse resp = reviewService.getReviewByBooking(11L);
+        assertNotNull(resp);
+        assertEquals(77L, resp.getId());
+        assertEquals(22L, resp.getProductId());
+    }
+
+    @Test
+    void getReviewsByProductMapping() {
+        User renter = new User(); renter.setId(3L);
+        Booking booking = new Booking(); booking.setId(21L); booking.setRenter(renter);
+        Product prod = new Product(); prod.setId(88L); booking.setProduct(prod);
+        Review r = new Review(booking, 3, "meh"); r.setId(101L);
+
+        when(reviewRepository.findByBookingProductId(88L)).thenReturn(List.of(r));
+
+        List<ReviewResponse> list = reviewService.getReviewsByProduct(88L);
+        assertNotNull(list);
+        assertEquals(1, list.size());
+        assertEquals(101L, list.get(0).getId());
     }
 }
