@@ -2,13 +2,21 @@
 
 import { useEffect, useState } from "react"
 import { type Booking, getActiveBookings, getRenterHistory, cancelBooking } from "@/lib/api"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Navbar } from "@/components/navbar"
+import { NotificationBell } from "@/components/notification-bell"
 
 type Tab = "active" | "history"
 
 type CountdownState = {
     [bookingId: number]: string
+}
+
+interface User {
+    id: number
+    name: string
+    email: string
+    role: string
 }
 
 function calculateCountdown(booking: Booking): { label: string; countdown: string } {
@@ -58,17 +66,19 @@ export default function MyBookingsPage() {
     const [error, setError] = useState<string | null>(null)
     const [cancellingId, setCancellingId] = useState<number | null>(null)
 
-    const userId = (() => {
-        const userData = localStorage.getItem('user')
-        if (userData) {
-            try {
-                return JSON.parse(userData).id
-            } catch {
-                return null
-            }
+    const [user] = useState<User | null>(() => {
+        if (typeof window === 'undefined') return null
+        const userData = window.localStorage.getItem('user')
+        if (!userData) return null
+        try {
+            return JSON.parse(userData) as User
+        } catch (error) {
+            console.error('Failed to parse user data from localStorage', error)
+            return null
         }
-        return null
-    })()
+    })
+
+    const userId = user?.id || null
 
     useEffect(() => {
         async function fetchData() {
@@ -116,6 +126,7 @@ export default function MyBookingsPage() {
 
     const handleCancel = async (bookingId: number) => {
         if (!confirm("Are you sure you want to cancel this booking?")) return
+        if (!userId) return
 
         try {
             setCancellingId(bookingId)
@@ -151,8 +162,13 @@ export default function MyBookingsPage() {
         return statusColors[status] || 'bg-gray-100 text-gray-800'
     }
 
-    const handleBack = () => {
-        window.location.href = '/'
+    const handleLogout = () => {
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+    }
+
+    if (!user) {
+        return <div className="flex min-h-screen items-center justify-center">Loading...</div>
     }
 
     if (loading) {
@@ -164,114 +180,119 @@ export default function MyBookingsPage() {
     }
 
     return (
-        <div className="min-h-screen p-6 bg-slate-50">
-            <div className="max-w-5xl mx-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold">My Bookings</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Manage your active rentals and view history
-                        </p>
-                    </div>
-                    <Button onClick={handleBack} variant="outline">
-                        Back to Home
-                    </Button>
-                </div>
+        <div className="min-h-screen bg-slate-50">
+            <Navbar
+                userName={user.name}
+                userRole={user.role}
+                onLogout={handleLogout}
+                notificationBell={<NotificationBell userId={user.id} />}
+            />
 
-                {/* Tabs */}
-                <div className="flex gap-2 mb-6">
-                    <button
-                        onClick={() => setActiveTab("active")}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === "active"
-                                ? "bg-blue-500 text-white"
-                                : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-                            }`}
-                    >
-                        Active ({activeBookings.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("history")}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === "history"
-                                ? "bg-blue-500 text-white"
-                                : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-                            }`}
-                    >
-                        History ({historyBookings.length})
-                    </button>
-                </div>
+            <main className="relative z-10">
+                <section className="w-full px-6 pb-12 mt-8 md:px-12 lg:px-20">
+                    <div className="max-w-7xl mx-auto">
+                        {/* Header */}
+                        <div className="mb-8">
+                            <h1 className="text-3xl font-bold text-slate-900">My Bookings</h1>
+                            <p className="text-slate-600 mt-2">
+                                Manage your active rentals and view history
+                            </p>
+                        </div>
 
-                {error && (
-                    <div className="text-red-600 bg-red-50 p-4 rounded-lg mb-4">
-                        {error}
-                    </div>
-                )}
+                        {/* Tabs */}
+                        <div className="flex gap-2 mb-6">
+                            <button
+                                onClick={() => setActiveTab("active")}
+                                className={`px-6 py-3 rounded-full font-medium transition-all duration-200 ${activeTab === "active"
+                                        ? "bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 text-white shadow-lg shadow-emerald-900/20"
+                                        : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                                    }`}
+                            >
+                                Active ({activeBookings.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("history")}
+                                className={`px-6 py-3 rounded-full font-medium transition-all duration-200 ${activeTab === "history"
+                                        ? "bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 text-white shadow-lg shadow-emerald-900/20"
+                                        : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                                    }`}
+                            >
+                                History ({historyBookings.length})
+                            </button>
+                        </div>
+
+                        {error && (
+                            <div className="text-red-600 bg-red-50 p-4 rounded-lg mb-4 border border-red-200">
+                                {error}
+                            </div>
+                        )}
 
                 {/* Active Bookings Tab */}
                 {activeTab === "active" && (
                     <>
                         {activeBookings.length === 0 ? (
-                            <Card>
-                                <CardContent className="pt-6">
-                                    <p className="text-center text-muted-foreground">
-                                        No active bookings. Browse the catalog to rent something!
-                                    </p>
-                                </CardContent>
-                            </Card>
+                            <div className="rounded-3xl border border-white/15 bg-white/75 p-8 text-center shadow-2xl backdrop-blur">
+                                <p className="text-slate-600">
+                                    No active bookings. Browse the catalog to rent something!
+                                </p>
+                            </div>
                         ) : (
-                            <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                 {activeBookings.map((booking) => {
                                     const { label } = calculateCountdown(booking)
                                     const countdown = countdowns[booking.id] || "..."
 
                                     return (
-                                        <Card key={booking.id} className="hover:shadow-md transition-shadow">
-                                            <CardHeader>
-                                                <div className="flex items-start justify-between">
-                                                    <div>
-                                                        <CardTitle className="text-lg">{booking.productName}</CardTitle>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Owner: {booking.ownerName || 'Unknown'}
-                                                        </p>
-                                                    </div>
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(booking.status)}`}>
-                                                        {booking.status}
-                                                    </span>
+                                        <div
+                                            key={booking.id}
+                                            className="group rounded-3xl border border-white/15 bg-white/75 p-6 shadow-2xl backdrop-blur transition-all duration-300 hover:shadow-emerald-500/10 hover:-translate-y-1"
+                                        >
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-900">{booking.productName}</h3>
+                                                    <p className="text-sm text-slate-600">
+                                                        Owner: {booking.ownerName || 'Unknown'}
+                                                    </p>
                                                 </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                                    <div>
-                                                        <p className="text-sm font-medium text-muted-foreground">From</p>
-                                                        <p className="text-sm">{formatDate(booking.bookingDate)}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-muted-foreground">To</p>
-                                                        <p className="text-sm">{formatDate(booking.returnDate)}</p>
-                                                    </div>
-                                                </div>
+                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(booking.status)}`}>
+                                                    {booking.status}
+                                                </span>
+                                            </div>
 
-                                                {/* Countdown */}
-                                                <div className="bg-blue-50 rounded-lg p-3 mb-4">
-                                                    <p className="text-xs text-blue-600 font-medium">{label}</p>
-                                                    <p className="text-xl font-bold text-blue-700">{countdown}</p>
+                                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                                <div>
+                                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">From</p>
+                                                    <p className="text-sm font-semibold text-slate-900">{formatDate(booking.bookingDate)}</p>
                                                 </div>
+                                                <div>
+                                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">To</p>
+                                                    <p className="text-sm font-semibold text-slate-900">{formatDate(booking.returnDate)}</p>
+                                                </div>
+                                            </div>
 
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-sm font-bold">€{booking.totalPrice.toFixed(2)}</p>
-                                                    {canCancel(booking) && (
-                                                        <Button
-                                                            onClick={() => handleCancel(booking.id)}
-                                                            disabled={cancellingId === booking.id}
-                                                            variant="destructive"
-                                                            size="sm"
-                                                        >
-                                                            {cancellingId === booking.id ? "Cancelling..." : "Cancel"}
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
+                                            {/* Countdown */}
+                                            <div className="rounded-2xl bg-gradient-to-br from-emerald-50 via-cyan-50 to-blue-50 p-4 mb-4 border border-emerald-100">
+                                                <p className="text-xs font-medium text-emerald-700 uppercase tracking-wider">{label}</p>
+                                                <p className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                                                    {countdown}
+                                                </p>
+                                            </div>
+
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-lg font-bold text-slate-900">€{booking.totalPrice.toFixed(2)}</p>
+                                                {canCancel(booking) && (
+                                                    <Button
+                                                        onClick={() => handleCancel(booking.id)}
+                                                        disabled={cancellingId === booking.id}
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        className="rounded-full"
+                                                    >
+                                                        {cancellingId === booking.id ? "Cancelling..." : "Cancel"}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
                                     )
                                 })}
                             </div>
@@ -283,53 +304,52 @@ export default function MyBookingsPage() {
                 {activeTab === "history" && (
                     <>
                         {historyBookings.length === 0 ? (
-                            <Card>
-                                <CardContent className="pt-6">
-                                    <p className="text-center text-muted-foreground">
-                                        No booking history yet. Complete a rental to see it here!
-                                    </p>
-                                </CardContent>
-                            </Card>
+                            <div className="rounded-3xl border border-white/15 bg-white/75 p-8 text-center shadow-2xl backdrop-blur">
+                                <p className="text-slate-600">
+                                    No booking history yet. Complete a rental to see it here!
+                                </p>
+                            </div>
                         ) : (
                             <div className="space-y-4">
                                 {historyBookings.map((booking) => (
-                                    <Card key={booking.id} className="hover:shadow-md transition-shadow">
-                                        <CardHeader>
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <CardTitle className="text-lg">{booking.productName}</CardTitle>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Owner: {booking.ownerName || 'Unknown'}
-                                                    </p>
-                                                </div>
-                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(booking.status)}`}>
-                                                    {booking.status}
-                                                </span>
+                                    <div
+                                        key={booking.id}
+                                        className="rounded-3xl border border-white/15 bg-white/75 p-6 shadow-2xl backdrop-blur transition-all duration-300 hover:shadow-emerald-500/10"
+                                    >
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div>
+                                                <h3 className="text-lg font-bold text-slate-900">{booking.productName}</h3>
+                                                <p className="text-sm text-slate-600">
+                                                    Owner: {booking.ownerName || 'Unknown'}
+                                                </p>
                                             </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                <div>
-                                                    <p className="text-sm font-medium text-muted-foreground">From</p>
-                                                    <p className="text-sm">{formatDate(booking.bookingDate)}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-muted-foreground">To</p>
-                                                    <p className="text-sm">{formatDate(booking.returnDate)}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-muted-foreground">Total Paid</p>
-                                                    <p className="text-sm font-bold">€{booking.totalPrice.toFixed(2)}</p>
-                                                </div>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(booking.status)}`}>
+                                                {booking.status}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div>
+                                                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">From</p>
+                                                <p className="text-sm font-semibold text-slate-900">{formatDate(booking.bookingDate)}</p>
                                             </div>
-                                        </CardContent>
-                                    </Card>
+                                            <div>
+                                                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">To</p>
+                                                <p className="text-sm font-semibold text-slate-900">{formatDate(booking.returnDate)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Paid</p>
+                                                <p className="text-sm font-bold text-slate-900">€{booking.totalPrice.toFixed(2)}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         )}
                     </>
                 )}
-            </div>
+                    </div>
+                </section>
+            </main>
         </div>
     )
 }
