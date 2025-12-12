@@ -56,12 +56,6 @@ export function RoleSelectionModal({ userId, onRoleSelected, title }: RoleSelect
     }
   }
 
-  const handleRoleChange = (role: "renter" | "owner") => {
-    setSelectedRole(role)
-    // Always save the role when clicked
-    void saveRole(role)
-  }
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
       <Card className="w-full max-w-md">

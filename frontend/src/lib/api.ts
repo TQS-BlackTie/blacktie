@@ -260,6 +260,11 @@ export async function getActiveBookings(userId: number): Promise<Booking[]> {
 
   if (!res.ok) {
     throw new Error("Failed to fetch active bookings")
+  }
+
+  return res.json()
+}
+
 // Reviews
 export type ReviewResponse = {
   id: number
@@ -302,3 +307,4 @@ export async function getReviewsByProduct(productId: number): Promise<ReviewResp
   if (!res.ok) throw new Error('Failed to fetch reviews')
   return res.json()
 }
+
