@@ -210,3 +210,46 @@ export async function getRenterHistory(userId: number): Promise<Booking[]> {
 
   return res.json()
 }
+
+// Reviews
+export type ReviewResponse = {
+  id: number
+  bookingId: number
+  productId?: number
+  rating: number
+  comment?: string
+  createdAt: string
+}
+
+export async function getReviewByBooking(bookingId: number): Promise<ReviewResponse | null> {
+  const res = await fetch(`/api/reviews/booking/${bookingId}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error('Failed to fetch review')
+  return res.json()
+}
+
+export async function createReview(userId: number, bookingId: number, rating: number, comment?: string): Promise<ReviewResponse> {
+  const form = new FormData()
+  form.append('bookingId', String(bookingId))
+  form.append('rating', String(rating))
+  if (comment) form.append('comment', comment)
+
+  const res = await fetch('/api/reviews', {
+    method: 'POST',
+    headers: { 'X-User-Id': String(userId) },
+    body: form,
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || 'Failed to create review')
+  }
+
+  return res.json()
+}
+
+export async function getReviewsByProduct(productId: number): Promise<ReviewResponse[]> {
+  const res = await fetch(`/api/reviews/product/${productId}`)
+  if (!res.ok) throw new Error('Failed to fetch reviews')
+  return res.json()
+}

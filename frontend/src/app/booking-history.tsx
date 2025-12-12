@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
-import { getRenterHistory, type Booking } from '@/lib/api'
+import { getRenterHistory, type Booking, getReviewByBooking } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import ReviewModal from '@/components/ReviewModal'
+import ReviewDisplay from '@/components/ReviewDisplay'
 
 export default function BookingHistoryPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [openReviewFor, setOpenReviewFor] = useState<number | null>(null)
+  const [openReviewDisplayFor, setOpenReviewDisplayFor] = useState<number | null>(null)
+  const [reviewsMap, setReviewsMap] = useState<Record<number, any>>({})
 
   const userId = (() => {
     const userData = localStorage.getItem('user')
@@ -30,6 +35,17 @@ export default function BookingHistoryPage() {
       try {
         const history = await getRenterHistory(userId)
         setBookings(history)
+        // fetch existing reviews for completed bookings
+        const map: Record<number, any> = {}
+        await Promise.all(history.filter(h => h.status === 'COMPLETED').map(async (b) => {
+          try {
+            const r = await getReviewByBooking(b.id)
+            if (r) map[b.id] = r
+          } catch {
+            // ignore
+          }
+        }))
+        setReviewsMap(map)
       } catch (e) {
         console.error(e)
         setError("Failed to load booking history")
@@ -137,13 +153,16 @@ export default function BookingHistoryPage() {
                     <p className="text-sm font-bold">€{booking.totalPrice.toFixed(2)}</p>
                   </div>
                   <div className="flex items-end">
-                    <Button 
-                      onClick={() => handleViewProduct()} 
-                      variant="outline" 
-                      size="sm"
-                    >
-                      View Product
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button onClick={() => handleViewProduct()} variant="outline" size="sm">View Product</Button>
+                      {booking.status === 'COMPLETED' && (
+                        reviewsMap[booking.id] ? (
+                          <Button variant="ghost" size="sm" onClick={() => setOpenReviewDisplayFor(booking.id)}>View Review</Button>
+                        ) : (
+                          <Button variant="default" size="sm" onClick={() => setOpenReviewFor(booking.id)}>Leave Review</Button>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -151,6 +170,27 @@ export default function BookingHistoryPage() {
           ))}
         </div>
       </div>
+      {openReviewFor && userId && (
+        <ReviewModal
+          bookingId={openReviewFor}
+          userId={userId}
+          onClose={() => setOpenReviewFor(null)}
+          onSuccess={(r) => {
+            setReviewsMap(prev => ({ ...prev, [r.bookingId ?? openReviewFor!]: r }))
+            if (r.productId) {
+              try {
+                window.dispatchEvent(new CustomEvent('review:created', { detail: { productId: r.productId } }))
+              } catch (e) {
+                // ignore
+              }
+            }
+          }}
+        />
+      )}
+
+      {openReviewDisplayFor && reviewsMap[openReviewDisplayFor] && (
+        <ReviewDisplay review={reviewsMap[openReviewDisplayFor]} onClose={() => setOpenReviewDisplayFor(null)} />
+      )}
     </div>
   )
 }

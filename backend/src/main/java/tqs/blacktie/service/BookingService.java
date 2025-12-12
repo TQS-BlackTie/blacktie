@@ -86,8 +86,10 @@ public class BookingService {
     }
 
     public List<BookingResponse> getOwnerBookings(Long ownerId) {
+        // Get all bookings for products owned by the owner, but return only past/completed or cancelled bookings
         List<Booking> bookings = bookingRepository.findByProductOwnerId(ownerId);
         return bookings.stream()
+            .filter(booking -> Booking.STATUS_COMPLETED.equals(booking.getStatus()) || Booking.STATUS_CANCELLED.equals(booking.getStatus()))
             .map(this::convertToResponse)
             .collect(Collectors.toList());
     }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getProducts, createProduct, type Product } from "@/lib/api"
+import { getProducts, createProduct, getReviewsByProduct, type Product } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,6 +27,7 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [manageProduct, setManageProduct] = useState<Product | null>(null)
+  const [ratingsMap, setRatingsMap] = useState<Record<number, { avg: number; count: number }>>({})
 
   const canCreateProduct = userRole === "owner"
 
@@ -48,6 +49,26 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
       })
 
       setProducts(data)
+      // fetch reviews for products to compute average rating
+      try {
+        const map: Record<number, { avg: number; count: number }> = {}
+        await Promise.all(data.map(async (p) => {
+          try {
+            const revs = await getReviewsByProduct(p.id)
+            if (revs && revs.length > 0) {
+              const sum = revs.reduce((s, r) => s + r.rating, 0)
+              map[p.id] = { avg: sum / revs.length, count: revs.length }
+            } else {
+              map[p.id] = { avg: 0, count: 0 }
+            }
+          } catch {
+            map[p.id] = { avg: 0, count: 0 }
+          }
+        }))
+        setRatingsMap(map)
+      } catch {
+        // ignore review fetch errors
+      }
     } catch {
       setError("Failed to load products")
     } finally {
@@ -57,6 +78,19 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
 
   useEffect(() => {
     void loadProducts()
+    // listen for reviews created elsewhere to refresh affected product rating
+    const handler = async (e: any) => {
+      try {
+        const pid = e?.detail?.productId
+        if (!pid) return
+        const revs = await getReviewsByProduct(pid)
+        setRatingsMap(prev => ({ ...prev, [pid]: revs && revs.length > 0 ? { avg: revs.reduce((s, r) => s + r.rating, 0) / revs.length, count: revs.length } : { avg: 0, count: 0 } }))
+      } catch {
+        // ignore
+      }
+    }
+    window.addEventListener('review:created', handler as EventListener)
+    return () => { window.removeEventListener('review:created', handler as EventListener) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -193,6 +227,9 @@ export function ProductCatalog({ userRole, userId }: ProductCatalogProps) {
             <CardContent>
               <p className="text-sm text-gray-700 mb-2">{p.description}</p>
               <p className="font-semibold mb-3">{p.price.toFixed(2)} € / day</p>
+              {ratingsMap[p.id] && ratingsMap[p.id].count > 0 && (
+                <p className="text-sm text-yellow-600 mb-2">Average: {ratingsMap[p.id].avg.toFixed(1)} ⭐ ({ratingsMap[p.id].count})</p>
+              )}
               <div className="flex flex-col gap-2">
                 <Button
                   onClick={() => (canCreateProduct ? setManageProduct(p) : setSelectedProduct(p))}
