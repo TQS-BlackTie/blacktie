@@ -201,6 +201,50 @@ export async function getBookingsByProduct(productId: number, userId: number): P
   return res.json()
 }
 
+// Payment types and functions
+export type PaymentIntentRequest = {
+  bookingId: number
+  amount: number // amount in cents
+}
+
+export type PaymentIntentResponse = {
+  clientSecret: string
+  paymentIntentId: string
+  amount: number
+  currency: string
+}
+
+export async function createPaymentIntent(
+  userId: number,
+  request: PaymentIntentRequest
+): Promise<PaymentIntentResponse> {
+  const res = await fetch("/api/payments/create-payment-intent", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Id": String(userId),
+    },
+    body: JSON.stringify(request),
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to create payment intent")
+  }
+
+  return res.json()
+}
+
+export async function getPaymentStatus(paymentIntentId: string): Promise<{ status: string }> {
+  const res = await fetch(`/api/payments/status/${paymentIntentId}`)
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch payment status")
+  }
+
+  return res.json()
+}
+
 export async function getRenterHistory(userId: number): Promise<Booking[]> {
   const res = await fetch(`/api/bookings/user/${userId}/history`)
 
@@ -216,7 +260,45 @@ export async function getActiveBookings(userId: number): Promise<Booking[]> {
 
   if (!res.ok) {
     throw new Error("Failed to fetch active bookings")
+// Reviews
+export type ReviewResponse = {
+  id: number
+  bookingId: number
+  productId?: number
+  rating: number
+  comment?: string
+  createdAt: string
+}
+
+export async function getReviewByBooking(bookingId: number): Promise<ReviewResponse | null> {
+  const res = await fetch(`/api/reviews/booking/${bookingId}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error('Failed to fetch review')
+  return res.json()
+}
+
+export async function createReview(userId: number, bookingId: number, rating: number, comment?: string): Promise<ReviewResponse> {
+  const form = new FormData()
+  form.append('bookingId', String(bookingId))
+  form.append('rating', String(rating))
+  if (comment) form.append('comment', comment)
+
+  const res = await fetch('/api/reviews', {
+    method: 'POST',
+    headers: { 'X-User-Id': String(userId) },
+    body: form,
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || 'Failed to create review')
   }
 
+  return res.json()
+}
+
+export async function getReviewsByProduct(productId: number): Promise<ReviewResponse[]> {
+  const res = await fetch(`/api/reviews/product/${productId}`)
+  if (!res.ok) throw new Error('Failed to fetch reviews')
   return res.json()
 }

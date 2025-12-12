@@ -86,9 +86,22 @@ export default function OwnerBookingsPage() {
   }
 
   const getStatusBadgeColor = (status: string) => {
-    return status === 'Concluída' 
-      ? 'bg-green-100 text-green-800' 
-      : 'bg-blue-100 text-blue-800'
+    // backend statuses: ACTIVE, COMPLETED, CANCELLED
+    if (status === 'COMPLETED') return 'bg-green-100 text-green-800'
+    if (status === 'CANCELLED') return 'bg-red-100 text-red-800'
+    return 'bg-blue-100 text-blue-800'
+  }
+
+  const mapStatusToLabel = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'Concluída'
+      case 'CANCELLED':
+        return 'Cancelada'
+      case 'ACTIVE':
+      default:
+        return 'Confirmada'
+    }
   }
 
   if (loading) {
@@ -180,7 +193,7 @@ export default function OwnerBookingsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(booking.status)}`}>
-                        {booking.status}
+                        {mapStatusToLabel(booking.status)}
                       </span>
                     </td>
                   </tr>
@@ -195,14 +208,14 @@ export default function OwnerBookingsPage() {
             <h2 className="text-lg font-semibold mb-4">Resumo</h2>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {bookings.filter(b => b.status === 'Confirmada').length}
+                  <div className="text-2xl font-bold text-blue-600">
+                  {bookings.filter(b => b.status === 'ACTIVE').length}
                 </div>
                 <div className="text-sm text-gray-600">Confirmadas</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {bookings.filter(b => b.status === 'Concluída').length}
+                  {bookings.filter(b => b.status === 'COMPLETED').length}
                 </div>
                 <div className="text-sm text-gray-600">Concluídas</div>
               </div>

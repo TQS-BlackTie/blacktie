@@ -59,6 +59,10 @@ class BookingServiceOwnerHistoryTest {
     @Test
     @DisplayName("Should return owner bookings with correct status")
     void shouldReturnOwnerBookingsWithStatus() {
+        // mark past booking as completed and future booking as cancelled to represent owner history
+        pastBooking.setStatus(Booking.STATUS_COMPLETED);
+        futureBooking.setStatus(Booking.STATUS_CANCELLED);
+
         when(bookingRepository.findByProductOwnerId(10L)).thenReturn(Arrays.asList(pastBooking, futureBooking));
 
         List<BookingResponse> responses = bookingService.getOwnerBookings(10L);
@@ -71,7 +75,7 @@ class BookingServiceOwnerHistoryTest {
 
         assertNotNull(r1);
         assertNotNull(r2);
-        assertEquals(Booking.STATUS_ACTIVE, r1.getStatus());
-        assertEquals(Booking.STATUS_ACTIVE, r2.getStatus());
+        assertEquals(Booking.STATUS_COMPLETED, r1.getStatus());
+        assertEquals(Booking.STATUS_CANCELLED, r2.getStatus());
     }
 }

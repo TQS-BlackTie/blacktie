@@ -5,6 +5,8 @@ import SignInPage from './app/signin'
 import RoleSetupPage from './app/role-setup'
 import ProfilePage from './app/profile'
 import MyBookingsPage from './app/my-bookings'
+import BookingHistoryPage from './app/booking-history'
+import OwnerBookingsPage from './app/owner-bookings'
 import './App.css'
 
 function App() {
@@ -37,6 +39,10 @@ function App() {
 
   if (currentPath === '/my-bookings' || currentPath === '/history' || currentPath === '/active-bookings') {
     return <MyBookingsPage />
+  }
+
+  if (currentPath === '/owner-bookings') {
+    return <OwnerBookingsPage />
   }
 
   return <HomePage />

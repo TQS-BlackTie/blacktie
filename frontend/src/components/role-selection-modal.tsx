@@ -31,9 +31,7 @@ export function RoleSelectionModal({ userId, onRoleSelected, title }: RoleSelect
       try {
         const user = await getCurrentUser(userId)
         setCurrentRole(user.role)
-        if (user.role === "renter" || user.role === "owner") {
-          setSelectedRole(user.role as "renter" | "owner")
-        }
+        // Don't pre-select any role - user must choose
       } catch (e) {
         console.error("Failed to load current role:", e)
       }
@@ -56,6 +54,12 @@ export function RoleSelectionModal({ userId, onRoleSelected, title }: RoleSelect
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleRoleChange = (role: "renter" | "owner") => {
+    setSelectedRole(role)
+    // Always save the role when clicked
+    void saveRole(role)
   }
 
   return (
