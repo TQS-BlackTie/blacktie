@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import tqs.blacktie.dto.AdminUserResponse;
 import tqs.blacktie.dto.PlatformMetricsResponse;
 import tqs.blacktie.entity.Booking;
+import tqs.blacktie.entity.Notification;
 import tqs.blacktie.entity.Product;
 import tqs.blacktie.entity.User;
 import tqs.blacktie.repository.BookingRepository;
@@ -466,6 +467,129 @@ class AdminServiceTest {
 
             assertThrows(IllegalArgumentException.class, () -> 
                 adminService.deleteUser(999L));
+        }
+
+        @Test
+        @DisplayName("Should delete user with bookings as renter and owned products")
+        void whenDeleteUserWithBookingsAndProducts_thenAllDataDeleted() {
+            // Setup: user has bookings as renter and owns products
+            Notification userNotification = new Notification();
+            userNotification.setId(1L);
+            userNotification.setUser(regularUser);
+
+            Booking renterBooking = new Booking();
+            renterBooking.setId(1L);
+            renterBooking.setRenter(regularUser);
+            renterBooking.setStatus(Booking.STATUS_APPROVED);
+
+            Notification bookingNotification = new Notification();
+            bookingNotification.setId(2L);
+            bookingNotification.setBooking(renterBooking);
+
+            Product ownedProduct = new Product();
+            ownedProduct.setId(1L);
+            ownedProduct.setOwner(regularUser);
+
+            Booking productBooking = new Booking();
+            productBooking.setId(2L);
+            productBooking.setProduct(ownedProduct);
+            productBooking.setStatus(Booking.STATUS_PAID);
+
+            Notification productBookingNotification = new Notification();
+            productBookingNotification.setId(3L);
+            productBookingNotification.setBooking(productBooking);
+
+            // Setup mocks
+            when(userRepository.findById(2L)).thenReturn(Optional.of(regularUser));
+            when(notificationRepository.findByUserOrderByCreatedAtDesc(regularUser))
+                .thenReturn(List.of(userNotification));
+            when(bookingRepository.findByRenterId(2L)).thenReturn(List.of(renterBooking));
+            when(notificationRepository.findByBooking(renterBooking))
+                .thenReturn(List.of(bookingNotification));
+            when(productRepository.findAll()).thenReturn(List.of(ownedProduct));
+            when(bookingRepository.findByProductId(1L)).thenReturn(List.of(productBooking));
+            when(notificationRepository.findByBooking(productBooking))
+                .thenReturn(List.of(productBookingNotification));
+
+            // Execute
+            adminService.deleteUser(2L);
+
+            // Verify user notifications are deleted
+            verify(notificationRepository).deleteAll(List.of(userNotification));
+            
+            // Verify renter booking and its notifications are deleted
+            verify(notificationRepository).deleteAll(List.of(bookingNotification));
+            verify(bookingRepository).delete(renterBooking);
+            
+            // Verify product bookings and their notifications are deleted
+            verify(notificationRepository).deleteAll(List.of(productBookingNotification));
+            verify(bookingRepository).delete(productBooking);
+            
+            // Verify products are deleted
+            verify(productRepository).delete(ownedProduct);
+            
+            // Verify user is deleted
+            verify(userRepository).delete(regularUser);
+        }
+
+        @Test
+        @DisplayName("Should delete user with multiple bookings and products")
+        void whenDeleteUserWithMultipleBookingsAndProducts_thenAllDataDeleted() {
+            // Setup: user has multiple bookings and products
+            Booking booking1 = new Booking();
+            booking1.setId(1L);
+            booking1.setRenter(regularUser);
+
+            Booking booking2 = new Booking();
+            booking2.setId(2L);
+            booking2.setRenter(regularUser);
+
+            Product product1 = new Product();
+            product1.setId(1L);
+            product1.setOwner(regularUser);
+
+            Product product2 = new Product();
+            product2.setId(2L);
+            product2.setOwner(regularUser);
+
+            Booking productBooking1 = new Booking();
+            productBooking1.setId(3L);
+            productBooking1.setProduct(product1);
+
+            Booking productBooking2 = new Booking();
+            productBooking2.setId(4L);
+            productBooking2.setProduct(product2);
+
+            // Setup mocks
+            when(userRepository.findById(2L)).thenReturn(Optional.of(regularUser));
+            when(notificationRepository.findByUserOrderByCreatedAtDesc(regularUser))
+                .thenReturn(Collections.emptyList());
+            when(bookingRepository.findByRenterId(2L)).thenReturn(List.of(booking1, booking2));
+            when(notificationRepository.findByBooking(booking1)).thenReturn(Collections.emptyList());
+            when(notificationRepository.findByBooking(booking2)).thenReturn(Collections.emptyList());
+            when(productRepository.findAll()).thenReturn(List.of(product1, product2));
+            when(bookingRepository.findByProductId(1L)).thenReturn(List.of(productBooking1));
+            when(bookingRepository.findByProductId(2L)).thenReturn(List.of(productBooking2));
+            when(notificationRepository.findByBooking(productBooking1)).thenReturn(Collections.emptyList());
+            when(notificationRepository.findByBooking(productBooking2)).thenReturn(Collections.emptyList());
+
+            // Execute
+            adminService.deleteUser(2L);
+
+            // Verify all renter bookings are deleted
+            verify(bookingRepository).delete(booking1);
+            verify(bookingRepository).delete(booking2);
+            
+            // Verify all product bookings are deleted
+            verify(bookingRepository).delete(productBooking1);
+            verify(bookingRepository).delete(productBooking2);
+            
+            // Verify all products are deleted
+            verify(productRepository).delete(product1);
+            verify(productRepository).delete(product2);
+            
+            // Verify user is deleted
+            verify(userRepository).delete(regularUser);
         }
     }
 
