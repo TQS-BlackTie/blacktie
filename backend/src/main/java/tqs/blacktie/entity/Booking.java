@@ -1,12 +1,18 @@
 package tqs.blacktie.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import tqs.blacktie.constants.BookingConstants;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bookings")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Booking {
     
     public static final String STATUS_PENDING_APPROVAL = BookingConstants.STATUS_PENDING_APPROVAL;
@@ -45,10 +51,6 @@ public class Booking {
     
     private LocalDateTime approvedAt;
     private LocalDateTime paidAt;
-
-    public Booking() {
-        this.status = STATUS_PENDING_APPROVAL;
-    }
     
     public Booking(User renter, Product product, LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice) {
         this.renter = renter;
@@ -57,98 +59,5 @@ public class Booking {
         this.returnDate = returnDate;
         this.totalPrice = totalPrice;
         this.status = STATUS_PENDING_APPROVAL;
-    }
-
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public User getRenter() {
-        return renter;
-    }
-    public void setRenter(User renter) {
-        this.renter = renter;
-    }
-    public Product getProduct() {
-        return product;
-    }
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-    public LocalDateTime getBookingDate() {
-        return bookingDate;
-    }
-    public void setBookingDate(LocalDateTime bookingDate) {
-        this.bookingDate = bookingDate;
-    }
-    public LocalDateTime getReturnDate() {
-        return returnDate;
-    }
-    public void setReturnDate(LocalDateTime returnDate) {
-        this.returnDate = returnDate;
-    }
-    public Double getTotalPrice() {
-        return totalPrice;
-    }
-    public void setTotalPrice(Double totalPrice) {
-        this.totalPrice = totalPrice;
-    }
-    
-    public String getStatus() {
-        return status;
-    }
-    
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    
-    public String getDeliveryMethod() {
-        return deliveryMethod;
-    }
-    
-    public void setDeliveryMethod(String deliveryMethod) {
-        this.deliveryMethod = deliveryMethod;
-    }
-    
-    public String getDeliveryCode() {
-        return deliveryCode;
-    }
-    
-    public void setDeliveryCode(String deliveryCode) {
-        this.deliveryCode = deliveryCode;
-    }
-    
-    public String getPickupLocation() {
-        return pickupLocation;
-    }
-    
-    public void setPickupLocation(String pickupLocation) {
-        this.pickupLocation = pickupLocation;
-    }
-    
-    public String getRejectionReason() {
-        return rejectionReason;
-    }
-    
-    public void setRejectionReason(String rejectionReason) {
-        this.rejectionReason = rejectionReason;
-    }
-    
-    public LocalDateTime getApprovedAt() {
-        return approvedAt;
-    }
-    
-    public void setApprovedAt(LocalDateTime approvedAt) {
-        this.approvedAt = approvedAt;
-    }
-    
-    public LocalDateTime getPaidAt() {
-        return paidAt;
-    }
-    
-    public void setPaidAt(LocalDateTime paidAt) {
-        this.paidAt = paidAt;
     }
 }
