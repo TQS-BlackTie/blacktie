@@ -47,7 +47,7 @@ public class AdminService {
         long availableProducts = productRepository.countByAvailableTrue();
         
         long totalBookings = bookingRepository.count();
-        long activeBookings = bookingRepository.countByStatus(Booking.STATUS_ACTIVE);
+        long activeBookings = bookingRepository.countByStatus(Booking.STATUS_PAID);
         long completedBookings = bookingRepository.countByStatus(Booking.STATUS_COMPLETED);
         long cancelledBookings = bookingRepository.countByStatus(Booking.STATUS_CANCELLED);
         
@@ -146,7 +146,7 @@ public class AdminService {
         for (Product product : ownerProducts) {
             // Get all active bookings for this product
             List<Booking> activeBookings = bookingRepository.findByProductId(product.getId()).stream()
-                .filter(b -> Booking.STATUS_ACTIVE.equals(b.getStatus()))
+                .filter(b -> Booking.STATUS_APPROVED.equals(b.getStatus()) || Booking.STATUS_PAID.equals(b.getStatus()))
                 .toList();
 
             for (Booking booking : activeBookings) {
@@ -160,7 +160,7 @@ public class AdminService {
 
     private void cancelUserBookings(User renter, String reason) {
         List<Booking> activeBookings = bookingRepository.findByRenterId(renter.getId()).stream()
-            .filter(b -> Booking.STATUS_ACTIVE.equals(b.getStatus()))
+            .filter(b -> Booking.STATUS_APPROVED.equals(b.getStatus()) || Booking.STATUS_PAID.equals(b.getStatus()))
             .toList();
 
         for (Booking booking : activeBookings) {
@@ -227,7 +227,7 @@ public class AdminService {
 
         // Cancel all active bookings for this product and notify renters
         List<Booking> activeBookings = bookingRepository.findByProductId(productId).stream()
-            .filter(b -> Booking.STATUS_ACTIVE.equals(b.getStatus()))
+            .filter(b -> Booking.STATUS_APPROVED.equals(b.getStatus()) || Booking.STATUS_PAID.equals(b.getStatus()))
             .toList();
 
         for (Booking booking : activeBookings) {
