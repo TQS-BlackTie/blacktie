@@ -14,6 +14,7 @@ import tqs.blacktie.entity.Booking;
 import tqs.blacktie.entity.Product;
 import tqs.blacktie.entity.User;
 import tqs.blacktie.repository.BookingRepository;
+import tqs.blacktie.repository.NotificationRepository;
 import tqs.blacktie.repository.ProductRepository;
 import tqs.blacktie.repository.UserRepository;
 
@@ -43,6 +44,9 @@ class AdminServiceTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @InjectMocks
     private AdminService adminService;
@@ -436,6 +440,9 @@ class AdminServiceTest {
         @DisplayName("Should delete regular user")
         void whenDeleteRegularUser_thenUserDeleted() {
             when(userRepository.findById(2L)).thenReturn(Optional.of(regularUser));
+            when(notificationRepository.findByUserOrderByCreatedAtDesc(regularUser)).thenReturn(Collections.emptyList());
+            when(bookingRepository.findByRenterId(2L)).thenReturn(Collections.emptyList());
+            when(productRepository.findAll()).thenReturn(Collections.emptyList());
 
             adminService.deleteUser(2L);
 
@@ -525,14 +532,13 @@ class AdminServiceTest {
 
             when(productRepository.findById(1L)).thenReturn(Optional.of(product));
             when(bookingRepository.findByProductId(1L)).thenReturn(List.of(activeBooking));
-            when(bookingRepository.save(any(Booking.class))).thenReturn(activeBooking);
+            when(notificationRepository.findByBooking(activeBooking)).thenReturn(Collections.emptyList());
 
             adminService.deleteProduct(1L);
 
-            verify(bookingRepository).save(activeBooking);
-            assertEquals(Booking.STATUS_CANCELLED, activeBooking.getStatus());
             verify(notificationService).createProductDeletedNotification(regularUser, "Test Product", false);
             verify(notificationService).createProductDeletedNotification(ownerUser, "Test Product", true);
+            verify(bookingRepository).delete(activeBooking);
             verify(productRepository).delete(product);
         }
 
