@@ -7,7 +7,6 @@ import ProfilePage from './app/profile'
 import MyBookingsPage from './app/my-bookings'
 import OwnerBookingsPage from './app/owner-bookings'
 import PendingApprovalsPage from './app/pending-approvals'
-import MyBookingsPage from './app/my-bookings'
 import './App.css'
 
 function App() {

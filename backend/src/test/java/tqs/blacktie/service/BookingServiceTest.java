@@ -561,7 +561,7 @@ class BookingServiceTest {
 
             Booking activeBooking = new Booking(testUser, testProduct, futureBookingDate, futureReturnDate, 100.0);
             activeBooking.setId(1L);
-            activeBooking.setStatus("ACTIVE");
+            activeBooking.setStatus(Booking.STATUS_PAID);
 
             Booking completedBooking = new Booking(testUser, testProduct, 
                 LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(7), 150.0);
@@ -581,7 +581,7 @@ class BookingServiceTest {
 
             assertEquals(1, activeBookings.size());
             assertEquals(1L, activeBookings.get(0).getId());
-            assertEquals("ACTIVE", activeBookings.get(0).getStatus());
+            assertEquals(Booking.STATUS_PAID, activeBookings.get(0).getStatus());
         }
 
         @Test
