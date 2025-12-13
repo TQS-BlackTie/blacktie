@@ -1,21 +1,23 @@
 package tqs.blacktie.entity;
 
 import jakarta.persistence.*;
+import tqs.blacktie.constants.BookingConstants;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bookings")
 public class Booking {
     
-    public static final String STATUS_PENDING_APPROVAL = "PENDING_APPROVAL";
-    public static final String STATUS_APPROVED = "APPROVED";
-    public static final String STATUS_REJECTED = "REJECTED";
-    public static final String STATUS_PAID = "PAID";
-    public static final String STATUS_COMPLETED = "COMPLETED";
-    public static final String STATUS_CANCELLED = "CANCELLED";
+    public static final String STATUS_PENDING_APPROVAL = BookingConstants.STATUS_PENDING_APPROVAL;
+    public static final String STATUS_APPROVED = BookingConstants.STATUS_APPROVED;
+    public static final String STATUS_REJECTED = BookingConstants.STATUS_REJECTED;
+    public static final String STATUS_PAID = BookingConstants.STATUS_PAID;
+    public static final String STATUS_COMPLETED = BookingConstants.STATUS_COMPLETED;
+    public static final String STATUS_CANCELLED = BookingConstants.STATUS_CANCELLED;
     
-    public static final String DELIVERY_PICKUP = "PICKUP";
-    public static final String DELIVERY_SHIPPING = "SHIPPING";
+    public static final String DELIVERY_PICKUP = BookingConstants.DELIVERY_PICKUP;
+    public static final String DELIVERY_SHIPPING = BookingConstants.DELIVERY_SHIPPING;
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

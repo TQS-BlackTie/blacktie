@@ -10,6 +10,7 @@ import tqs.blacktie.repository.BookingRepository;
 import tqs.blacktie.repository.ProductRepository;
 import tqs.blacktie.repository.UserRepository;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -326,12 +327,12 @@ public class BookingService {
     }
 
     private String generateDeliveryCode() {
-        // Generate a random 8-character alphanumeric code
+        // Generate a cryptographically secure random 8-character alphanumeric code
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder code = new StringBuilder();
-        java.util.Random random = new java.util.Random();
+        SecureRandom secureRandom = new SecureRandom();
         for (int i = 0; i < 8; i++) {
-            code.append(chars.charAt(random.nextInt(chars.length())));
+            code.append(chars.charAt(secureRandom.nextInt(chars.length())));
         }
         return code.toString();
     }
