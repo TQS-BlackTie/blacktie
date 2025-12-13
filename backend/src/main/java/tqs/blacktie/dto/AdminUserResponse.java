@@ -17,22 +17,6 @@ public class AdminUserResponse {
     public AdminUserResponse() {
     }
 
-    public AdminUserResponse(Long id, String name, String email, String role, String status,
-                             String phone, String address, String businessInfo,
-                             String createdAt, long bookingsCount, long productsCount) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.role = role;
-        this.status = status;
-        this.phone = phone;
-        this.address = address;
-        this.businessInfo = businessInfo;
-        this.createdAt = createdAt;
-        this.bookingsCount = bookingsCount;
-        this.productsCount = productsCount;
-    }
-
     public Long getId() {
         return id;
     }

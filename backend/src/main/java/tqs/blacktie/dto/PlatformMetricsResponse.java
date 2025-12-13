@@ -17,24 +17,6 @@ public class PlatformMetricsResponse {
     public PlatformMetricsResponse() {
     }
 
-    public PlatformMetricsResponse(long totalUsers, long totalOwners, long totalRenters,
-                                   long totalProducts, long availableProducts,
-                                   long totalBookings, long activeBookings, 
-                                   long completedBookings, long cancelledBookings,
-                                   double totalRevenue, double averageBookingValue) {
-        this.totalUsers = totalUsers;
-        this.totalOwners = totalOwners;
-        this.totalRenters = totalRenters;
-        this.totalProducts = totalProducts;
-        this.availableProducts = availableProducts;
-        this.totalBookings = totalBookings;
-        this.activeBookings = activeBookings;
-        this.completedBookings = completedBookings;
-        this.cancelledBookings = cancelledBookings;
-        this.totalRevenue = totalRevenue;
-        this.averageBookingValue = averageBookingValue;
-    }
-
     public long getTotalUsers() {
         return totalUsers;
     }

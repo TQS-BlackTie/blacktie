@@ -24,6 +24,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -213,6 +215,146 @@ class AdminServiceTest {
             adminService.updateUserStatus(2L, "active");
 
             verify(notificationService).createAccountReactivatedNotification(regularUser);
+        }
+
+        @Test
+        @DisplayName("Should reactivate banned user and send notification")
+        void whenReactivateBannedUser_thenNotificationSent() {
+            regularUser.setStatus(User.STATUS_BANNED);
+            when(userRepository.findById(2L)).thenReturn(Optional.of(regularUser));
+            when(userRepository.save(any(User.class))).thenReturn(regularUser);
+
+            adminService.updateUserStatus(2L, "active");
+
+            verify(notificationService).createAccountReactivatedNotification(regularUser);
+        }
+
+        @Test
+        @DisplayName("Should cancel owner products bookings when suspending")
+        void whenSuspendOwner_thenCancelProductBookings() {
+            Product product = new Product();
+            product.setId(1L);
+            product.setOwner(ownerUser);
+
+            Booking activeBooking = new Booking();
+            activeBooking.setId(1L);
+            activeBooking.setStatus(Booking.STATUS_ACTIVE);
+            activeBooking.setRenter(regularUser);
+
+            when(userRepository.findById(3L)).thenReturn(Optional.of(ownerUser));
+            when(userRepository.save(any(User.class))).thenReturn(ownerUser);
+            when(productRepository.findAll()).thenReturn(List.of(product));
+            when(bookingRepository.findByProductId(1L)).thenReturn(List.of(activeBooking));
+            when(bookingRepository.findByRenterId(3L)).thenReturn(Collections.emptyList());
+
+            adminService.updateUserStatus(3L, "suspended");
+
+            verify(bookingRepository).save(activeBooking);
+            assertEquals(Booking.STATUS_CANCELLED, activeBooking.getStatus());
+            verify(notificationService).createBookingCancelledByAdminNotification(eq(regularUser), eq(activeBooking), anyString());
+        }
+
+        @Test
+        @DisplayName("Should cancel user bookings when suspending renter")
+        void whenSuspendRenter_thenCancelUserBookings() {
+            Product product = new Product();
+            product.setId(1L);
+            product.setOwner(ownerUser);
+
+            Booking activeBooking = new Booking();
+            activeBooking.setId(1L);
+            activeBooking.setStatus(Booking.STATUS_ACTIVE);
+            activeBooking.setRenter(regularUser);
+            activeBooking.setProduct(product);
+
+            when(userRepository.findById(2L)).thenReturn(Optional.of(regularUser));
+            when(userRepository.save(any(User.class))).thenReturn(regularUser);
+            when(productRepository.findAll()).thenReturn(Collections.emptyList());
+            when(bookingRepository.findByRenterId(2L)).thenReturn(List.of(activeBooking));
+
+            adminService.updateUserStatus(2L, "banned");
+
+            verify(bookingRepository).save(activeBooking);
+            assertEquals(Booking.STATUS_CANCELLED, activeBooking.getStatus());
+            verify(notificationService).createBookingCancelledByAdminNotification(eq(ownerUser), eq(activeBooking), anyString());
+        }
+
+        @Test
+        @DisplayName("Should not send reactivation notification when status is same")
+        void whenActivateAlreadyActiveUser_thenNoReactivationNotification() {
+            regularUser.setStatus(User.STATUS_ACTIVE);
+            when(userRepository.findById(2L)).thenReturn(Optional.of(regularUser));
+            when(userRepository.save(any(User.class))).thenReturn(regularUser);
+
+            adminService.updateUserStatus(2L, "active");
+
+            verify(notificationService, never()).createAccountReactivatedNotification(any());
+        }
+
+        @Test
+        @DisplayName("Should skip products without owner when cancelling owner bookings")
+        void whenSuspendUser_thenSkipProductsWithoutOwner() {
+            Product productWithoutOwner = new Product();
+            productWithoutOwner.setId(1L);
+            productWithoutOwner.setOwner(null);
+
+            when(userRepository.findById(2L)).thenReturn(Optional.of(regularUser));
+            when(userRepository.save(any(User.class))).thenReturn(regularUser);
+            when(productRepository.findAll()).thenReturn(List.of(productWithoutOwner));
+            when(bookingRepository.findByRenterId(2L)).thenReturn(Collections.emptyList());
+
+            adminService.updateUserStatus(2L, "suspended");
+
+            verify(bookingRepository, never()).findByProductId(any());
+        }
+
+        @Test
+        @DisplayName("Should skip completed bookings when cancelling")
+        void whenSuspendUser_thenSkipCompletedBookings() {
+            Product product = new Product();
+            product.setId(1L);
+            product.setOwner(ownerUser);
+
+            Booking completedBooking = new Booking();
+            completedBooking.setId(1L);
+            completedBooking.setStatus(Booking.STATUS_COMPLETED);
+            completedBooking.setRenter(regularUser);
+
+            when(userRepository.findById(3L)).thenReturn(Optional.of(ownerUser));
+            when(userRepository.save(any(User.class))).thenReturn(ownerUser);
+            when(productRepository.findAll()).thenReturn(List.of(product));
+            when(bookingRepository.findByProductId(1L)).thenReturn(List.of(completedBooking));
+            when(bookingRepository.findByRenterId(3L)).thenReturn(Collections.emptyList());
+
+            adminService.updateUserStatus(3L, "suspended");
+
+            // Should not save completed booking
+            verify(bookingRepository, never()).save(completedBooking);
+        }
+
+        @Test
+        @DisplayName("Should handle booking without product owner when cancelling renter bookings")
+        void whenCancelRenterBooking_thenSkipNotificationIfNoOwner() {
+            Product productWithoutOwner = new Product();
+            productWithoutOwner.setId(1L);
+            productWithoutOwner.setOwner(null);
+
+            Booking activeBooking = new Booking();
+            activeBooking.setId(1L);
+            activeBooking.setStatus(Booking.STATUS_ACTIVE);
+            activeBooking.setRenter(regularUser);
+            activeBooking.setProduct(productWithoutOwner);
+
+            when(userRepository.findById(2L)).thenReturn(Optional.of(regularUser));
+            when(userRepository.save(any(User.class))).thenReturn(regularUser);
+            when(productRepository.findAll()).thenReturn(Collections.emptyList());
+            when(bookingRepository.findByRenterId(2L)).thenReturn(List.of(activeBooking));
+
+            adminService.updateUserStatus(2L, "banned");
+
+            verify(bookingRepository).save(activeBooking);
+            // Should not notify owner since owner is null
+            verify(notificationService, never()).createBookingCancelledByAdminNotification(eq(null), any(), anyString());
         }
 
         @Test

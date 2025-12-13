@@ -129,7 +129,7 @@ public class AdminService {
             // Cancel all active bookings made by this user as a renter
             cancelUserBookings(user, "Renter account " + normalizedStatus);
         } else if (normalizedStatus.equals(User.STATUS_ACTIVE) && 
-                   (previousStatus != null && (previousStatus.equals(User.STATUS_SUSPENDED) || previousStatus.equals(User.STATUS_BANNED)))) {
+                   (previousStatus.equals(User.STATUS_SUSPENDED) || previousStatus.equals(User.STATUS_BANNED))) {
             // Account reactivated
             notificationService.createAccountReactivatedNotification(user);
         }

@@ -171,7 +171,7 @@ class AdminControllerTest {
             User updatedUser = new User("Test", "test@test.com", "pass");
             updatedUser.setId(2L);
             updatedUser.setStatus(User.STATUS_SUSPENDED);
-            when(adminService.updateUserStatus(eq(2L), eq("suspended"))).thenReturn(updatedUser);
+            when(adminService.updateUserStatus(2L, "suspended")).thenReturn(updatedUser);
             AdminUserResponse userResponse = new AdminUserResponse();
             userResponse.setId(2L);
             when(adminService.getUserDetails(2L)).thenReturn(userResponse);
@@ -210,7 +210,7 @@ class AdminControllerTest {
             User updatedUser = new User("Test", "test@test.com", "pass");
             updatedUser.setId(2L);
             updatedUser.setRole(User.ROLE_OWNER);
-            when(adminService.updateUserRole(eq(2L), eq("owner"))).thenReturn(updatedUser);
+            when(adminService.updateUserRole(2L, "owner")).thenReturn(updatedUser);
             AdminUserResponse userResponse = new AdminUserResponse();
             userResponse.setId(2L);
             when(adminService.getUserDetails(2L)).thenReturn(userResponse);
@@ -302,6 +302,140 @@ class AdminControllerTest {
             ResponseEntity<Object> response = adminController.deleteProduct(1L, 999L);
 
             assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when non-admin tries to get products")
+        void whenNonAdminUser_thenReturnForbidden() {
+            when(adminService.isAdmin(2L)).thenReturn(false);
+
+            ResponseEntity<Object> response = adminController.getAllProducts(2L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when non-admin tries to delete product")
+        void whenNonAdminDeleteProduct_thenReturnForbidden() {
+            when(adminService.isAdmin(2L)).thenReturn(false);
+
+            ResponseEntity<Object> response = adminController.deleteProduct(2L, 1L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("Additional Edge Cases Tests")
+    class AdditionalEdgeCasesTests {
+
+        @Test
+        @DisplayName("Should return forbidden when non-admin tries to get metrics")
+        void whenNonAdminGetMetrics_thenReturnForbidden() {
+            when(adminService.isAdmin(2L)).thenReturn(false);
+
+            ResponseEntity<Object> response = adminController.getPlatformMetrics(2L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when non-admin tries to get users")
+        void whenNonAdminGetUsers_thenReturnForbidden() {
+            when(adminService.isAdmin(2L)).thenReturn(false);
+
+            ResponseEntity<Object> response = adminController.getAllUsers(2L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when non-admin tries to update status")
+        void whenNonAdminUpdateStatus_thenReturnForbidden() {
+            when(adminService.isAdmin(2L)).thenReturn(false);
+
+            UpdateUserStatusRequest request = new UpdateUserStatusRequest();
+            request.setStatus("suspended");
+
+            ResponseEntity<Object> response = adminController.updateUserStatus(2L, 3L, request);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when non-admin tries to update role")
+        void whenNonAdminUpdateRole_thenReturnForbidden() {
+            when(adminService.isAdmin(2L)).thenReturn(false);
+
+            SetRoleRequest request = new SetRoleRequest();
+            request.setRole("owner");
+
+            ResponseEntity<Object> response = adminController.updateUserRole(2L, 3L, request);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when non-admin tries to delete user")
+        void whenNonAdminDeleteUser_thenReturnForbidden() {
+            when(adminService.isAdmin(2L)).thenReturn(false);
+
+            ResponseEntity<Object> response = adminController.deleteUser(2L, 3L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return bad request for invalid role")
+        void whenInvalidRole_thenReturnBadRequest() {
+            when(adminService.isAdmin(1L)).thenReturn(true);
+            when(adminService.updateUserRole(2L, "invalid")).thenThrow(new IllegalArgumentException("Invalid role"));
+
+            SetRoleRequest request = new SetRoleRequest();
+            request.setRole("invalid");
+
+            ResponseEntity<Object> response = adminController.updateUserRole(1L, 2L, request);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return bad request for user status update when user not found")
+        void whenUpdateStatusUserNotFound_thenReturnBadRequest() {
+            when(adminService.isAdmin(1L)).thenReturn(true);
+            when(adminService.updateUserStatus(999L, "suspended")).thenThrow(new IllegalArgumentException("User not found"));
+
+            UpdateUserStatusRequest request = new UpdateUserStatusRequest();
+            request.setStatus("suspended");
+
+            ResponseEntity<Object> response = adminController.updateUserStatus(1L, 999L, request);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return bad request for user role update when user not found")
+        void whenUpdateRoleUserNotFound_thenReturnBadRequest() {
+            when(adminService.isAdmin(1L)).thenReturn(true);
+            when(adminService.updateUserRole(999L, "owner")).thenThrow(new IllegalArgumentException("User not found"));
+
+            SetRoleRequest request = new SetRoleRequest();
+            request.setRole("owner");
+
+            ResponseEntity<Object> response = adminController.updateUserRole(1L, 999L, request);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return bad request when deleting non-existent user")
+        void whenDeleteNonExistentUser_thenReturnBadRequest() {
+            when(adminService.isAdmin(1L)).thenReturn(true);
+            doThrow(new IllegalArgumentException("User not found")).when(adminService).deleteUser(999L);
+
+            ResponseEntity<Object> response = adminController.deleteUser(1L, 999L);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         }
     }
 }
