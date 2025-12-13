@@ -51,8 +51,8 @@ export default function ProfilePage() {
           address: userData.address || "",
           businessInfo: userData.businessInfo || ""
         })
-      } catch (e) {
-        console.error(e)
+      } catch (err: unknown) {
+        console.error(err)
         setError("Failed to load user profile")
       } finally {
         setLoading(false)

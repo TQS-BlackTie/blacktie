@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { getPendingApprovalBookings, approveBooking, rejectBooking, type Booking } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,11 +24,7 @@ export default function PendingApprovalsPage() {
   const user = userData ? JSON.parse(userData) : null
   const userId = user?.id
 
-  useEffect(() => {
-    fetchPendingBookings()
-  }, [userId])
-
-  const fetchPendingBookings = async () => {
+  const fetchPendingBookings = useCallback(async () => {
     if (!userId) {
       window.location.href = '/login'
       return
@@ -37,13 +33,17 @@ export default function PendingApprovalsPage() {
     try {
       const data = await getPendingApprovalBookings(userId)
       setBookings(data)
-    } catch (e) {
-      console.error(e)
-      setError("Failed to load pending bookings")
+    } catch (err: unknown) {
+      console.error(err)
+      setError('Failed to load pending bookings')
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId])
+
+  useEffect(() => {
+    void fetchPendingBookings()
+  }, [fetchPendingBookings])
 
   const handleApproveClick = (booking: Booking) => {
     setSelectedBooking(booking)
@@ -74,8 +74,9 @@ export default function PendingApprovalsPage() {
       })
       setShowApproveModal(false)
       await fetchPendingBookings()
-    } catch (e: any) {
-      alert(e.message || 'Failed to approve booking')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      alert(message || 'Failed to approve booking')
     } finally {
       setSubmitting(false)
     }
@@ -91,8 +92,9 @@ export default function PendingApprovalsPage() {
       })
       setShowRejectModal(false)
       await fetchPendingBookings()
-    } catch (e: any) {
-      alert(e.message || 'Failed to reject booking')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      alert(message || 'Failed to reject booking')
     } finally {
       setSubmitting(false)
     }

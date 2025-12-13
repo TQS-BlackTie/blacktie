@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { getUserBookings, processBookingPayment, cancelBooking, type Booking } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Navbar } from '@/components/navbar'
@@ -52,8 +52,7 @@ function calculateCountdown(booking: Booking): { label: string; countdown: strin
   return { label, countdown: countdown.trim() }
 }
 
-function PaymentForm({ bookingId: _bookingId, amount, onSuccess, onCancel }: { 
-  bookingId: number
+function PaymentForm({ amount, onSuccess, onCancel }: { 
   amount: number
   onSuccess: () => void
   onCancel: () => void
@@ -82,8 +81,9 @@ function PaymentForm({ bookingId: _bookingId, amount, onSuccess, onCancel }: {
       } else {
         onSuccess()
       }
-    } catch (err: any) {
-      setError(err.message || 'Payment failed')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(message || 'Payment failed')
     } finally {
       setProcessing(false)
     }
@@ -124,9 +124,26 @@ export default function MyBookingsPage() {
   const user = userData ? JSON.parse(userData) : null
   const userId = user?.id
 
-  useEffect(() => {
-    fetchBookings()
+  const fetchBookings = useCallback(async () => {
+    if (!userId) {
+      window.location.href = '/login'
+      return
+    }
+
+    try {
+      const data = await getUserBookings(userId)
+      setBookings(data)
+    } catch (err: unknown) {
+      console.error(err)
+      setError('Failed to load bookings')
+    } finally {
+      setLoading(false)
+    }
   }, [userId])
+
+  useEffect(() => {
+    void fetchBookings()
+  }, [fetchBookings])
 
   // Update countdowns every second for PAID and COMPLETED bookings
   useEffect(() => {
@@ -148,22 +165,7 @@ export default function MyBookingsPage() {
     return () => clearInterval(interval)
   }, [bookings])
 
-  const fetchBookings = async () => {
-    if (!userId) {
-      window.location.href = '/login'
-      return
-    }
-
-    try {
-      const data = await getUserBookings(userId)
-      setBookings(data)
-    } catch (e) {
-      console.error(e)
-      setError("Failed to load bookings")
-    } finally {
-      setLoading(false)
-    }
-  }
+  
 
   const handlePayClick = async (booking: Booking) => {
     setSelectedBooking(booking)
@@ -176,8 +178,9 @@ export default function MyBookingsPage() {
       })
       setClientSecret(paymentIntent.clientSecret)
       setShowPaymentModal(true)
-    } catch (e: any) {
-      alert(e.message || 'Failed to initiate payment')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      alert(message || 'Failed to initiate payment')
     } finally {
       setProcessingPayment(false)
     }
@@ -192,8 +195,9 @@ export default function MyBookingsPage() {
       setClientSecret(null)
       await fetchBookings()
       alert('Payment successful! Check your booking details for delivery information.')
-    } catch (e: any) {
-      alert(e.message || 'Failed to process payment')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      alert(message || 'Failed to process payment')
     }
   }
 
@@ -205,8 +209,9 @@ export default function MyBookingsPage() {
       setCancellingId(bookingId)
       await cancelBooking(userId, bookingId)
       await fetchBookings()
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to cancel booking")
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      alert(message || "Failed to cancel booking")
     } finally {
       setCancellingId(null)
     }
@@ -255,13 +260,6 @@ export default function MyBookingsPage() {
     window.location.href = '/login'
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div>Loading...</div>
-      </div>
-    )
-  }
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -429,7 +427,6 @@ export default function MyBookingsPage() {
             </DialogHeader>
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <PaymentForm
-                bookingId={selectedBooking!.id}
                 amount={Math.round(selectedBooking!.totalPrice * 100)}
                 onSuccess={handlePaymentSuccess}
                 onCancel={() => {

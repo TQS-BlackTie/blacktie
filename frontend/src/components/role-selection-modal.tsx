@@ -32,8 +32,8 @@ export function RoleSelectionModal({ userId, onRoleSelected, title }: RoleSelect
         const user = await getCurrentUser(userId)
         setCurrentRole(user.role)
         // Don't pre-select any role - user must choose
-      } catch (e) {
-        console.error("Failed to load current role:", e)
+      } catch (err: unknown) {
+        console.error("Failed to load current role:", err)
       }
     }
     loadCurrentRole()

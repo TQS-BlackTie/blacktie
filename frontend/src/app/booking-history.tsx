@@ -47,8 +47,8 @@ export default function BookingHistoryPage() {
           }
         }))
         setReviewsMap(map)
-      } catch (e) {
-        console.error(e)
+      } catch (err: unknown) {
+        console.error(err)
         setError("Failed to load booking history")
       } finally {
         setLoading(false)
