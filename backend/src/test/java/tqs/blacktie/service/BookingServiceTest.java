@@ -179,6 +179,27 @@ class BookingServiceTest {
             assertEquals("Product is already booked for the selected dates", exception.getMessage());
             verify(bookingRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("Should allow booking when previous booking was cancelled")
+        void shouldAllowBookingWhenPreviousBookingWasCancelled() {
+            // Create a cancelled booking for the same dates
+            Booking cancelledBooking = new Booking(testUser, testProduct, 
+                testRequest.getBookingDate(), testRequest.getReturnDate(), 100.0);
+            cancelledBooking.setId(99L);
+            cancelledBooking.setStatus(Booking.STATUS_CANCELLED);
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
+            when(bookingRepository.findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
+                any(), any(), any())).thenReturn(Arrays.asList(cancelledBooking));
+            when(bookingRepository.save(any(Booking.class))).thenReturn(testBooking);
+
+            BookingResponse response = bookingService.createBooking(1L, testRequest);
+
+            assertNotNull(response);
+            verify(bookingRepository, times(1)).save(any(Booking.class));
+        }
     }
 
     @Nested
@@ -522,6 +543,63 @@ class BookingServiceTest {
             BookingResponse response = history.get(0);
             assertNull(response.getOwnerId());
             assertEquals("Unknown", response.getOwnerName());
+        }
+    }
+
+    @Nested
+    @DisplayName("Active Bookings Tests")
+    class ActiveBookingsTests {
+
+        @Test
+        @DisplayName("Should return only active bookings for renter")
+        void shouldReturnOnlyActiveBookingsForRenter() {
+            LocalDateTime futureBookingDate = LocalDateTime.now().plusDays(1);
+            LocalDateTime futureReturnDate = LocalDateTime.now().plusDays(3);
+
+            Booking activeBooking = new Booking(testUser, testProduct, futureBookingDate, futureReturnDate, 100.0);
+            activeBooking.setId(1L);
+            activeBooking.setStatus("ACTIVE");
+
+            Booking completedBooking = new Booking(testUser, testProduct, 
+                LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(7), 150.0);
+            completedBooking.setId(2L);
+            completedBooking.setStatus("COMPLETED");
+
+            Booking cancelledBooking = new Booking(testUser, testProduct, 
+                LocalDateTime.now().plusDays(5), LocalDateTime.now().plusDays(7), 200.0);
+            cancelledBooking.setId(3L);
+            cancelledBooking.setStatus("CANCELLED");
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(bookingRepository.findByRenterId(1L))
+                .thenReturn(Arrays.asList(activeBooking, completedBooking, cancelledBooking));
+
+            List<BookingResponse> activeBookings = bookingService.getActiveBookingsByRenter(1L);
+
+            assertEquals(1, activeBookings.size());
+            assertEquals(1L, activeBookings.get(0).getId());
+            assertEquals("ACTIVE", activeBookings.get(0).getStatus());
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no active bookings")
+        void shouldReturnEmptyListWhenNoActiveBookings() {
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(bookingRepository.findByRenterId(1L)).thenReturn(Collections.emptyList());
+
+            List<BookingResponse> activeBookings = bookingService.getActiveBookingsByRenter(1L);
+
+            assertTrue(activeBookings.isEmpty());
+        }
+
+        @Test
+        @DisplayName("Should throw exception when user not found")
+        void shouldThrowExceptionWhenUserNotFoundForActiveBookings() {
+            when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(IllegalArgumentException.class, () -> {
+                bookingService.getActiveBookingsByRenter(999L);
+            });
         }
     }
 }

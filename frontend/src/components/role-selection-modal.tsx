@@ -11,14 +11,16 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
+import { Button } from "@/components/ui/button"
 import { setUserRole, getCurrentUser } from "@/lib/api"
 
 type RoleSelectionModalProps = {
   userId: number
   onRoleSelected: (role: string) => void
+  title?: string
 }
 
-export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModalProps) {
+export function RoleSelectionModal({ userId, onRoleSelected, title }: RoleSelectionModalProps) {
   const [selectedRole, setSelectedRole] = useState<"renter" | "owner" | null>(null)
   const [currentRole, setCurrentRole] = useState<string | null>(null)
   const [error, setError] = useState("")
@@ -37,13 +39,13 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
     loadCurrentRole()
   }, [userId])
 
-  const saveRole = async (role: "renter" | "owner") => {
-    if (isSubmitting) return
+  const handleConfirm = async () => {
+    if (!selectedRole || isSubmitting) return
     setError("")
     setIsSubmitting(true)
 
     try {
-      const updatedUser = await setUserRole(userId, role)
+      const updatedUser = await setUserRole(userId, selectedRole)
       localStorage.setItem('user', JSON.stringify(updatedUser))
       onRoleSelected(updatedUser.role)
     } catch (err: unknown) {
@@ -54,19 +56,13 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
     }
   }
 
-  const handleRoleChange = (role: "renter" | "owner") => {
-    setSelectedRole(role)
-    // Always save the role when clicked
-    void saveRole(role)
-  }
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Choose Your Role</CardTitle>
+          <CardTitle>{title || "Choose Your Role"}</CardTitle>
           <CardDescription>
-            {currentRole && currentRole !== "renter" 
+            {currentRole && currentRole !== "renter"
               ? `Current role: ${currentRole === "owner" ? "Owner" : currentRole}. You can change it anytime.`
               : "Select how you want to use the platform. You can change it anytime."}
           </CardDescription>
@@ -87,15 +83,15 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
 
             <Field>
               <FieldLabel>Select your role:</FieldLabel>
-              
+
               <div className="space-y-3 mt-2">
-                <label className={`flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${selectedRole === "renter" ? "border-primary bg-primary/5" : ""}`}>
+                <label className={`flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${selectedRole === "renter" ? "border-blue-500 bg-blue-50" : ""}`}>
                   <input
                     type="radio"
                     name="role"
                     value="renter"
                     checked={selectedRole === "renter"}
-                    onChange={() => handleRoleChange("renter")}
+                    onChange={() => setSelectedRole("renter")}
                     disabled={isSubmitting}
                     className="mr-3"
                   />
@@ -107,13 +103,13 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
                   </div>
                 </label>
 
-                <label className={`flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${selectedRole === "owner" ? "border-primary bg-primary/5" : ""}`}>
+                <label className={`flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${selectedRole === "owner" ? "border-blue-500 bg-blue-50" : ""}`}>
                   <input
                     type="radio"
                     name="role"
                     value="owner"
                     checked={selectedRole === "owner"}
-                    onChange={() => handleRoleChange("owner")}
+                    onChange={() => setSelectedRole("owner")}
                     disabled={isSubmitting}
                     className="mr-3"
                   />
@@ -126,6 +122,16 @@ export function RoleSelectionModal({ userId, onRoleSelected }: RoleSelectionModa
                 </label>
               </div>
             </Field>
+
+            <Button
+              onClick={handleConfirm}
+              disabled={!selectedRole || isSubmitting}
+              className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isSubmitting ? "Saving..." : "Confirm Role"}
+            </Button>
+
+
 
           </FieldGroup>
         </CardContent>

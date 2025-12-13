@@ -194,6 +194,20 @@ public class BookingService {
             .toList();
     }
 
+    public List<BookingResponse> getActiveBookingsByRenter(Long userId) {
+        // Verify user exists
+        userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        // Get all bookings for the renter with ACTIVE status
+        List<Booking> allBookings = bookingRepository.findByRenterId(userId);
+        
+        return allBookings.stream()
+            .filter(booking -> Booking.STATUS_ACTIVE.equals(booking.getStatus()))
+            .map(this::convertToResponse)
+            .toList();
+    }
+
     private BookingResponse convertToResponse(Booking booking) {
         Long ownerId = booking.getProduct().getOwner() != null ? booking.getProduct().getOwner().getId() : null;
         String ownerName = booking.getProduct().getOwner() != null ? booking.getProduct().getOwner().getName() : "Unknown";

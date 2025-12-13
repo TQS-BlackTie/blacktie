@@ -77,19 +77,29 @@ export function ProductBookingsModal({ product, userId, onClose }: ProductBookin
             {bookings.map((b) => (
               <div key={b.id} className="py-3 flex items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-gray-900">{b.renterName}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-900">{b.renterName}</p>
+                    <span className={`px-2 py-0.5 text-xs rounded-full ${b.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                        b.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                          'bg-blue-100 text-blue-700'
+                      }`}>
+                      {b.status}
+                    </span>
+                  </div>
                   <p className="text-sm text-gray-600">
                     {formatDate(b.bookingDate)} → {formatDate(b.returnDate)}
                   </p>
                   <p className="text-xs text-gray-500">Total: {b.totalPrice.toFixed(2)} €</p>
                 </div>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleCancel(b.id)}
-                  disabled={canceling === b.id}
-                >
-                  {canceling === b.id ? "Cancelling..." : "Cancel booking"}
-                </Button>
+                {b.status !== 'CANCELLED' && b.status !== 'COMPLETED' && (
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleCancel(b.id)}
+                    disabled={canceling === b.id}
+                  >
+                    {canceling === b.id ? "Cancelling..." : "Cancel booking"}
+                  </Button>
+                )}
               </div>
             ))}
           </div>

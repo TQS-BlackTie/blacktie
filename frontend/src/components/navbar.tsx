@@ -20,11 +20,16 @@ export function Navbar({ userName, userRole, onLogout, notificationBell }: Navba
     return () => window.removeEventListener("popstate", updatePath)
   }, [])
 
-  const navItems = [
+  const allNavItems = [
     { label: "Catalog", href: "/" },
+    { label: "My Bookings", href: "/my-bookings", roleRequired: "renter" },
     { label: "Profile", href: "/profile" },
     { label: "Role Setup", href: "/role-setup" },
   ]
+
+  const navItems = allNavItems.filter(
+    (item) => !item.roleRequired || item.roleRequired === userRole
+  )
 
   const goTo = (href: string) => {
     if (typeof window === "undefined") return
