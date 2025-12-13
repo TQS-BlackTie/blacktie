@@ -54,11 +54,11 @@ public class UserService {
 
         // Check if user is suspended or banned (admin users are always allowed)
         String status = user.getStatus();
-        if (status != null && !"admin".equals(user.getRole())) {
-            if ("suspended".equals(status)) {
+        if (status != null && !User.ROLE_ADMIN.equals(user.getRole())) {
+            if (User.STATUS_SUSPENDED.equals(status)) {
                 throw new IllegalArgumentException("Your account has been suspended. Please contact support.");
             }
-            if ("banned".equals(status)) {
+            if (User.STATUS_BANNED.equals(status)) {
                 throw new IllegalArgumentException("Your account has been banned.");
             }
         }
@@ -72,11 +72,11 @@ public class UserService {
 
         String normalizedRole = newRole.toLowerCase().trim();
 
-        if (normalizedRole.equals("admin")) {
+        if (normalizedRole.equals(User.ROLE_ADMIN)) {
             throw new IllegalArgumentException("Cannot set role to admin");
         }
 
-        if (!normalizedRole.equals("renter") && !normalizedRole.equals("owner")) {
+        if (!normalizedRole.equals(User.ROLE_RENTER) && !normalizedRole.equals(User.ROLE_OWNER)) {
             throw new IllegalArgumentException("Invalid role. Only 'renter' or 'owner' are allowed");
         }
 

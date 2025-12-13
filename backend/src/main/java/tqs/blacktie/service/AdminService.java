@@ -11,10 +11,11 @@ import tqs.blacktie.repository.ProductRepository;
 import tqs.blacktie.repository.UserRepository;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class AdminService {
+
+    private static final String USER_NOT_FOUND_MSG = "User not found";
 
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
@@ -33,14 +34,14 @@ public class AdminService {
 
     public boolean isAdmin(Long userId) {
         return userRepository.findById(userId)
-            .map(user -> "admin".equals(user.getRole()))
+            .map(user -> User.ROLE_ADMIN.equals(user.getRole()))
             .orElse(false);
     }
 
     public PlatformMetricsResponse getPlatformMetrics() {
         long totalUsers = userRepository.count() - 1; // Exclude admin
-        long totalOwners = userRepository.countByRole("owner");
-        long totalRenters = userRepository.countByRole("renter");
+        long totalOwners = userRepository.countByRole(User.ROLE_OWNER);
+        long totalRenters = userRepository.countByRole(User.ROLE_RENTER);
         
         long totalProducts = productRepository.count();
         long availableProducts = productRepository.countByAvailableTrue();
@@ -54,56 +55,58 @@ public class AdminService {
         double totalRevenue = totalRevenueResult != null ? totalRevenueResult : 0.0;
         double averageBookingValue = completedBookings > 0 ? totalRevenue / completedBookings : 0;
         
-        return new PlatformMetricsResponse(
-            totalUsers,
-            totalOwners,
-            totalRenters,
-            totalProducts,
-            availableProducts,
-            totalBookings,
-            activeBookings,
-            completedBookings,
-            cancelledBookings,
-            totalRevenue,
-            averageBookingValue
-        );
+        PlatformMetricsResponse response = new PlatformMetricsResponse();
+        response.setTotalUsers(totalUsers);
+        response.setTotalOwners(totalOwners);
+        response.setTotalRenters(totalRenters);
+        response.setTotalProducts(totalProducts);
+        response.setAvailableProducts(availableProducts);
+        response.setTotalBookings(totalBookings);
+        response.setActiveBookings(activeBookings);
+        response.setCompletedBookings(completedBookings);
+        response.setCancelledBookings(cancelledBookings);
+        response.setTotalRevenue(totalRevenue);
+        response.setAverageBookingValue(averageBookingValue);
+        return response;
     }
 
     public List<AdminUserResponse> getAllUsersForAdmin() {
-        return userRepository.findByRoleNot("admin").stream()
-            .map(user -> {
-                long bookingsCount = bookingRepository.countByRenterId(user.getId());
-                long productsCount = productRepository.countByOwnerId(user.getId());
-                
-                return new AdminUserResponse(
-                    user.getId(),
-                    user.getName(),
-                    user.getEmail(),
-                    user.getRole(),
-                    user.getStatus() != null ? user.getStatus() : "active",
-                    user.getPhone(),
-                    user.getAddress(),
-                    user.getBusinessInfo(),
-                    user.getCreatedAt().toString(),
-                    bookingsCount,
-                    productsCount
-                );
-            })
-            .collect(Collectors.toList());
+        return userRepository.findByRoleNot(User.ROLE_ADMIN).stream()
+            .map(this::mapUserToAdminResponse)
+            .toList();
+    }
+
+    private AdminUserResponse mapUserToAdminResponse(User user) {
+        long bookingsCount = bookingRepository.countByRenterId(user.getId());
+        long productsCount = productRepository.countByOwnerId(user.getId());
+        
+        AdminUserResponse response = new AdminUserResponse();
+        response.setId(user.getId());
+        response.setName(user.getName());
+        response.setEmail(user.getEmail());
+        response.setRole(user.getRole());
+        response.setStatus(user.getStatus() != null ? user.getStatus() : User.STATUS_ACTIVE);
+        response.setPhone(user.getPhone());
+        response.setAddress(user.getAddress());
+        response.setBusinessInfo(user.getBusinessInfo());
+        response.setCreatedAt(user.getCreatedAt().toString());
+        response.setBookingsCount(bookingsCount);
+        response.setProductsCount(productsCount);
+        return response;
     }
 
     public User updateUserStatus(Long userId, String status) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG));
 
-        if ("admin".equals(user.getRole())) {
+        if (User.ROLE_ADMIN.equals(user.getRole())) {
             throw new IllegalArgumentException("Cannot modify admin user status");
         }
 
         String normalizedStatus = status.toLowerCase().trim();
-        if (!normalizedStatus.equals("active") && 
-            !normalizedStatus.equals("suspended") && 
-            !normalizedStatus.equals("banned")) {
+        if (!normalizedStatus.equals(User.STATUS_ACTIVE) && 
+            !normalizedStatus.equals(User.STATUS_SUSPENDED) && 
+            !normalizedStatus.equals(User.STATUS_BANNED)) {
             throw new IllegalArgumentException("Invalid status. Only 'active', 'suspended', or 'banned' are allowed");
         }
 
@@ -112,9 +115,9 @@ public class AdminService {
         User savedUser = userRepository.save(user);
 
         // Handle status change notifications and booking cancellations
-        if (normalizedStatus.equals("suspended") || normalizedStatus.equals("banned")) {
+        if (normalizedStatus.equals(User.STATUS_SUSPENDED) || normalizedStatus.equals(User.STATUS_BANNED)) {
             // Notify the user about their account status
-            if (normalizedStatus.equals("suspended")) {
+            if (normalizedStatus.equals(User.STATUS_SUSPENDED)) {
                 notificationService.createAccountSuspendedNotification(user);
             } else {
                 notificationService.createAccountBannedNotification(user);
@@ -125,8 +128,8 @@ public class AdminService {
 
             // Cancel all active bookings made by this user as a renter
             cancelUserBookings(user, "Renter account " + normalizedStatus);
-        } else if (normalizedStatus.equals("active") && 
-                   (previousStatus != null && (previousStatus.equals("suspended") || previousStatus.equals("banned")))) {
+        } else if (normalizedStatus.equals(User.STATUS_ACTIVE) && 
+                   (previousStatus != null && (previousStatus.equals(User.STATUS_SUSPENDED) || previousStatus.equals(User.STATUS_BANNED)))) {
             // Account reactivated
             notificationService.createAccountReactivatedNotification(user);
         }
@@ -173,18 +176,18 @@ public class AdminService {
 
     public User updateUserRole(Long userId, String role) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG));
 
-        if ("admin".equals(user.getRole())) {
+        if (User.ROLE_ADMIN.equals(user.getRole())) {
             throw new IllegalArgumentException("Cannot modify admin user role");
         }
 
         String normalizedRole = role.toLowerCase().trim();
-        if (normalizedRole.equals("admin")) {
+        if (normalizedRole.equals(User.ROLE_ADMIN)) {
             throw new IllegalArgumentException("Cannot set role to admin");
         }
 
-        if (!normalizedRole.equals("renter") && !normalizedRole.equals("owner")) {
+        if (!normalizedRole.equals(User.ROLE_RENTER) && !normalizedRole.equals(User.ROLE_OWNER)) {
             throw new IllegalArgumentException("Invalid role. Only 'renter' or 'owner' are allowed");
         }
 
@@ -194,9 +197,9 @@ public class AdminService {
 
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG));
 
-        if ("admin".equals(user.getRole())) {
+        if (User.ROLE_ADMIN.equals(user.getRole())) {
             throw new IllegalArgumentException("Cannot delete admin user");
         }
 
@@ -205,24 +208,9 @@ public class AdminService {
 
     public AdminUserResponse getUserDetails(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG));
 
-        long bookingsCount = bookingRepository.countByRenterId(user.getId());
-        long productsCount = productRepository.countByOwnerId(user.getId());
-
-        return new AdminUserResponse(
-            user.getId(),
-            user.getName(),
-            user.getEmail(),
-            user.getRole(),
-            user.getStatus() != null ? user.getStatus() : "active",
-            user.getPhone(),
-            user.getAddress(),
-            user.getBusinessInfo(),
-            user.getCreatedAt().toString(),
-            bookingsCount,
-            productsCount
-        );
+        return mapUserToAdminResponse(user);
     }
 
     // Product management for admin

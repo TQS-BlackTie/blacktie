@@ -2,6 +2,7 @@ package tqs.blacktie.service;
 
 import org.springframework.stereotype.Service;
 import tqs.blacktie.entity.Product;
+import tqs.blacktie.entity.User;
 import tqs.blacktie.repository.ProductRepository;
 import tqs.blacktie.repository.UserRepository;
 
@@ -22,7 +23,7 @@ public class ProductService {
         var requester = userRepository.findById(requesterId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + requesterId));
 
-        boolean isOwner = "owner".equalsIgnoreCase(requester.getRole());
+        boolean isOwner = User.ROLE_OWNER.equalsIgnoreCase(requester.getRole());
         String trimmedName = name != null && !name.isBlank() ? name : null;
 
         if (isOwner) {
@@ -64,7 +65,7 @@ public class ProductService {
         }
         var owner = userRepository.findById(ownerId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + ownerId));
-        if (owner.getRole() == null || !"owner".equalsIgnoreCase(owner.getRole())) {
+        if (owner.getRole() == null || !User.ROLE_OWNER.equalsIgnoreCase(owner.getRole())) {
             throw new IllegalStateException("Only owners can create products");
         }
         product.setOwner(owner);

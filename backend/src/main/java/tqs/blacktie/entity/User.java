@@ -7,6 +7,16 @@ import java.time.LocalDateTime;
 @Table(name = "users")
 public class User {
 
+    // Role constants
+    public static final String ROLE_RENTER = "renter";
+    public static final String ROLE_OWNER = "owner";
+    public static final String ROLE_ADMIN = "admin";
+
+    // Status constants
+    public static final String STATUS_ACTIVE = "active";
+    public static final String STATUS_SUSPENDED = "suspended";
+    public static final String STATUS_BANNED = "banned";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,10 +31,10 @@ public class User {
     private String password;
 
     @Column(nullable = false)
-    private String role = "renter";
+    private String role = ROLE_RENTER;
 
     @Column(columnDefinition = "varchar(255) default 'active'")
-    private String status = "active";
+    private String status = STATUS_ACTIVE;
 
     @Column
     private String phone;
@@ -40,16 +50,16 @@ public class User {
 
     public User() {
         this.createdAt = LocalDateTime.now();
-        this.role = "renter";
-        this.status = "active";
+        this.role = ROLE_RENTER;
+        this.status = STATUS_ACTIVE;
     }
 
     public User(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;
-        this.role = "renter";
-        this.status = "active";
+        this.role = ROLE_RENTER;
+        this.status = STATUS_ACTIVE;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -58,7 +68,7 @@ public class User {
         this.email = email;
         this.password = password;
         this.role = role;
-        this.status = "active";
+        this.status = STATUS_ACTIVE;
         this.createdAt = LocalDateTime.now();
     }
 
