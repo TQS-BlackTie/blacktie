@@ -168,6 +168,7 @@ class BookingServiceTest {
         @Test
         @DisplayName("Should throw exception when product already booked for dates")
         void shouldThrowExceptionWhenProductAlreadyBooked() {
+            testBooking.setStatus(Booking.STATUS_APPROVED); // Only APPROVED/PAID bookings block overlaps
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(bookingRepository.findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
@@ -237,6 +238,7 @@ class BookingServiceTest {
             User owner = new User("Owner", "owner@example.com", "pass", "owner");
             owner.setId(10L);
             testProduct.setOwner(owner);
+            testBooking.setStatus(Booking.STATUS_PAID);
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
             when(bookingRepository.findByProduct(testProduct)).thenReturn(Arrays.asList(testBooking));
@@ -285,6 +287,7 @@ class BookingServiceTest {
         @Test
         @DisplayName("Renter can view bookings for product")
         void renterCanViewBookingsForProduct() {
+            testBooking.setStatus(Booking.STATUS_PAID);
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser)); // renter
             when(bookingRepository.findByProduct(testProduct)).thenReturn(Arrays.asList(testBooking));
@@ -558,7 +561,7 @@ class BookingServiceTest {
 
             Booking activeBooking = new Booking(testUser, testProduct, futureBookingDate, futureReturnDate, 100.0);
             activeBooking.setId(1L);
-            activeBooking.setStatus("ACTIVE");
+            activeBooking.setStatus(Booking.STATUS_PAID);
 
             Booking completedBooking = new Booking(testUser, testProduct, 
                 LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(7), 150.0);
@@ -578,7 +581,7 @@ class BookingServiceTest {
 
             assertEquals(1, activeBookings.size());
             assertEquals(1L, activeBookings.get(0).getId());
-            assertEquals("ACTIVE", activeBookings.get(0).getStatus());
+            assertEquals(Booking.STATUS_PAID, activeBookings.get(0).getStatus());
         }
 
         @Test

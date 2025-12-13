@@ -14,8 +14,8 @@ export default function RoleSetupPage() {
       try {
         const userData = await getCurrentUser(userId)
         setUser(userData)
-      } catch (e) {
-        console.error(e)
+      } catch (err: unknown) {
+        console.error(err)
         setError("Erro ao carregar utilizador")
       } finally {
         setLoading(false)

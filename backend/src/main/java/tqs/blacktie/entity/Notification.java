@@ -2,14 +2,25 @@ package tqs.blacktie.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "notifications")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Notification {
     
     public static final String TYPE_NEW_BOOKING = "NEW_BOOKING";
     public static final String TYPE_BOOKING_CANCELLED_BY_RENTER = "BOOKING_CANCELLED_BY_RENTER";
     public static final String TYPE_BOOKING_CANCELLED_BY_OWNER = "BOOKING_CANCELLED_BY_OWNER";
+    public static final String TYPE_BOOKING_APPROVED = "BOOKING_APPROVED";
+    public static final String TYPE_BOOKING_REJECTED = "BOOKING_REJECTED";
+    public static final String TYPE_PAYMENT_RECEIVED = "PAYMENT_RECEIVED";
     public static final String TYPE_ACCOUNT_SUSPENDED = "ACCOUNT_SUSPENDED";
     public static final String TYPE_ACCOUNT_BANNED = "ACCOUNT_BANNED";
     public static final String TYPE_ACCOUNT_REACTIVATED = "ACCOUNT_REACTIVATED";
@@ -40,11 +51,6 @@ public class Notification {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    public Notification() {
-        this.createdAt = LocalDateTime.now();
-        this.isRead = false;
-    }
-
     public Notification(User user, String type, String message, Booking booking) {
         this.user = user;
         this.type = type;
@@ -52,71 +58,5 @@ public class Notification {
         this.booking = booking;
         this.isRead = false;
         this.createdAt = LocalDateTime.now();
-    }
-
-    public Notification(User user, String type, String message) {
-        this.user = user;
-        this.type = type;
-        this.message = message;
-        this.booking = null;
-        this.isRead = false;
-        this.createdAt = LocalDateTime.now();
-    }
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public Booking getBooking() {
-        return booking;
-    }
-
-    public void setBooking(Booking booking) {
-        this.booking = booking;
-    }
-
-    public Boolean getIsRead() {
-        return isRead;
-    }
-
-    public void setIsRead(Boolean isRead) {
-        this.isRead = isRead;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 }

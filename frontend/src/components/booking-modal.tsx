@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { createBooking, getBookingsByProduct, type Booking, type Product } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { PaymentModal } from "@/components/payment-modal"
 
 type DateRange = {
   start: string | null
@@ -47,8 +46,7 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
   const [calendarLoading, setCalendarLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [createdBooking, setCreatedBooking] = useState<Booking | null>(null)
-  const [showPayment, setShowPayment] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   const today = useMemo(() => startOfDay(new Date()), [])
 
@@ -170,13 +168,12 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
 
     try {
       setLoading(true)
-      const booking = await createBooking(userId, {
+      await createBooking(userId, {
         productId: product.id,
         bookingDate: toLocalDateTimeString(range.start),
         returnDate: toLocalDateTimeString(range.end),
       })
-      setCreatedBooking(booking)
-      setShowPayment(true)
+      setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create booking")
     } finally {
@@ -276,6 +273,43 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+        {success ? (
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
+                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Booking Request Submitted!</h2>
+              <p className="text-gray-600 mb-4">
+                Your booking request has been sent to the owner for approval.
+              </p>
+              <div className="bg-blue-50 p-4 rounded-lg text-left">
+                <p className="text-sm text-blue-800 mb-2">
+                  <strong>Next steps:</strong>
+                </p>
+                <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                  <li>Wait for the owner to review your request</li>
+                  <li>You'll receive a notification when approved</li>
+                  <li>Once approved, you can proceed with payment in "My Bookings"</li>
+                </ol>
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                onSuccess()
+                onClose()
+              }}
+              className="w-full"
+            >
+              Go to My Bookings
+            </Button>
+          </div>
+        ) : (
+          <>
+            <h2 className="text-2xl font-bold mb-4">Reserve {product.name}</h2>
+        
         <h2 className="text-2xl font-bold mb-4">Reserve {product.name}</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -351,26 +385,13 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
               disabled={loading || totalPrice === null}
               className="flex-1"
             >
-              {loading ? "Reserving..." : "Continue to Payment"}
+              {loading ? "Submitting..." : "Submit Booking Request"}
             </Button>
           </div>
         </form>
+          </>
+        )}
       </div>
-
-      {showPayment && createdBooking && (
-        <PaymentModal
-          booking={createdBooking}
-          userId={userId}
-          onSuccess={() => {
-            setShowPayment(false)
-            onSuccess()
-          }}
-          onCancel={() => {
-            setShowPayment(false)
-            onClose()
-          }}
-        />
-      )}
     </div>
   )
 }

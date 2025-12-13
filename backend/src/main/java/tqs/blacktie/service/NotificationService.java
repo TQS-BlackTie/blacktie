@@ -49,21 +49,49 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    public void createBookingApprovedNotification(User renter, Booking booking) {
+        String message = String.format("Your booking for '%s' has been approved! You can now proceed with payment.", 
+            booking.getProduct().getName());
+        
+        Notification notification = new Notification(renter, Notification.TYPE_BOOKING_APPROVED, message, booking);
+        notificationRepository.save(notification);
+    }
+
+    public void createBookingRejectedNotification(User renter, Booking booking, String reason) {
+        String message = String.format("Your booking for '%s' was rejected.", 
+            booking.getProduct().getName());
+        if (reason != null && !reason.isEmpty()) {
+            message += " Reason: " + reason;
+        }
+        
+        Notification notification = new Notification(renter, Notification.TYPE_BOOKING_REJECTED, message, booking);
+        notificationRepository.save(notification);
+    }
+
+    public void createPaymentReceivedNotification(User owner, Booking booking) {
+        String message = String.format("Payment received for booking of '%s' by %s", 
+            booking.getProduct().getName(),
+            booking.getRenter().getName());
+        
+        Notification notification = new Notification(owner, Notification.TYPE_PAYMENT_RECEIVED, message, booking);
+        notificationRepository.save(notification);
+    }
+
     public void createAccountSuspendedNotification(User user) {
         String message = "Your account has been suspended by the platform administrator. Please contact support for more information.";
-        Notification notification = new Notification(user, Notification.TYPE_ACCOUNT_SUSPENDED, message);
+        Notification notification = new Notification(user, Notification.TYPE_ACCOUNT_SUSPENDED, message, null);
         notificationRepository.save(notification);
     }
 
     public void createAccountBannedNotification(User user) {
         String message = "Your account has been banned by the platform administrator.";
-        Notification notification = new Notification(user, Notification.TYPE_ACCOUNT_BANNED, message);
+        Notification notification = new Notification(user, Notification.TYPE_ACCOUNT_BANNED, message, null);
         notificationRepository.save(notification);
     }
 
     public void createAccountReactivatedNotification(User user) {
         String message = "Your account has been reactivated. Welcome back!";
-        Notification notification = new Notification(user, Notification.TYPE_ACCOUNT_REACTIVATED, message);
+        Notification notification = new Notification(user, Notification.TYPE_ACCOUNT_REACTIVATED, message, null);
         notificationRepository.save(notification);
     }
 
@@ -81,7 +109,7 @@ public class NotificationService {
         } else {
             message = String.format("A product you had booked ('%s') has been removed by the administrator. Your booking has been cancelled.", productName);
         }
-        Notification notification = new Notification(user, Notification.TYPE_PRODUCT_DELETED_BY_ADMIN, message);
+        Notification notification = new Notification(user, Notification.TYPE_PRODUCT_DELETED_BY_ADMIN, message, null);
         notificationRepository.save(notification);
     }
 

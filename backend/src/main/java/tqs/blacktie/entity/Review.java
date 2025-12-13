@@ -2,9 +2,17 @@ package tqs.blacktie.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "reviews", uniqueConstraints = {@UniqueConstraint(columnNames = {"booking_id"})})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Review {
 
     @Id
@@ -21,24 +29,10 @@ public class Review {
     private String comment;
     private LocalDateTime createdAt;
 
-    public Review() {}
-
     public Review(Booking booking, Integer rating, String comment) {
         this.booking = booking;
         this.rating = rating;
         this.comment = comment;
         this.createdAt = LocalDateTime.now();
     }
-
-    public Long getId() { return id; }
-    public Booking getBooking() { return booking; }
-    public Integer getRating() { return rating; }
-    public String getComment() { return comment; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-
-    public void setId(Long id) { this.id = id; }
-    public void setBooking(Booking booking) { this.booking = booking; }
-    public void setRating(Integer rating) { this.rating = rating; }
-    public void setComment(String comment) { this.comment = comment; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

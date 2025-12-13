@@ -212,16 +212,16 @@ class BookingTest {
         }
 
         @Test
-        @DisplayName("Default status should be ACTIVE with no-args constructor")
-        void whenNoArgsConstructor_thenStatusIsActive() {
+        @DisplayName("Default status should be PENDING_APPROVAL with no-args constructor")
+        void whenNoArgsConstructor_thenStatusIsPendingApproval() {
             Booking booking = new Booking();
 
-            assertEquals("ACTIVE", booking.getStatus());
+            assertEquals(Booking.STATUS_PENDING_APPROVAL, booking.getStatus());
         }
 
         @Test
-        @DisplayName("Default status should be ACTIVE with all-args constructor")
-        void whenAllArgsConstructor_thenStatusIsActive() {
+        @DisplayName("Default status should be PENDING_APPROVAL with all-args constructor")
+        void whenAllArgsConstructor_thenStatusIsPendingApproval() {
             User renter = new User("John Doe", "john@example.com", "password");
             Product product = new Product("Suit", "Black", 100.0);
             LocalDateTime bookingDate = LocalDateTime.now();
@@ -229,7 +229,7 @@ class BookingTest {
 
             Booking booking = new Booking(renter, product, bookingDate, returnDate, 300.0);
 
-            assertEquals("ACTIVE", booking.getStatus());
+            assertEquals(Booking.STATUS_PENDING_APPROVAL, booking.getStatus());
         }
     }
 }

@@ -6,6 +6,7 @@ import RoleSetupPage from './app/role-setup'
 import ProfilePage from './app/profile'
 import MyBookingsPage from './app/my-bookings'
 import OwnerBookingsPage from './app/owner-bookings'
+import PendingApprovalsPage from './app/pending-approvals'
 import AdminDashboardPage from './app/admin-dashboard'
 import './App.css'
 
@@ -44,6 +45,11 @@ function App() {
   if (currentPath === '/owner-bookings') {
     return <OwnerBookingsPage />
   }
+
+  if (currentPath === '/pending-approvals') {
+    return <PendingApprovalsPage />
+  }
+
 
   if (currentPath === '/admin' || currentPath === '/admin-dashboard') {
     return <AdminDashboardPage />

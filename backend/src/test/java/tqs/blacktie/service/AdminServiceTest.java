@@ -107,7 +107,7 @@ class AdminServiceTest {
             when(productRepository.count()).thenReturn(20L);
             when(productRepository.countByAvailableTrue()).thenReturn(15L);
             when(bookingRepository.count()).thenReturn(50L);
-            when(bookingRepository.countByStatus(Booking.STATUS_ACTIVE)).thenReturn(10L);
+            when(bookingRepository.countByStatus(Booking.STATUS_PAID)).thenReturn(10L);
             when(bookingRepository.countByStatus(Booking.STATUS_COMPLETED)).thenReturn(35L);
             when(bookingRepository.countByStatus(Booking.STATUS_CANCELLED)).thenReturn(5L);
             when(bookingRepository.sumTotalPriceByStatus(Booking.STATUS_COMPLETED)).thenReturn(3500.0);
@@ -238,7 +238,7 @@ class AdminServiceTest {
 
             Booking activeBooking = new Booking();
             activeBooking.setId(1L);
-            activeBooking.setStatus(Booking.STATUS_ACTIVE);
+            activeBooking.setStatus(Booking.STATUS_APPROVED);
             activeBooking.setRenter(regularUser);
 
             when(userRepository.findById(3L)).thenReturn(Optional.of(ownerUser));
@@ -263,7 +263,7 @@ class AdminServiceTest {
 
             Booking activeBooking = new Booking();
             activeBooking.setId(1L);
-            activeBooking.setStatus(Booking.STATUS_ACTIVE);
+            activeBooking.setStatus(Booking.STATUS_APPROVED);
             activeBooking.setRenter(regularUser);
             activeBooking.setProduct(product);
 
@@ -341,7 +341,7 @@ class AdminServiceTest {
 
             Booking activeBooking = new Booking();
             activeBooking.setId(1L);
-            activeBooking.setStatus(Booking.STATUS_ACTIVE);
+            activeBooking.setStatus(Booking.STATUS_APPROVED);
             activeBooking.setRenter(regularUser);
             activeBooking.setProduct(productWithoutOwner);
 
@@ -519,7 +519,7 @@ class AdminServiceTest {
 
             Booking activeBooking = new Booking();
             activeBooking.setId(1L);
-            activeBooking.setStatus(Booking.STATUS_ACTIVE);
+            activeBooking.setStatus(Booking.STATUS_APPROVED);
             activeBooking.setRenter(regularUser);
             activeBooking.setProduct(product);
 

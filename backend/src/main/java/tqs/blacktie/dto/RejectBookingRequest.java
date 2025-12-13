@@ -9,11 +9,7 @@ import lombok.AllArgsConstructor;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginResponse {
-
-    private Long id;
-    private String name;
-    private String email;
-    private String role;
-    private String message;
+public class RejectBookingRequest {
+    
+    private String reason;
 }
