@@ -343,6 +343,16 @@ export async function getRenterHistory(userId: number): Promise<Booking[]> {
   return res.json()
 }
 
+export async function getActiveBookings(userId: number): Promise<Booking[]> {
+  const res = await fetch(`/api/bookings/user/${userId}/active`)
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch active bookings")
+  }
+
+  return res.json()
+}
+
 // Reviews
 export type ReviewResponse = {
   id: number
@@ -385,3 +395,4 @@ export async function getReviewsByProduct(productId: number): Promise<ReviewResp
   if (!res.ok) throw new Error('Failed to fetch reviews')
   return res.json()
 }
+

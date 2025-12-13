@@ -52,6 +52,16 @@ public class BookingController {
         }
     }
 
+    @GetMapping("/user/{userId}/active")
+    public ResponseEntity<List<BookingResponse>> getActiveBookings(@PathVariable Long userId) {
+        try {
+            List<BookingResponse> activeBookings = bookingService.getActiveBookingsByRenter(userId);
+            return ResponseEntity.ok(activeBookings);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<BookingResponse>> getAllBookings() {
         List<BookingResponse> bookings = bookingService.getAllBookings();

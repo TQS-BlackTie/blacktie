@@ -65,14 +65,16 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
     }
 
     void loadBookings()
-  }, [product.id,userId])
+  }, [product.id, userId])
 
   const disabledRanges: DisabledRange[] = useMemo(
     () =>
-      productBookings.map((b) => ({
-        start: parseDateKey(b.bookingDate.split("T")[0]),
-        end: parseDateKey(b.returnDate.split("T")[0]),
-      })),
+      productBookings
+        .filter((b) => b.status !== 'CANCELLED' && b.status !== 'COMPLETED')
+        .map((b) => ({
+          start: parseDateKey(b.bookingDate.split("T")[0]),
+          end: parseDateKey(b.returnDate.split("T")[0]),
+        })),
     [productBookings],
   )
 
@@ -308,6 +310,8 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
           <>
             <h2 className="text-2xl font-bold mb-4">Reserve {product.name}</h2>
         
+        <h2 className="text-2xl font-bold mb-4">Reserve {product.name}</h2>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <p className="text-sm text-gray-600 mb-2">{product.description}</p>

@@ -210,6 +210,16 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findByProductOwnerId(ownerId);
         return bookings.stream()
             .filter(booking -> Booking.STATUS_PENDING_APPROVAL.equals(booking.getStatus()))
+    public List<BookingResponse> getActiveBookingsByRenter(Long userId) {
+        // Verify user exists
+        userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        // Get all bookings for the renter with ACTIVE status
+        List<Booking> allBookings = bookingRepository.findByRenterId(userId);
+        
+        return allBookings.stream()
+            .filter(booking -> Booking.STATUS_ACTIVE.equals(booking.getStatus()))
             .map(this::convertToResponse)
             .toList();
     }
