@@ -15,6 +15,12 @@ public class BookingResponse {
     private LocalDateTime returnDate;
     private Double totalPrice;
     private String status;
+    private String deliveryMethod;
+    private String deliveryCode;
+    private String pickupLocation;
+    private String rejectionReason;
+    private LocalDateTime approvedAt;
+    private LocalDateTime paidAt;
 
     public BookingResponse() {
     }
@@ -121,5 +127,53 @@ public class BookingResponse {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public String getDeliveryMethod() {
+        return deliveryMethod;
+    }
+
+    public void setDeliveryMethod(String deliveryMethod) {
+        this.deliveryMethod = deliveryMethod;
+    }
+
+    public String getDeliveryCode() {
+        return deliveryCode;
+    }
+
+    public void setDeliveryCode(String deliveryCode) {
+        this.deliveryCode = deliveryCode;
+    }
+
+    public String getPickupLocation() {
+        return pickupLocation;
+    }
+
+    public void setPickupLocation(String pickupLocation) {
+        this.pickupLocation = pickupLocation;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    public LocalDateTime getApprovedAt() {
+        return approvedAt;
+    }
+
+    public void setApprovedAt(LocalDateTime approvedAt) {
+        this.approvedAt = approvedAt;
+    }
+
+    public LocalDateTime getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(LocalDateTime paidAt) {
+        this.paidAt = paidAt;
     }
 }

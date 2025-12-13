@@ -77,11 +77,26 @@ export default function BookingHistoryPage() {
 
   const getStatusBadge = (status: string) => {
     const statusColors = {
+      PENDING_APPROVAL: 'bg-yellow-100 text-yellow-800',
+      APPROVED: 'bg-blue-100 text-blue-800',
+      REJECTED: 'bg-red-100 text-red-800',
+      PAID: 'bg-green-100 text-green-800',
       COMPLETED: 'bg-green-100 text-green-800',
-      CANCELLED: 'bg-red-100 text-red-800',
-      ACTIVE: 'bg-blue-100 text-blue-800'
+      CANCELLED: 'bg-red-100 text-red-800'
     }
     return statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      PENDING_APPROVAL: 'Pending Approval',
+      APPROVED: 'Approved',
+      REJECTED: 'Rejected',
+      PAID: 'Paid',
+      COMPLETED: 'Completed',
+      CANCELLED: 'Cancelled'
+    }
+    return labels[status] || status
   }
 
   if (loading) {
@@ -138,7 +153,7 @@ export default function BookingHistoryPage() {
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(booking.status)}`}>
-                    {booking.status}
+                    {getStatusLabel(booking.status)}
                   </span>
                 </div>
               </CardHeader>
@@ -156,6 +171,33 @@ export default function BookingHistoryPage() {
                     <p className="text-sm font-medium text-muted-foreground">Total Paid</p>
                     <p className="text-sm font-bold">€{booking.totalPrice.toFixed(2)}</p>
                   </div>
+                  
+                  {booking.status === 'REJECTED' && booking.rejectionReason && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm font-medium text-red-600">Rejection Reason</p>
+                      <p className="text-sm text-red-800">{booking.rejectionReason}</p>
+                    </div>
+                  )}
+                  
+                  {booking.status === 'PAID' && booking.deliveryMethod && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm font-medium text-muted-foreground">Delivery Method</p>
+                      <p className="text-sm">{booking.deliveryMethod === 'PICKUP' ? 'Pick-up' : 'Shipping'}</p>
+                      {booking.deliveryMethod === 'SHIPPING' && booking.deliveryCode && (
+                        <>
+                          <p className="text-sm font-medium text-muted-foreground mt-2">Delivery Code</p>
+                          <p className="text-sm font-mono font-bold text-green-700">{booking.deliveryCode}</p>
+                        </>
+                      )}
+                      {booking.deliveryMethod === 'PICKUP' && booking.pickupLocation && (
+                        <>
+                          <p className="text-sm font-medium text-muted-foreground mt-2">Pick-up Location</p>
+                          <p className="text-sm">{booking.pickupLocation}</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  
                   <div className="flex items-end">
                     <div className="flex items-center gap-2">
                       <Button onClick={() => handleViewProduct()} variant="outline" size="sm">View Product</Button>

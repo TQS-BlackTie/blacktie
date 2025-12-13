@@ -139,6 +139,12 @@ export type Booking = {
   returnDate: string
   totalPrice: number
   status: string
+  deliveryMethod?: string
+  deliveryCode?: string
+  pickupLocation?: string
+  rejectionReason?: string
+  approvedAt?: string
+  paidAt?: string
 }
 
 export type CreateBookingInput = {
@@ -196,6 +202,88 @@ export async function getBookingsByProduct(productId: number, userId: number): P
 
   if (!res.ok) {
     throw new Error("Failed to fetch bookings for product")
+  }
+
+  return res.json()
+}
+
+// Owner booking management
+export async function getPendingApprovalBookings(ownerId: number): Promise<Booking[]> {
+  const res = await fetch("/api/bookings/pending-approval", {
+    headers: { "X-User-Id": String(ownerId) },
+  })
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch pending bookings")
+  }
+
+  return res.json()
+}
+
+export type ApproveBookingInput = {
+  deliveryMethod: 'PICKUP' | 'SHIPPING'
+  pickupLocation?: string
+}
+
+export async function approveBooking(
+  ownerId: number,
+  bookingId: number,
+  input: ApproveBookingInput
+): Promise<Booking> {
+  const res = await fetch(`/api/bookings/${bookingId}/approve`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Id": String(ownerId),
+    },
+    body: JSON.stringify(input),
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to approve booking")
+  }
+
+  return res.json()
+}
+
+export type RejectBookingInput = {
+  reason?: string
+}
+
+export async function rejectBooking(
+  ownerId: number,
+  bookingId: number,
+  input: RejectBookingInput
+): Promise<Booking> {
+  const res = await fetch(`/api/bookings/${bookingId}/reject`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Id": String(ownerId),
+    },
+    body: JSON.stringify(input),
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to reject booking")
+  }
+
+  return res.json()
+}
+
+export async function processBookingPayment(userId: number, bookingId: number): Promise<Booking> {
+  const res = await fetch(`/api/bookings/${bookingId}/payment`, {
+    method: "POST",
+    headers: {
+      "X-User-Id": String(userId),
+    },
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to process payment")
   }
 
   return res.json()

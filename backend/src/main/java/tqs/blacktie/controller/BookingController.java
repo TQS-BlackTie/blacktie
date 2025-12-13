@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tqs.blacktie.dto.BookingRequest;
 import tqs.blacktie.dto.BookingResponse;
+import tqs.blacktie.dto.ApproveBookingRequest;
+import tqs.blacktie.dto.RejectBookingRequest;
 import tqs.blacktie.service.BookingService;
 
 import java.util.List;
@@ -95,6 +97,63 @@ public class BookingController {
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/pending-approval")
+    public ResponseEntity<?> getPendingApprovalBookings(@RequestHeader("X-User-Id") Long ownerId) {
+        try {
+            List<BookingResponse> bookings = bookingService.getPendingApprovalBookings(ownerId);
+            return ResponseEntity.ok(bookings);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{bookingId}/approve")
+    public ResponseEntity<?> approveBooking(
+            @PathVariable Long bookingId,
+            @RequestHeader("X-User-Id") Long ownerId,
+            @Valid @RequestBody ApproveBookingRequest request) {
+        try {
+            BookingResponse booking = bookingService.approveBooking(
+                bookingId, ownerId, request.getDeliveryMethod(), request.getPickupLocation());
+            return ResponseEntity.ok(booking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{bookingId}/reject")
+    public ResponseEntity<?> rejectBooking(
+            @PathVariable Long bookingId,
+            @RequestHeader("X-User-Id") Long ownerId,
+            @RequestBody RejectBookingRequest request) {
+        try {
+            BookingResponse booking = bookingService.rejectBooking(bookingId, ownerId, request.getReason());
+            return ResponseEntity.ok(booking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{bookingId}/payment")
+    public ResponseEntity<?> processPayment(
+            @PathVariable Long bookingId,
+            @RequestHeader("X-User-Id") Long userId) {
+        try {
+            BookingResponse booking = bookingService.processPayment(bookingId, userId);
+            return ResponseEntity.ok(booking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }

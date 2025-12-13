@@ -7,9 +7,15 @@ import java.time.LocalDateTime;
 @Table(name = "bookings")
 public class Booking {
     
-    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_PENDING_APPROVAL = "PENDING_APPROVAL";
+    public static final String STATUS_APPROVED = "APPROVED";
+    public static final String STATUS_REJECTED = "REJECTED";
+    public static final String STATUS_PAID = "PAID";
     public static final String STATUS_COMPLETED = "COMPLETED";
     public static final String STATUS_CANCELLED = "CANCELLED";
+    
+    public static final String DELIVERY_PICKUP = "PICKUP";
+    public static final String DELIVERY_SHIPPING = "SHIPPING";
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,10 +34,18 @@ public class Booking {
     private Double totalPrice;
 
     @Column(nullable = false)
-    private String status = STATUS_ACTIVE; // ACTIVE, COMPLETED, CANCELLED
+    private String status = STATUS_PENDING_APPROVAL;
+
+    private String deliveryMethod; // PICKUP or SHIPPING
+    private String deliveryCode; // Generated after payment if SHIPPING
+    private String pickupLocation; // Address/instructions if PICKUP
+    private String rejectionReason; // Reason if rejected by owner
+    
+    private LocalDateTime approvedAt;
+    private LocalDateTime paidAt;
 
     public Booking() {
-        this.status = STATUS_ACTIVE;
+        this.status = STATUS_PENDING_APPROVAL;
     }
     
     public Booking(User renter, Product product, LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice) {
@@ -40,7 +54,7 @@ public class Booking {
         this.bookingDate = bookingDate;
         this.returnDate = returnDate;
         this.totalPrice = totalPrice;
-        this.status = STATUS_ACTIVE;
+        this.status = STATUS_PENDING_APPROVAL;
     }
 
     public Long getId() {
@@ -86,5 +100,53 @@ public class Booking {
     
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public String getDeliveryMethod() {
+        return deliveryMethod;
+    }
+    
+    public void setDeliveryMethod(String deliveryMethod) {
+        this.deliveryMethod = deliveryMethod;
+    }
+    
+    public String getDeliveryCode() {
+        return deliveryCode;
+    }
+    
+    public void setDeliveryCode(String deliveryCode) {
+        this.deliveryCode = deliveryCode;
+    }
+    
+    public String getPickupLocation() {
+        return pickupLocation;
+    }
+    
+    public void setPickupLocation(String pickupLocation) {
+        this.pickupLocation = pickupLocation;
+    }
+    
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+    
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+    
+    public LocalDateTime getApprovedAt() {
+        return approvedAt;
+    }
+    
+    public void setApprovedAt(LocalDateTime approvedAt) {
+        this.approvedAt = approvedAt;
+    }
+    
+    public LocalDateTime getPaidAt() {
+        return paidAt;
+    }
+    
+    public void setPaidAt(LocalDateTime paidAt) {
+        this.paidAt = paidAt;
     }
 }

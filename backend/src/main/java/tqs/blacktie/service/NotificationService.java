@@ -49,6 +49,34 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    public void createBookingApprovedNotification(User renter, Booking booking) {
+        String message = String.format("Your booking for '%s' has been approved! You can now proceed with payment.", 
+            booking.getProduct().getName());
+        
+        Notification notification = new Notification(renter, Notification.TYPE_BOOKING_APPROVED, message, booking);
+        notificationRepository.save(notification);
+    }
+
+    public void createBookingRejectedNotification(User renter, Booking booking, String reason) {
+        String message = String.format("Your booking for '%s' was rejected.", 
+            booking.getProduct().getName());
+        if (reason != null && !reason.isEmpty()) {
+            message += " Reason: " + reason;
+        }
+        
+        Notification notification = new Notification(renter, Notification.TYPE_BOOKING_REJECTED, message, booking);
+        notificationRepository.save(notification);
+    }
+
+    public void createPaymentReceivedNotification(User owner, Booking booking) {
+        String message = String.format("Payment received for booking of '%s' by %s", 
+            booking.getProduct().getName(),
+            booking.getRenter().getName());
+        
+        Notification notification = new Notification(owner, Notification.TYPE_PAYMENT_RECEIVED, message, booking);
+        notificationRepository.save(notification);
+    }
+
     public List<NotificationResponse> getUserNotifications(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG + userId));

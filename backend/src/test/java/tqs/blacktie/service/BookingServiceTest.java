@@ -168,6 +168,7 @@ class BookingServiceTest {
         @Test
         @DisplayName("Should throw exception when product already booked for dates")
         void shouldThrowExceptionWhenProductAlreadyBooked() {
+            testBooking.setStatus(Booking.STATUS_APPROVED); // Only APPROVED/PAID bookings block overlaps
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(bookingRepository.findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
@@ -216,6 +217,7 @@ class BookingServiceTest {
             User owner = new User("Owner", "owner@example.com", "pass", "owner");
             owner.setId(10L);
             testProduct.setOwner(owner);
+            testBooking.setStatus(Booking.STATUS_PAID);
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
             when(bookingRepository.findByProduct(testProduct)).thenReturn(Arrays.asList(testBooking));
@@ -264,6 +266,7 @@ class BookingServiceTest {
         @Test
         @DisplayName("Renter can view bookings for product")
         void renterCanViewBookingsForProduct() {
+            testBooking.setStatus(Booking.STATUS_PAID);
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser)); // renter
             when(bookingRepository.findByProduct(testProduct)).thenReturn(Arrays.asList(testBooking));

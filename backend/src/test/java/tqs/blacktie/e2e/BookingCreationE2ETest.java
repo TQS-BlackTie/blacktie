@@ -103,7 +103,22 @@ class BookingCreationE2ETest {
         assertThat(firstRes.getBody()).isNotNull();
         assertThat(firstRes.getBody().getProductId()).isEqualTo(productId);
 
-        // Attempt overlapping booking
+        // Approve the first booking so it blocks overlaps (only APPROVED/PAID bookings block)
+        Long bookingId = firstRes.getBody().getId();
+        HttpHeaders ownerHeaders = new HttpHeaders();
+        ownerHeaders.setContentType(MediaType.APPLICATION_JSON);
+        ownerHeaders.set("X-User-Id", ownerId.toString());
+        
+        String approvalJson = "{\"deliveryMethod\":\"PICKUP\",\"pickupLocation\":\"123 Main St\"}";
+        HttpEntity<String> approvalEntity = new HttpEntity<>(approvalJson, ownerHeaders);
+        restTemplate.exchange(
+            url("/api/bookings/" + bookingId + "/approve"),
+            HttpMethod.PUT,
+            approvalEntity,
+            BookingResponse.class
+        );
+
+        // Attempt overlapping booking - should now fail because first booking is APPROVED
         BookingRequest overlapping = new BookingRequest(productId, start.plusDays(1), end.plusDays(1));
         HttpEntity<BookingRequest> overlapEntity = new HttpEntity<>(overlapping, bookingHeaders);
         

@@ -70,7 +70,7 @@ public class ReviewServiceTest {
 
     @Test
     void createReview_whenNotCompleted_throws() {
-        Booking booking = makeBooking(3L, 7L, Booking.STATUS_ACTIVE);
+        Booking booking = makeBooking(3L, 7L, Booking.STATUS_PENDING_APPROVAL);
         when(bookingRepository.findById(3L)).thenReturn(Optional.of(booking));
 
         assertThrows(IllegalStateException.class, () -> reviewService.createReview(7L, 3L, 4, "not completed"));

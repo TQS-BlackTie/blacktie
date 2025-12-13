@@ -10,6 +10,9 @@ public class Notification {
     public static final String TYPE_NEW_BOOKING = "NEW_BOOKING";
     public static final String TYPE_BOOKING_CANCELLED_BY_RENTER = "BOOKING_CANCELLED_BY_RENTER";
     public static final String TYPE_BOOKING_CANCELLED_BY_OWNER = "BOOKING_CANCELLED_BY_OWNER";
+    public static final String TYPE_BOOKING_APPROVED = "BOOKING_APPROVED";
+    public static final String TYPE_BOOKING_REJECTED = "BOOKING_REJECTED";
+    public static final String TYPE_PAYMENT_RECEIVED = "PAYMENT_RECEIVED";
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
