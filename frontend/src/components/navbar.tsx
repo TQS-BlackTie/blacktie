@@ -28,11 +28,14 @@ export function Navbar({ userName, userRole, onLogout, notificationBell }: Navba
   }, [])
 
   const allNavItems: NavItem[] = [
-    { label: "Catalog", href: "/" },
+    { label: "Catalog", href: "/", roleExcluded: "admin" },
     { label: "My Bookings", href: "/my-bookings", roleRequired: "renter" },
+    { label: "My Bookings", href: "/owner-bookings", roleRequired: "owner" },
     { label: "Admin Dashboard", href: "/admin", roleRequired: "admin" },
     { label: "Profile", href: "/profile" },
     { label: "Role Setup", href: "/role-setup", roleExcluded: "admin" },
+    { label: "Pending Approvals", href: "/pending-approvals", roleRequired: "owner" },
+
   ]
 
   const navItems = allNavItems.filter(
@@ -78,30 +81,7 @@ export function Navbar({ userName, userRole, onLogout, notificationBell }: Navba
               </button>
             )
           })}
-          {userRole === 'owner' && (
-            <button
-              onClick={() => goTo('/pending-approvals')}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition duration-200 ${
-                activePath === '/pending-approvals'
-                  ? 'border-white/30 bg-white/15 text-white shadow-lg shadow-emerald-900/20'
-                  : 'border-white/5 text-slate-200 hover:border-white/15 hover:bg-white/10'
-              }`}
-            >
-              Pending Approvals
-            </button>
-          )}
-          {userRole === 'renter' && (
-            <button
-              onClick={() => goTo('/my-bookings')}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition duration-200 ${
-                activePath === '/my-bookings'
-                  ? 'border-white/30 bg-white/15 text-white shadow-lg shadow-emerald-900/20'
-                  : 'border-white/5 text-slate-200 hover:border-white/15 hover:bg-white/10'
-              }`}
-            >
-              My Bookings
-            </button>
-          )}
+
         </nav>
 
         <div className="ml-auto flex items-center gap-3">

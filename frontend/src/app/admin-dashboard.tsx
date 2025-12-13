@@ -147,7 +147,7 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800 text-white">
         <div className="text-lg text-slate-600">Loading admin dashboard...</div>
       </div>
     )
@@ -155,7 +155,7 @@ export default function AdminDashboardPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-4">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800 text-white gap-4">
         <div className="text-lg text-red-600">{error}</div>
         <Button onClick={() => user && loadData(user.id)}>Retry</Button>
       </div>
@@ -165,7 +165,7 @@ export default function AdminDashboardPage() {
   if (!user || !metrics) return null
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
       <Navbar
         userName={user.name}
         userRole={user.role}
@@ -422,8 +422,12 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-4 px-4">
                             <div>
-                              <div className="font-medium text-slate-700">{product.owner.name}</div>
-                              <div className="text-sm text-slate-500">{product.owner.email}</div>
+                              <div className="font-medium text-slate-700">
+                                {product.owner?.name || 'N/A'}
+                              </div>
+                              <div className="text-sm text-slate-500">
+                                {product.owner?.email || 'N/A'}
+                              </div>
                             </div>
                           </td>
                           <td className="py-4 px-4">

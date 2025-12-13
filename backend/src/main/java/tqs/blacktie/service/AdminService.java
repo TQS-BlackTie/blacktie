@@ -4,9 +4,11 @@ import org.springframework.stereotype.Service;
 import tqs.blacktie.dto.AdminUserResponse;
 import tqs.blacktie.dto.PlatformMetricsResponse;
 import tqs.blacktie.entity.Booking;
+import tqs.blacktie.entity.Notification;
 import tqs.blacktie.entity.Product;
 import tqs.blacktie.entity.User;
 import tqs.blacktie.repository.BookingRepository;
+import tqs.blacktie.repository.NotificationRepository;
 import tqs.blacktie.repository.ProductRepository;
 import tqs.blacktie.repository.UserRepository;
 
@@ -21,15 +23,18 @@ public class AdminService {
     private final BookingRepository bookingRepository;
     private final ProductRepository productRepository;
     private final NotificationService notificationService;
+    private final NotificationRepository notificationRepository;
 
     public AdminService(UserRepository userRepository,
                        BookingRepository bookingRepository,
                        ProductRepository productRepository,
-                       NotificationService notificationService) {
+                       NotificationService notificationService,
+                       NotificationRepository notificationRepository) {
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
         this.productRepository = productRepository;
         this.notificationService = notificationService;
+        this.notificationRepository = notificationRepository;
     }
 
     public boolean isAdmin(Long userId) {
@@ -203,6 +208,42 @@ public class AdminService {
             throw new IllegalArgumentException("Cannot delete admin user");
         }
 
+        // Delete all notifications for this user
+        List<Notification> userNotifications = notificationRepository.findByUserOrderByCreatedAtDesc(user);
+        notificationRepository.deleteAll(userNotifications);
+
+        // Delete bookings where user is renter (user_id is NOT NULL, can't set to null)
+        List<Booking> userBookings = bookingRepository.findByRenterId(userId);
+        for (Booking booking : userBookings) {
+            // Delete notifications related to this booking
+            List<Notification> bookingNotifications = notificationRepository.findByBooking(booking);
+            notificationRepository.deleteAll(bookingNotifications);
+            
+            // Delete the booking
+            bookingRepository.delete(booking);
+        }
+
+        // Handle products owned by this user
+        List<Product> userProducts = productRepository.findAll().stream()
+            .filter(p -> p.getOwner() != null && p.getOwner().getId().equals(userId))
+            .toList();
+
+        for (Product product : userProducts) {
+            // Delete all bookings for this product
+            List<Booking> productBookings = bookingRepository.findByProductId(product.getId());
+            for (Booking booking : productBookings) {
+                // Delete notifications related to this booking
+                List<Notification> bookingNotifications = notificationRepository.findByBooking(booking);
+                notificationRepository.deleteAll(bookingNotifications);
+                
+                // Delete the booking
+                bookingRepository.delete(booking);
+            }
+            // Delete the product
+            productRepository.delete(product);
+        }
+
+        // Now safe to delete the user
         userRepository.delete(user);
     }
 
@@ -225,16 +266,22 @@ public class AdminService {
         String productName = product.getName();
         User owner = product.getOwner();
 
-        // Cancel all active bookings for this product and notify renters
-        List<Booking> activeBookings = bookingRepository.findByProductId(productId).stream()
-            .filter(b -> Booking.STATUS_APPROVED.equals(b.getStatus()) || Booking.STATUS_PAID.equals(b.getStatus()))
-            .toList();
+        // Get all bookings for this product (active and historical)
+        List<Booking> allBookings = bookingRepository.findByProductId(productId);
 
-        for (Booking booking : activeBookings) {
-            booking.setStatus(Booking.STATUS_CANCELLED);
-            bookingRepository.save(booking);
-            // Notify the renter
-            notificationService.createProductDeletedNotification(booking.getRenter(), productName, false);
+        // Notify renters and delete bookings
+        for (Booking booking : allBookings) {
+            // Notify the renter if booking was active
+            if (Booking.STATUS_APPROVED.equals(booking.getStatus()) || Booking.STATUS_PAID.equals(booking.getStatus())) {
+                notificationService.createProductDeletedNotification(booking.getRenter(), productName, false);
+            }
+            
+            // Delete notifications related to this booking
+            List<Notification> bookingNotifications = notificationRepository.findByBooking(booking);
+            notificationRepository.deleteAll(bookingNotifications);
+            
+            // Delete the booking (product_id is NOT NULL, can't set to null)
+            bookingRepository.delete(booking);
         }
 
         // Notify the owner
@@ -242,7 +289,7 @@ public class AdminService {
             notificationService.createProductDeletedNotification(owner, productName, true);
         }
 
-        // Delete the product
+        // Now safe to delete the product
         productRepository.delete(product);
     }
 }
