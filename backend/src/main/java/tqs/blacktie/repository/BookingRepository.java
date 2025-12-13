@@ -33,4 +33,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Find bookings for products owned by a specific owner
     @Query("SELECT b FROM Booking b WHERE b.product.owner.id = :ownerId")
     List<Booking> findByProductOwnerId(@Param("ownerId") Long ownerId);
+
+    // Count by status for admin metrics
+    long countByStatus(String status);
+
+    // Count by renter ID
+    long countByRenterId(Long renterId);
+
+    // Sum of total revenue (completed bookings)
+    @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.status = :status")
+    Double sumTotalPriceByStatus(@Param("status") String status);
 }

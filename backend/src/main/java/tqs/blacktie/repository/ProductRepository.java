@@ -37,4 +37,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         String name,
         Double maxPrice
     );
+
+    // Admin metrics
+    long countByAvailableTrue();
+    
+    long countByOwnerId(Long ownerId);
 }

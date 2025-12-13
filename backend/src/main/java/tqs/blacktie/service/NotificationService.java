@@ -49,6 +49,42 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    public void createAccountSuspendedNotification(User user) {
+        String message = "Your account has been suspended by the platform administrator. Please contact support for more information.";
+        Notification notification = new Notification(user, Notification.TYPE_ACCOUNT_SUSPENDED, message);
+        notificationRepository.save(notification);
+    }
+
+    public void createAccountBannedNotification(User user) {
+        String message = "Your account has been banned by the platform administrator.";
+        Notification notification = new Notification(user, Notification.TYPE_ACCOUNT_BANNED, message);
+        notificationRepository.save(notification);
+    }
+
+    public void createAccountReactivatedNotification(User user) {
+        String message = "Your account has been reactivated. Welcome back!";
+        Notification notification = new Notification(user, Notification.TYPE_ACCOUNT_REACTIVATED, message);
+        notificationRepository.save(notification);
+    }
+
+    public void createBookingCancelledByAdminNotification(User user, Booking booking, String reason) {
+        String message = String.format("Your booking for '%s' was cancelled by the administrator. Reason: %s", 
+            booking.getProduct().getName(), reason);
+        Notification notification = new Notification(user, Notification.TYPE_BOOKING_CANCELLED_BY_ADMIN, message, booking);
+        notificationRepository.save(notification);
+    }
+
+    public void createProductDeletedNotification(User user, String productName, boolean isOwner) {
+        String message;
+        if (isOwner) {
+            message = String.format("Your product '%s' has been removed by the platform administrator.", productName);
+        } else {
+            message = String.format("A product you had booked ('%s') has been removed by the administrator. Your booking has been cancelled.", productName);
+        }
+        Notification notification = new Notification(user, Notification.TYPE_PRODUCT_DELETED_BY_ADMIN, message);
+        notificationRepository.save(notification);
+    }
+
     public List<NotificationResponse> getUserNotifications(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG + userId));
