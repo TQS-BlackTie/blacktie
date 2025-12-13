@@ -49,9 +49,6 @@ function App() {
     return <PendingApprovalsPage />
   }
 
-  if (currentPath === '/my-bookings') {
-    return <MyBookingsPage />
-  }
 
   return <HomePage />
 }
