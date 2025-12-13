@@ -53,9 +53,13 @@ export function SigninForm({ ...props }: React.ComponentProps<typeof Card>) {
           role: data.role
         }))
 
-        // Always redirect to role setup after login
+        // Redirect based on role
         setTimeout(() => {
-          window.location.href = "/role-setup"
+          if (data.role === "admin") {
+            window.location.href = "/admin"
+          } else {
+            window.location.href = "/role-setup"
+          }
         }, 1000)
       } else {
         const errorData = await response.json()

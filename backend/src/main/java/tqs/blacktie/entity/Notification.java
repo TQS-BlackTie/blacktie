@@ -10,6 +10,11 @@ public class Notification {
     public static final String TYPE_NEW_BOOKING = "NEW_BOOKING";
     public static final String TYPE_BOOKING_CANCELLED_BY_RENTER = "BOOKING_CANCELLED_BY_RENTER";
     public static final String TYPE_BOOKING_CANCELLED_BY_OWNER = "BOOKING_CANCELLED_BY_OWNER";
+    public static final String TYPE_ACCOUNT_SUSPENDED = "ACCOUNT_SUSPENDED";
+    public static final String TYPE_ACCOUNT_BANNED = "ACCOUNT_BANNED";
+    public static final String TYPE_ACCOUNT_REACTIVATED = "ACCOUNT_REACTIVATED";
+    public static final String TYPE_BOOKING_CANCELLED_BY_ADMIN = "BOOKING_CANCELLED_BY_ADMIN";
+    public static final String TYPE_PRODUCT_DELETED_BY_ADMIN = "PRODUCT_DELETED_BY_ADMIN";
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,6 +50,15 @@ public class Notification {
         this.type = type;
         this.message = message;
         this.booking = booking;
+        this.isRead = false;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public Notification(User user, String type, String message) {
+        this.user = user;
+        this.type = type;
+        this.message = message;
+        this.booking = null;
         this.isRead = false;
         this.createdAt = LocalDateTime.now();
     }

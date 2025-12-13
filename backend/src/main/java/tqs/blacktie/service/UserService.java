@@ -52,6 +52,17 @@ public class UserService {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
+        // Check if user is suspended or banned (admin users are always allowed)
+        String status = user.getStatus();
+        if (status != null && !"admin".equals(user.getRole())) {
+            if ("suspended".equals(status)) {
+                throw new IllegalArgumentException("Your account has been suspended. Please contact support.");
+            }
+            if ("banned".equals(status)) {
+                throw new IllegalArgumentException("Your account has been banned.");
+            }
+        }
+
         return user;
     }
 

@@ -23,6 +23,9 @@ public class User {
     @Column(nullable = false)
     private String role = "renter";
 
+    @Column(columnDefinition = "varchar(255) default 'active'")
+    private String status = "active";
+
     @Column
     private String phone;
 
@@ -38,6 +41,7 @@ public class User {
     public User() {
         this.createdAt = LocalDateTime.now();
         this.role = "renter";
+        this.status = "active";
     }
 
     public User(String name, String email, String password) {
@@ -45,6 +49,7 @@ public class User {
         this.email = email;
         this.password = password;
         this.role = "renter";
+        this.status = "active";
         this.createdAt = LocalDateTime.now();
     }
 
@@ -53,6 +58,7 @@ public class User {
         this.email = email;
         this.password = password;
         this.role = role;
+        this.status = "active";
         this.createdAt = LocalDateTime.now();
     }
 
@@ -126,5 +132,13 @@ public class User {
 
     public void setBusinessInfo(String businessInfo) {
         this.businessInfo = businessInfo;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
