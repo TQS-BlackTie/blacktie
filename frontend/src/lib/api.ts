@@ -396,3 +396,132 @@ export async function getReviewsByProduct(productId: number): Promise<ReviewResp
   return res.json()
 }
 
+// Admin types and functions
+export type PlatformMetrics = {
+  totalUsers: number
+  totalOwners: number
+  totalRenters: number
+  totalProducts: number
+  availableProducts: number
+  totalBookings: number
+  activeBookings: number
+  completedBookings: number
+  cancelledBookings: number
+  totalRevenue: number
+  averageBookingValue: number
+}
+
+export type AdminUser = {
+  id: number
+  name: string
+  email: string
+  role: string
+  status: string
+  phone?: string
+  address?: string
+  businessInfo?: string
+  createdAt: string
+  bookingsCount: number
+  productsCount: number
+}
+
+export async function getAdminMetrics(userId: number): Promise<PlatformMetrics> {
+  const res = await fetch('/api/admin/metrics', {
+    headers: { 'X-User-Id': String(userId) }
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to fetch metrics' }))
+    throw new Error(error.message || 'Failed to fetch metrics')
+  }
+  return res.json()
+}
+
+export async function getAdminUsers(userId: number): Promise<AdminUser[]> {
+  const res = await fetch('/api/admin/users', {
+    headers: { 'X-User-Id': String(userId) }
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to fetch users' }))
+    throw new Error(error.message || 'Failed to fetch users')
+  }
+  return res.json()
+}
+
+export async function updateUserStatus(adminId: number, targetUserId: number, status: string): Promise<AdminUser> {
+  const res = await fetch(`/api/admin/users/${targetUserId}/status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': String(adminId)
+    },
+    body: JSON.stringify({ status })
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to update status' }))
+    throw new Error(error.message || 'Failed to update status')
+  }
+  return res.json()
+}
+
+export async function updateUserRoleAdmin(adminId: number, targetUserId: number, role: string): Promise<AdminUser> {
+  const res = await fetch(`/api/admin/users/${targetUserId}/role`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': String(adminId)
+    },
+    body: JSON.stringify({ role })
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to update role' }))
+    throw new Error(error.message || 'Failed to update role')
+  }
+  return res.json()
+}
+
+export async function deleteUserAdmin(adminId: number, targetUserId: number): Promise<void> {
+  const res = await fetch(`/api/admin/users/${targetUserId}`, {
+    method: 'DELETE',
+    headers: { 'X-User-Id': String(adminId) }
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to delete user' }))
+    throw new Error(error.message || 'Failed to delete user')
+  }
+}
+
+// Admin Product Management
+export type AdminProduct = {
+  id: number
+  name: string
+  description: string
+  price: number
+  available: boolean
+  owner: {
+    id: number
+    name: string
+    email: string
+  }
+}
+
+export async function getAdminProducts(userId: number): Promise<AdminProduct[]> {
+  const res = await fetch('/api/admin/products', {
+    headers: { 'X-User-Id': String(userId) }
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to fetch products' }))
+    throw new Error(error.message || 'Failed to fetch products')
+  }
+  return res.json()
+}
+
+export async function deleteProductAdmin(adminId: number, productId: number): Promise<void> {
+  const res = await fetch(`/api/admin/products/${productId}`, {
+    method: 'DELETE',
+    headers: { 'X-User-Id': String(adminId) }
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to delete product' }))
+    throw new Error(error.message || 'Failed to delete product')
+  }
+}

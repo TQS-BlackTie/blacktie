@@ -28,6 +28,8 @@ export default function HomePage() {
   useEffect(() => {
     if (!user) {
       window.location.href = '/login'
+    } else if (user.role === 'admin') {
+      window.location.href = '/admin'
     }
   }, [user])
 

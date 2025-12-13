@@ -7,6 +7,7 @@ import ProfilePage from './app/profile'
 import MyBookingsPage from './app/my-bookings'
 import OwnerBookingsPage from './app/owner-bookings'
 import PendingApprovalsPage from './app/pending-approvals'
+import AdminDashboardPage from './app/admin-dashboard'
 import './App.css'
 
 function App() {
@@ -49,6 +50,10 @@ function App() {
     return <PendingApprovalsPage />
   }
 
+
+  if (currentPath === '/admin' || currentPath === '/admin-dashboard') {
+    return <AdminDashboardPage />
+  }
 
   return <HomePage />
 }

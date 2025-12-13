@@ -21,6 +21,11 @@ public class Notification {
     public static final String TYPE_BOOKING_APPROVED = "BOOKING_APPROVED";
     public static final String TYPE_BOOKING_REJECTED = "BOOKING_REJECTED";
     public static final String TYPE_PAYMENT_RECEIVED = "PAYMENT_RECEIVED";
+    public static final String TYPE_ACCOUNT_SUSPENDED = "ACCOUNT_SUSPENDED";
+    public static final String TYPE_ACCOUNT_BANNED = "ACCOUNT_BANNED";
+    public static final String TYPE_ACCOUNT_REACTIVATED = "ACCOUNT_REACTIVATED";
+    public static final String TYPE_BOOKING_CANCELLED_BY_ADMIN = "BOOKING_CANCELLED_BY_ADMIN";
+    public static final String TYPE_PRODUCT_DELETED_BY_ADMIN = "PRODUCT_DELETED_BY_ADMIN";
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

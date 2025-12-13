@@ -8,6 +8,13 @@ type NavbarProps = {
   notificationBell?: React.ReactNode
 }
 
+type NavItem = {
+  label: string
+  href: string
+  roleRequired?: string
+  roleExcluded?: string
+}
+
 export function Navbar({ userName, userRole, onLogout, notificationBell }: NavbarProps) {
   const [activePath, setActivePath] = useState<string>("")
 
@@ -20,15 +27,20 @@ export function Navbar({ userName, userRole, onLogout, notificationBell }: Navba
     return () => window.removeEventListener("popstate", updatePath)
   }, [])
 
-  const allNavItems = [
+  const allNavItems: NavItem[] = [
     { label: "Catalog", href: "/" },
     { label: "My Bookings", href: "/my-bookings", roleRequired: "renter" },
+    { label: "Admin Dashboard", href: "/admin", roleRequired: "admin" },
     { label: "Profile", href: "/profile" },
-    { label: "Role Setup", href: "/role-setup" },
+    { label: "Role Setup", href: "/role-setup", roleExcluded: "admin" },
   ]
 
   const navItems = allNavItems.filter(
-    (item) => !item.roleRequired || item.roleRequired === userRole
+    (item) => {
+      if (item.roleExcluded && item.roleExcluded === userRole) return false
+      if (!item.roleRequired) return true
+      return item.roleRequired === userRole
+    }
   )
 
   const goTo = (href: string) => {

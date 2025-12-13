@@ -235,14 +235,16 @@ export default function ProfilePage() {
                       <span className="rounded-xl bg-gray-100 px-3 py-2 font-medium capitalize">
                         {user?.role || "Not set"}
                       </span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowRoleModal(true)}
-                        className="rounded-full"
-                      >
-                        Change Role
-                      </Button>
+                      {user?.role !== 'admin' && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowRoleModal(true)}
+                          className="rounded-full"
+                        >
+                          Change Role
+                        </Button>
+                      )}
                     </div>
                   </Field>
 
@@ -270,6 +272,7 @@ export default function ProfilePage() {
         <RoleSelectionModal
           userId={userId}
           onRoleSelected={handleRoleSelected}
+          onClose={() => setShowRoleModal(false)}
         />
       )}
     </div>
