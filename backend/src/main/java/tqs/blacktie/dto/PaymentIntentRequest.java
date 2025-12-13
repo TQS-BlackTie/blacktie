@@ -2,7 +2,15 @@ package tqs.blacktie.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class PaymentIntentRequest {
     
     @NotNull(message = "Booking ID is required")
@@ -11,28 +19,4 @@ public class PaymentIntentRequest {
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
     private Long amount; // amount in cents
-
-    public PaymentIntentRequest() {
-    }
-
-    public PaymentIntentRequest(Long bookingId, Long amount) {
-        this.bookingId = bookingId;
-        this.amount = amount;
-    }
-
-    public Long getBookingId() {
-        return bookingId;
-    }
-
-    public void setBookingId(Long bookingId) {
-        this.bookingId = bookingId;
-    }
-
-    public Long getAmount() {
-        return amount;
-    }
-
-    public void setAmount(Long amount) {
-        this.amount = amount;
-    }
 }

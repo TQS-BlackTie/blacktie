@@ -3,7 +3,15 @@ package tqs.blacktie.dto;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class BookingRequest {
     
     @NotNull(message = "Product ID is required")
@@ -14,37 +22,4 @@ public class BookingRequest {
     
     @NotNull(message = "Return date is required")
     private LocalDateTime returnDate;
-
-    public BookingRequest() {
-    }
-
-    public BookingRequest(Long productId, LocalDateTime bookingDate, LocalDateTime returnDate) {
-        this.productId = productId;
-        this.bookingDate = bookingDate;
-        this.returnDate = returnDate;
-    }
-
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
-    public LocalDateTime getBookingDate() {
-        return bookingDate;
-    }
-
-    public void setBookingDate(LocalDateTime bookingDate) {
-        this.bookingDate = bookingDate;
-    }
-
-    public LocalDateTime getReturnDate() {
-        return returnDate;
-    }
-
-    public void setReturnDate(LocalDateTime returnDate) {
-        this.returnDate = returnDate;
-    }
 }

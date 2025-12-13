@@ -3,7 +3,15 @@ package tqs.blacktie.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class UpdateProfileRequest {
 
     @NotBlank(message = "Name is required")
@@ -18,46 +26,4 @@ public class UpdateProfileRequest {
 
     @Size(max = 500, message = "Business info must not exceed 500 characters")
     private String businessInfo;
-
-    public UpdateProfileRequest() {
-    }
-
-    public UpdateProfileRequest(String name, String phone, String address, String businessInfo) {
-        this.name = name;
-        this.phone = phone;
-        this.address = address;
-        this.businessInfo = businessInfo;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getBusinessInfo() {
-        return businessInfo;
-    }
-
-    public void setBusinessInfo(String businessInfo) {
-        this.businessInfo = businessInfo;
-    }
 }
