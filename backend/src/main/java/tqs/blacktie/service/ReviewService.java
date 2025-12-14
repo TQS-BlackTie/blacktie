@@ -74,7 +74,7 @@ public class ReviewService {
             user.getName(),
             user.getEmail(),
             user.getRole(),
-            user.getCreatedAt().toString()
+            user.getCreatedAt() != null ? user.getCreatedAt().toString() : null
         );
         response.setPhone(user.getPhone());
         response.setAddress(user.getAddress());
@@ -86,7 +86,10 @@ public class ReviewService {
             response.setOwnerAverageRating(0.0);
             response.setOwnerReviewCount(0);
         } else {
-            response.setOwnerAverageRating(ownerReviews.stream().mapToInt(Review::getRating).average().orElse(0.0));
+            response.setOwnerAverageRating(ownerReviews.stream()
+                .filter(r -> r.getRating() != null)
+                .mapToInt(Review::getRating)
+                .average().orElse(0.0));
             response.setOwnerReviewCount(ownerReviews.size());
         }
 
@@ -95,14 +98,21 @@ public class ReviewService {
             response.setRenterAverageRating(0.0);
             response.setRenterReviewCount(0);
         } else {
-            response.setRenterAverageRating(renterReviews.stream().mapToInt(Review::getRating).average().orElse(0.0));
+            response.setRenterAverageRating(renterReviews.stream()
+                .filter(r -> r.getRating() != null)
+                .mapToInt(Review::getRating)
+                .average().orElse(0.0));
             response.setRenterReviewCount(renterReviews.size());
         }
 
         // Total
         int totalCount = ownerReviews.size() + renterReviews.size();
-        double totalSum = ownerReviews.stream().mapToInt(Review::getRating).sum() + 
-                          renterReviews.stream().mapToInt(Review::getRating).sum();
+        double totalSum = ownerReviews.stream()
+                              .filter(r -> r.getRating() != null)
+                              .mapToInt(Review::getRating).sum() + 
+                          renterReviews.stream()
+                              .filter(r -> r.getRating() != null)
+                              .mapToInt(Review::getRating).sum();
         
         response.setTotalReviews(totalCount);
         response.setAverageRating(totalCount > 0 ? totalSum / totalCount : 0.0);

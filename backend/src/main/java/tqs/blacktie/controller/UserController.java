@@ -42,7 +42,7 @@ public class UserController {
                 user.getPhone(),
                 user.getAddress(),
                 user.getBusinessInfo(),
-                user.getCreatedAt().toString()
+                user.getCreatedAt() != null ? user.getCreatedAt().toString() : null
             ))
             .collect(Collectors.toList());
     }
@@ -80,7 +80,7 @@ public class UserController {
                 user.getPhone(),
                 user.getAddress(),
                 user.getBusinessInfo(),
-                user.getCreatedAt().toString()
+                user.getCreatedAt() != null ? user.getCreatedAt().toString() : null
             ));
         } catch (IllegalArgumentException e) {
             Map<String, String> error = new HashMap<>();
