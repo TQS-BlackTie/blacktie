@@ -29,6 +29,7 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
   const [newDescription, setNewDescription] = useState("")
   const [newPrice, setNewPrice] = useState("")
   const [newDepositAmount, setNewDepositAmount] = useState("")
+  const [newSize, setNewSize] = useState("")
   const [newCity, setNewCity] = useState("")
   const [municipalitySuggestions, setMunicipalitySuggestions] = useState<string[]>([])
   const [isValidMunicipality, setIsValidMunicipality] = useState(false)
@@ -195,6 +196,7 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
         price: priceNumber,
         depositAmount: depositNumber,
         city: newCity.trim() || undefined,
+        size: newSize.trim() || undefined,
         image: newImage || undefined,
       })
 
@@ -202,6 +204,7 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
       setNewDescription("")
       setNewPrice("")
       setNewDepositAmount("")
+      setNewSize("")
       setNewCity("")
       setIsValidMunicipality(false)
       setNewImage(null)
@@ -373,6 +376,13 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
                 className="w-36 rounded-xl"
                 title="Optional deposit amount for this product"
               />
+              <Input
+                placeholder="Size (e.g., S, M, L, XL)"
+                value={newSize}
+                onChange={(e) => setNewSize(e.target.value)}
+                className="w-32 rounded-xl"
+                title="Product size (optional)"
+              />
             </div>
             <div className="flex flex-col gap-2">
               <div ref={municipalityInputRef} className="relative">
@@ -541,6 +551,14 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                   Deposit: {p.depositAmount.toFixed(2)} €
+                </p>
+              )}
+              {p.size && (
+                <p className="text-sm text-slate-600 mt-1 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                  Size: {p.size}
                 </p>
               )}
             </CardContent>

@@ -12,7 +12,7 @@ import lombok.AllArgsConstructor;
 @Setter
 @AllArgsConstructor
 public class Product {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -52,6 +52,9 @@ public class Product {
 
     @Column(name = "longitude")
     private Double longitude;
+
+    @Column(name = "size")
+    private String size;
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
