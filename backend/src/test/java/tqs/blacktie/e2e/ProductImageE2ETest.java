@@ -64,7 +64,7 @@ class ProductImageE2ETest {
         HttpEntity<SetRoleRequest> setRoleEntity = new HttpEntity<>(new SetRoleRequest("owner"));
         ResponseEntity<?> roleRes = restTemplate.exchange(
                 url("/api/users/" + userId + "/role"),
-                HttpMethod.POST,
+                HttpMethod.PUT,
                 setRoleEntity,
                 Object.class
         );
