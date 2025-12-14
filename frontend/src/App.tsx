@@ -5,6 +5,7 @@ import SignInPage from './app/signin'
 import RoleSetupPage from './app/role-setup'
 import ProfilePage from './app/profile'
 import MyBookingsPage from './app/my-bookings'
+import BookingHistoryPage from './app/booking-history'
 import OwnerBookingsPage from './app/owner-bookings'
 import PendingApprovalsPage from './app/pending-approvals'
 import MyReputationPage from './app/my-reputation'
@@ -39,8 +40,12 @@ function App() {
     return <ProfilePage />
   }
 
-  if (currentPath === '/my-bookings' || currentPath === '/history' || currentPath === '/active-bookings') {
+  if (currentPath === '/my-bookings' || currentPath === '/active-bookings') {
     return <MyBookingsPage />
+  }
+
+  if (currentPath === '/history' || currentPath === '/booking-history') {
+    return <BookingHistoryPage />
   }
 
   if (currentPath === '/owner-bookings') {

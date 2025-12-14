@@ -132,7 +132,8 @@ export default function MyBookingsPage() {
 
     try {
       const data = await getUserBookings(userId)
-      setBookings(data)
+      // Filter to show only active bookings (not COMPLETED or CANCELLED)
+      setBookings(data.filter(b => b.status !== 'COMPLETED' && b.status !== 'CANCELLED'))
     } catch (err: unknown) {
       console.error(err)
       setError('Failed to load bookings')

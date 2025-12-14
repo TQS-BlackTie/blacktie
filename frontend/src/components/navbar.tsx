@@ -30,6 +30,7 @@ export function Navbar({ userName, userRole, onLogout, notificationBell }: Navba
   const allNavItems: NavItem[] = [
     { label: "Catalog", href: "/", roleExcluded: "admin" },
     { label: "My Bookings", href: "/my-bookings", roleRequired: "renter" },
+    { label: "Booking History", href: "/history", roleRequired: "renter" },
     { label: "My Bookings", href: "/owner-bookings", roleRequired: "owner" },
     { label: "Admin Dashboard", href: "/admin", roleRequired: "admin" },
     { label: "Profile", href: "/profile" },
