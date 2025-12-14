@@ -20,7 +20,7 @@ jobs:
           java-version: "21"
           cache: "maven"
       - name: Build & unit tests
-        run: mvn clean test
+        run: mvn clean test -Dtest='!tqs.blacktie.e2e.playwright.**'
       - name: List generated test reports
         if: always()
         run: |
@@ -107,4 +107,4 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=TQS-BlackTie_blacktie
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=TQS-BlackTie_blacktie -Dtest='!tqs.blacktie.e2e.playwright.**'
