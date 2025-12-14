@@ -6,7 +6,7 @@ export default function RoleSetupPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  
+
   // Get userId from localStorage (set after login)
   const userId = Number(localStorage.getItem("userId")) || 1
   useEffect(() => {
@@ -14,8 +14,8 @@ export default function RoleSetupPage() {
       try {
         const userData = await getCurrentUser(userId)
         setUser(userData)
-      } catch (e) {
-        console.error(e)
+      } catch (err: unknown) {
+        console.error(err)
         setError("Erro ao carregar utilizador")
       } finally {
         setLoading(false)
@@ -32,7 +32,7 @@ export default function RoleSetupPage() {
   const handleRoleSelected = async (role: string) => {
     if (user) {
       setUser({ ...user, role })
-      
+
       setTimeout(() => {
         window.location.href = "/"
       }, 500)
@@ -55,5 +55,11 @@ export default function RoleSetupPage() {
     )
   }
 
-  return <RoleSelectionModal userId={user.id} onRoleSelected={handleRoleSelected} />
+
+
+  return <RoleSelectionModal
+    userId={user.id}
+    onRoleSelected={handleRoleSelected}
+    title="Complete Account Setup"
+  />
 }

@@ -3,6 +3,7 @@ package tqs.blacktie.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import tqs.blacktie.entity.Product;
+import tqs.blacktie.entity.User;
 
 import java.util.List;
 
@@ -23,4 +24,22 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         String name,
         Double maxPrice
     );
+
+    // Disponíveis por owner
+    List<Product> findByOwnerAndAvailableTrue(User owner);
+
+    List<Product> findByOwnerAndAvailableTrueAndNameContainingIgnoreCase(User owner, String name);
+
+    List<Product> findByOwnerAndAvailableTrueAndPriceLessThanEqual(User owner, Double maxPrice);
+
+    List<Product> findByOwnerAndAvailableTrueAndNameContainingIgnoreCaseAndPriceLessThanEqual(
+        User owner,
+        String name,
+        Double maxPrice
+    );
+
+    // Admin metrics
+    long countByAvailableTrue();
+    
+    long countByOwnerId(Long ownerId);
 }

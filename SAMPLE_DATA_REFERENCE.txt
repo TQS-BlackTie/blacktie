@@ -1,0 +1,124 @@
+================================================================================
+                    BLACKTIE - SAMPLE DATA REFERENCE
+                    Formal Event Clothing Rental Platform
+================================================================================
+
+================================================================================
+                              USERS (8 total)
+================================================================================
+
+ADMIN
+--------------------------------------------------------------------------------
+| Name            | Email              | Password |
+|-----------------|--------------------+----------|
+| Platform Admin  | admin@blacktie.pt  | admin    |
+
+OWNERS (3)
+--------------------------------------------------------------------------------
+| Name              | Email                  | Password  | City    |
+|-------------------|------------------------+-----------|---------|
+| Elegância Lisboa  | elegancia@blacktie.pt  | owner123  | Lisboa  |
+| Gala Porto        | gala@blacktie.pt       | owner123  | Porto   |
+| Cerimónia Faro    | cerimonia@blacktie.pt  | owner123  | Faro    |
+
+RENTERS (4)
+--------------------------------------------------------------------------------
+| Name          | Email           | Password   |
+|---------------|-----------------|------------|
+| João Silva    | joao@email.pt   | renter123  |
+| Maria Santos  | maria@email.pt  | renter123  |
+| Pedro Costa   | pedro@email.pt  | renter123  |
+| Ana Ferreira  | ana@email.pt    | renter123  |
+
+
+================================================================================
+                            PRODUCTS (18 total)
+================================================================================
+
+LISBOA - Elegância Lisboa (5 products)
+--------------------------------------------------------------------------------
+| Product                      | Price/Day | Deposit  |
+|------------------------------|-----------|----------|
+| Classic Black Tuxedo         | €75       | €150     |
+| Midnight Blue Dinner Jacket  | €65       | €120     |
+| White Dinner Jacket          | €70       | €130     |
+| Burgundy Velvet Blazer       | €55       | €100     |
+| Classic Wing-Tip Dress Shirt | €15       | €30      |
+
+PORTO - Gala Porto (6 products)
+--------------------------------------------------------------------------------
+| Product                   | Price/Day | Deposit  |
+|---------------------------|-----------|----------|
+| Emerald Silk Evening Gown | €95       | €200     |
+| Black Sequin Cocktail Dress | €60     | €110     |
+| Navy Ball Gown            | €120      | €250     |
+| Silver Satin Clutch       | €20       | €40      |
+| Pearl Drop Earrings       | €35       | €70      |
+| Diamond Tennis Bracelet   | €45       | €90      |
+
+FARO - Cerimónia Faro (7 products)
+--------------------------------------------------------------------------------
+| Product                     | Price/Day | Deposit  |
+|-----------------------------|-----------|----------|
+| Ivory Linen Summer Suit     | €60       | €120     |
+| Champagne Maxi Dress        | €70       | €140     |
+| Coral Statement Necklace    | €25       | €50      |
+| Tan Leather Dress Shoes     | €30       | €60      |
+| Silk Pocket Square Set      | €18       | €35      |
+| Gold Cufflinks & Tie Bar Set| €22       | €45      |
+| Bow Tie Collection          | €20       | €40      |
+
+
+================================================================================
+                           BOOKINGS (10 total)
+================================================================================
+
+COMPLETED (8)
+--------------------------------------------------------------------------------
+| Renter        | Product                   | Event                     |
+|---------------|---------------------------|---------------------------|
+| João Silva    | Classic Black Tuxedo      | Lisboa Wedding Reception  |
+| Maria Santos  | Emerald Silk Evening Gown | Annual Corporate Gala     |
+| Pedro Costa   | Ivory Linen Summer Suit   | Beach Wedding Algarve     |
+| João Silva    | Silver Satin Clutch       | Charity Auction Evening   |
+| Ana Ferreira  | Midnight Blue Dinner Jacket| New Year's Eve Gala      |
+| Maria Santos  | Navy Ball Gown            | Opera Opening Night       |
+| Pedro Costa   | Classic Wing-Tip Dress Shirt| Business Conference Dinner|
+| Ana Ferreira  | Champagne Maxi Dress      | Sunset Beach Party        |
+
+APPROVED - UPCOMING (1)
+--------------------------------------------------------------------------------
+| Renter        | Product              | Status   |
+|---------------|----------------------|----------|
+| João Silva    | White Dinner Jacket  | APPROVED |
+
+PENDING APPROVAL (1)
+--------------------------------------------------------------------------------
+| Renter        | Product               | Status           |
+|---------------|-----------------------|------------------|
+| Maria Santos  | Burgundy Velvet Blazer| PENDING_APPROVAL |
+
+
+================================================================================
+                           REVIEWS (14 total)
+================================================================================
+
+All reviews are 4-5 stars from both renters and owners for completed bookings.
+
+Examples:
+- "Perfect fit and excellent quality. The tuxedo made our wedding photos stunning!"
+- "The emerald gown was absolutely breathtaking. Received so many compliments!"
+- "Felt like a princess in this ball gown. Worth every euro!"
+- "Great renter, returned everything in perfect condition."
+
+================================================================================
+                         QUICK LOGIN REFERENCE
+================================================================================
+
+To test the platform:
+
+1. As Admin:    admin@blacktie.pt / admin
+2. As Owner:    elegancia@blacktie.pt / owner123
+3. As Renter:   joao@email.pt / renter123
+
+================================================================================

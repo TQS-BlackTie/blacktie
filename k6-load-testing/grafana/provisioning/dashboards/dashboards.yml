@@ -1,0 +1,16 @@
+# Grafana Dashboard Provisioning
+# ==============================================================================
+# This file configures automatic dashboard loading from JSON files
+
+apiVersion: 1
+
+providers:
+  - name: 'k6-dashboards'
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

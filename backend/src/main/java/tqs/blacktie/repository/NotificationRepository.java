@@ -1,0 +1,17 @@
+package tqs.blacktie.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import tqs.blacktie.entity.Booking;
+import tqs.blacktie.entity.Notification;
+import tqs.blacktie.entity.User;
+
+import java.util.List;
+
+@Repository
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+    List<Notification> findByUserOrderByCreatedAtDesc(User user);
+    List<Notification> findByUserAndIsReadOrderByCreatedAtDesc(User user, Boolean isRead);
+    long countByUserAndIsRead(User user, Boolean isRead);
+    List<Notification> findByBooking(Booking booking);
+}

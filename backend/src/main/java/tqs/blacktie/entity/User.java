@@ -2,10 +2,26 @@ package tqs.blacktie.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@AllArgsConstructor
 public class User {
+
+    // Role constants
+    public static final String ROLE_RENTER = "renter";
+    public static final String ROLE_OWNER = "owner";
+    public static final String ROLE_ADMIN = "admin";
+
+    // Status constants
+    public static final String STATUS_ACTIVE = "active";
+    public static final String STATUS_SUSPENDED = "suspended";
+    public static final String STATUS_BANNED = "banned";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +37,10 @@ public class User {
     private String password;
 
     @Column(nullable = false)
-    private String role = "renter";
+    private String role = ROLE_RENTER;
+
+    @Column(columnDefinition = "varchar(255) default 'active'")
+    private String status = STATUS_ACTIVE;
 
     @Column
     private String phone;
@@ -37,14 +56,16 @@ public class User {
 
     public User() {
         this.createdAt = LocalDateTime.now();
-        this.role = "renter";
+        this.role = ROLE_RENTER;
+        this.status = STATUS_ACTIVE;
     }
 
     public User(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;
-        this.role = "renter";
+        this.role = ROLE_RENTER;
+        this.status = STATUS_ACTIVE;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -53,78 +74,7 @@ public class User {
         this.email = email;
         this.password = password;
         this.role = role;
+        this.status = STATUS_ACTIVE;
         this.createdAt = LocalDateTime.now();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getBusinessInfo() {
-        return businessInfo;
-    }
-
-    public void setBusinessInfo(String businessInfo) {
-        this.businessInfo = businessInfo;
     }
 }

@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Prometheus - Time-series database for storing k6 metrics
+  # =============================================================================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: k6-prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - --web.enable-remote-write-receiver
+      - --enable-feature=native-histograms
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - k6-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # Grafana - Visualization platform for k6 metrics
+  # =============================================================================
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: k6-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - k6-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # k6 - Load testing tool (runs as a one-off service)
+  # =============================================================================
+  k6:
+    image: grafana/k6:0.47.0
+    container_name: k6-runner
+    ports:
+      - "6565:6565"
+    environment:
+      - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
+      - K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=true
+    volumes:
+      - ./scripts:/scripts:ro
+      - ./reports:/reports
+    networks:
+      - k6-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - prometheus
+    # Override entrypoint to keep container running for manual test execution
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+networks:
+  k6-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
