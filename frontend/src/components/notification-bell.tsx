@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell } from 'lucide-react'
 import { Button } from './ui/button'
 import {
@@ -100,6 +101,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+  const navigate = useNavigate()
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -148,7 +150,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     // Navigate to the relevant page
     const link = getNotificationLink(notification)
     if (link) {
-      window.location.href = link
+      navigate(link)
     }
   }
 
