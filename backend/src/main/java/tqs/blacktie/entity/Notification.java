@@ -26,6 +26,8 @@ public class Notification {
     public static final String TYPE_ACCOUNT_REACTIVATED = "ACCOUNT_REACTIVATED";
     public static final String TYPE_BOOKING_CANCELLED_BY_ADMIN = "BOOKING_CANCELLED_BY_ADMIN";
     public static final String TYPE_PRODUCT_DELETED_BY_ADMIN = "PRODUCT_DELETED_BY_ADMIN";
+    public static final String TYPE_DEPOSIT_REQUESTED = "DEPOSIT_REQUESTED";
+    public static final String TYPE_DEPOSIT_PAID = "DEPOSIT_PAID";
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

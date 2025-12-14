@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Navbar } from '@/components/navbar'
 import { NotificationBell } from '@/components/notification-bell'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { requestDeposit } from '@/lib/api'
 
 interface User {
   id: number
@@ -19,6 +23,12 @@ interface Booking {
   returnDate: string
   totalPrice: number
   status: string
+  depositAmount?: number
+  depositRequested?: boolean
+  depositReason?: string
+  depositRequestedAt?: string
+  depositPaid?: boolean
+  depositPaidAt?: string
 }
 
 export default function OwnerBookingsPage() {
@@ -31,6 +41,12 @@ export default function OwnerBookingsPage() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1)
   const [selectedWeek, setSelectedWeek] = useState<number>(1)
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [depositModalOpen, setDepositModalOpen] = useState(false)
+  const [depositAmount, setDepositAmount] = useState('')
+  const [depositReason, setDepositReason] = useState('')
+  const [depositError, setDepositError] = useState<string | null>(null)
+  const [depositSubmitting, setDepositSubmitting] = useState(false)
 
   useEffect(() => {
     const userData = window.localStorage.getItem('user')
@@ -186,6 +202,56 @@ export default function OwnerBookingsPage() {
     window.location.href = '/login'
   }
 
+  const canRequestDeposit = (booking: Booking) => {
+    const returnDate = new Date(booking.returnDate)
+    const now = new Date()
+    return (
+      (booking.status === 'COMPLETED' || booking.status === 'PAID') &&
+      returnDate < now &&
+      !booking.depositRequested
+    )
+  }
+
+  const handleRequestDepositClick = (booking: Booking) => {
+    setSelectedBooking(booking)
+    setDepositAmount('')
+    setDepositReason('')
+    setDepositError(null)
+    setDepositModalOpen(true)
+  }
+
+  const handleRequestDepositSubmit = async () => {
+    if (!selectedBooking || !user) return
+
+    const amount = Number(depositAmount)
+    if (!depositAmount || isNaN(amount) || amount <= 0) {
+      setDepositError('Please enter a valid deposit amount')
+      return
+    }
+
+    if (!depositReason.trim()) {
+      setDepositError('Please provide a reason for the deposit')
+      return
+    }
+
+    try {
+      setDepositSubmitting(true)
+      setDepositError(null)
+      await requestDeposit(user.id, selectedBooking.id, {
+        depositAmount: amount,
+        reason: depositReason.trim()
+      })
+      
+      // Refresh bookings
+      await fetchBookings(user.id)
+      setDepositModalOpen(false)
+    } catch (error) {
+      setDepositError(error instanceof Error ? error.message : 'Failed to request deposit')
+    } finally {
+      setDepositSubmitting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -335,6 +401,9 @@ export default function OwnerBookingsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-card divide-y divide-border">
@@ -367,6 +436,26 @@ export default function OwnerBookingsPage() {
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(booking.status)}`}>
                         {mapStatusToLabel(booking.status)}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {canRequestDeposit(booking) ? (
+                        <Button
+                          onClick={() => handleRequestDepositClick(booking)}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          Request Deposit
+                        </Button>
+                      ) : booking.depositRequested ? (
+                        <div className="text-xs text-muted-foreground">
+                          {booking.depositPaid ? (
+                            <span className="text-green-600 font-medium">Deposit Paid</span>
+                          ) : (
+                            <span className="text-amber-600 font-medium">Deposit Pending</span>
+                          )}
+                        </div>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -407,6 +496,76 @@ export default function OwnerBookingsPage() {
           </div>
         )}
       </div>
+
+      {/* Deposit Request Modal */}
+      <Dialog open={depositModalOpen} onOpenChange={setDepositModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request Deposit</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedBooking && (
+              <div className="text-sm text-muted-foreground mb-4">
+                <p><strong>Product:</strong> {selectedBooking.productName}</p>
+                <p><strong>Renter:</strong> {selectedBooking.renterName}</p>
+              </div>
+            )}
+            
+            {depositError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+                {depositError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Deposit Amount (€)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Enter amount"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                disabled={depositSubmitting}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Reason for Deposit
+              </label>
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                rows={4}
+                placeholder="Explain why you're requesting this deposit..."
+                value={depositReason}
+                onChange={(e) => setDepositReason(e.target.value)}
+                disabled={depositSubmitting}
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setDepositModalOpen(false)}
+                disabled={depositSubmitting}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRequestDepositSubmit}
+                disabled={depositSubmitting}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {depositSubmitting ? 'Requesting...' : 'Request Deposit'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

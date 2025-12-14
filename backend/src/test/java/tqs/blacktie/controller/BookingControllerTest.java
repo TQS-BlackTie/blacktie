@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import tqs.blacktie.dto.BookingRequest;
 import tqs.blacktie.dto.BookingResponse;
+import tqs.blacktie.dto.RequestDepositRequest;
 import tqs.blacktie.service.BookingService;
 
 import java.time.LocalDateTime;
@@ -375,6 +376,173 @@ class BookingControllerTest {
             ResponseEntity<?> response = bookingController.getActiveBookings(999L);
 
             assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("Request Deposit Tests")
+    class RequestDepositTests {
+
+        @Test
+        @DisplayName("Should request deposit successfully")
+        void shouldRequestDepositSuccessfully() {
+            RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
+            BookingResponse expectedResponse = new BookingResponse(
+                1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                LocalDateTime.now(), LocalDateTime.now().plusDays(1), 100.0, "COMPLETED"
+            );
+            expectedResponse.setDepositAmount(50.0);
+            expectedResponse.setDepositRequested(true);
+            expectedResponse.setDepositReason("Damaged item");
+
+            when(bookingService.requestDeposit(eq(1L), eq(5L), eq(50.0), eq("Damaged item")))
+                .thenReturn(expectedResponse);
+
+            ResponseEntity<?> response = bookingController.requestDeposit(1L, 5L, depositRequest);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody() instanceof BookingResponse);
+            BookingResponse body = (BookingResponse) response.getBody();
+            assertEquals(50.0, body.getDepositAmount());
+            assertEquals(true, body.getDepositRequested());
+            assertEquals("Damaged item", body.getDepositReason());
+            verify(bookingService, times(1)).requestDeposit(eq(1L), eq(5L), eq(50.0), eq("Damaged item"));
+        }
+
+        @Test
+        @DisplayName("Should return bad request when booking not found")
+        void shouldReturnBadRequestWhenBookingNotFoundForDeposit() {
+            RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
+            
+            when(bookingService.requestDeposit(eq(999L), eq(5L), eq(50.0), eq("Damaged item")))
+                .thenThrow(new IllegalArgumentException("Booking not found with id: 999"));
+
+            ResponseEntity<?> response = bookingController.requestDeposit(999L, 5L, depositRequest);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("Booking not found with id: 999", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when user is not owner")
+        void shouldReturnForbiddenWhenUserIsNotOwner() {
+            RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
+            
+            when(bookingService.requestDeposit(eq(1L), eq(999L), eq(50.0), eq("Damaged item")))
+                .thenThrow(new IllegalStateException("User is not authorized to request deposit for this booking"));
+
+            ResponseEntity<?> response = bookingController.requestDeposit(1L, 999L, depositRequest);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertEquals("User is not authorized to request deposit for this booking", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when booking not completed")
+        void shouldReturnForbiddenWhenBookingNotCompleted() {
+            RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
+            
+            when(bookingService.requestDeposit(eq(1L), eq(5L), eq(50.0), eq("Damaged item")))
+                .thenThrow(new IllegalStateException("Deposit can only be requested after the booking return date"));
+
+            ResponseEntity<?> response = bookingController.requestDeposit(1L, 5L, depositRequest);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertTrue(response.getBody().toString().contains("return date"));
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when deposit already requested")
+        void shouldReturnForbiddenWhenDepositAlreadyRequested() {
+            RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
+            
+            when(bookingService.requestDeposit(eq(1L), eq(5L), eq(50.0), eq("Damaged item")))
+                .thenThrow(new IllegalStateException("Deposit has already been requested for this booking"));
+
+            ResponseEntity<?> response = bookingController.requestDeposit(1L, 5L, depositRequest);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertTrue(response.getBody().toString().contains("already been requested"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Pay Deposit Tests")
+    class PayDepositTests {
+
+        @Test
+        @DisplayName("Should pay deposit successfully")
+        void shouldPayDepositSuccessfully() {
+            BookingResponse expectedResponse = new BookingResponse(
+                1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                LocalDateTime.now(), LocalDateTime.now().plusDays(1), 100.0, "COMPLETED"
+            );
+            expectedResponse.setDepositAmount(50.0);
+            expectedResponse.setDepositRequested(true);
+            expectedResponse.setDepositPaid(true);
+            expectedResponse.setDepositPaidAt(LocalDateTime.now());
+
+            when(bookingService.payDeposit(eq(1L), eq(1L)))
+                .thenReturn(expectedResponse);
+
+            ResponseEntity<?> response = bookingController.payDeposit(1L, 1L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody() instanceof BookingResponse);
+            BookingResponse body = (BookingResponse) response.getBody();
+            assertEquals(true, body.getDepositPaid());
+            assertNotNull(body.getDepositPaidAt());
+            verify(bookingService, times(1)).payDeposit(eq(1L), eq(1L));
+        }
+
+        @Test
+        @DisplayName("Should return bad request when booking not found")
+        void shouldReturnBadRequestWhenBookingNotFoundForPayment() {
+            when(bookingService.payDeposit(eq(999L), eq(1L)))
+                .thenThrow(new IllegalArgumentException("Booking not found with id: 999"));
+
+            ResponseEntity<?> response = bookingController.payDeposit(999L, 1L);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("Booking not found with id: 999", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when user is not renter")
+        void shouldReturnForbiddenWhenUserIsNotRenter() {
+            when(bookingService.payDeposit(eq(1L), eq(999L)))
+                .thenThrow(new IllegalStateException("User is not authorized to pay deposit for this booking"));
+
+            ResponseEntity<?> response = bookingController.payDeposit(1L, 999L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertEquals("User is not authorized to pay deposit for this booking", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when deposit not requested")
+        void shouldReturnForbiddenWhenDepositNotRequested() {
+            when(bookingService.payDeposit(eq(1L), eq(1L)))
+                .thenThrow(new IllegalStateException("No deposit has been requested for this booking"));
+
+            ResponseEntity<?> response = bookingController.payDeposit(1L, 1L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertTrue(response.getBody().toString().contains("No deposit has been requested"));
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when deposit already paid")
+        void shouldReturnForbiddenWhenDepositAlreadyPaid() {
+            when(bookingService.payDeposit(eq(1L), eq(1L)))
+                .thenThrow(new IllegalStateException("Deposit has already been paid for this booking"));
+
+            ResponseEntity<?> response = bookingController.payDeposit(1L, 1L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertTrue(response.getBody().toString().contains("already been paid"));
         }
     }
 }

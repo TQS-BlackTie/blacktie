@@ -25,6 +25,7 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
   const [newName, setNewName] = useState("")
   const [newDescription, setNewDescription] = useState("")
   const [newPrice, setNewPrice] = useState("")
+  const [newDepositAmount, setNewDepositAmount] = useState("")
   const [newImage, setNewImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
@@ -119,18 +120,26 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
       return
     }
 
+    const depositNumber = newDepositAmount.trim() ? Number(newDepositAmount) : undefined
+    if (depositNumber !== undefined && (Number.isNaN(depositNumber) || depositNumber < 0)) {
+      setAddError("Deposit amount must be a positive number")
+      return
+    }
+
     try {
       setAdding(true)
       await createProduct(userId, {
         name: newName.trim(),
         description: newDescription.trim(),
         price: priceNumber,
+        depositAmount: depositNumber,
         image: newImage || undefined,
       })
 
       setNewName("")
       setNewDescription("")
       setNewPrice("")
+      setNewDepositAmount("")
       setNewImage(null)
       setImagePreview(null)
       await loadProducts()
@@ -237,6 +246,16 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
                 value={newPrice}
                 onChange={(e) => setNewPrice(e.target.value)}
                 className="w-32 rounded-xl"
+              />
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                placeholder="Deposit (optional)"
+                value={newDepositAmount}
+                onChange={(e) => setNewDepositAmount(e.target.value)}
+                className="w-36 rounded-xl"
+                title="Optional deposit amount for this product"
               />
             </div>
             <div className="flex flex-col gap-2 md:flex-row md:items-center">

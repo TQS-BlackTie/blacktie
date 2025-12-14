@@ -605,4 +605,253 @@ class BookingServiceTest {
             });
         }
     }
+
+    @Nested
+    @DisplayName("Request Deposit Tests")
+    class RequestDepositTests {
+
+        private User owner;
+        private Booking completedBooking;
+
+        @BeforeEach
+        void setUp() {
+            owner = new User("Owner", "owner@example.com", "password");
+            owner.setId(5L);
+            owner.setRole("owner");
+
+            testProduct.setOwner(owner);
+
+            LocalDateTime pastBookingDate = LocalDateTime.now().minusDays(5);
+            LocalDateTime pastReturnDate = LocalDateTime.now().minusDays(2);
+            
+            completedBooking = new Booking(testUser, testProduct, pastBookingDate, pastReturnDate, 100.0);
+            completedBooking.setId(1L);
+            completedBooking.setStatus(Booking.STATUS_COMPLETED);
+        }
+
+        @Test
+        @DisplayName("Should request deposit successfully for completed booking")
+        void shouldRequestDepositSuccessfully() {
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(completedBooking));
+            when(bookingRepository.save(any(Booking.class))).thenReturn(completedBooking);
+            doNothing().when(notificationService).createDepositRequestedNotification(any(), any(), any(), any());
+
+            BookingResponse response = bookingService.requestDeposit(1L, 5L, 50.0, "Item damaged");
+
+            assertNotNull(response);
+            assertEquals(50.0, completedBooking.getDepositAmount());
+            assertEquals(true, completedBooking.getDepositRequested());
+            assertEquals("Item damaged", completedBooking.getDepositReason());
+            assertNotNull(completedBooking.getDepositRequestedAt());
+            verify(bookingRepository, times(1)).save(completedBooking);
+            verify(notificationService, times(1)).createDepositRequestedNotification(
+                eq(testUser), eq(completedBooking), eq(50.0), eq("Item damaged"));
+        }
+
+        @Test
+        @DisplayName("Should request deposit for paid booking after return date")
+        void shouldRequestDepositForPaidBooking() {
+            completedBooking.setStatus(Booking.STATUS_PAID);
+            
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(completedBooking));
+            when(bookingRepository.save(any(Booking.class))).thenReturn(completedBooking);
+            doNothing().when(notificationService).createDepositRequestedNotification(any(), any(), any(), any());
+
+            BookingResponse response = bookingService.requestDeposit(1L, 5L, 75.0, "Missing item");
+
+            assertNotNull(response);
+            assertEquals(75.0, completedBooking.getDepositAmount());
+            assertEquals(true, completedBooking.getDepositRequested());
+        }
+
+        @Test
+        @DisplayName("Should throw exception when booking not found")
+        void shouldThrowExceptionWhenBookingNotFound() {
+            when(bookingRepository.findById(999L)).thenReturn(Optional.empty());
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+                bookingService.requestDeposit(999L, 5L, 50.0, "Reason");
+            });
+
+            assertTrue(exception.getMessage().contains("Booking not found"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when user is not the owner")
+        void shouldThrowExceptionWhenUserIsNotOwner() {
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(completedBooking));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.requestDeposit(1L, 999L, 50.0, "Reason");
+            });
+
+            assertTrue(exception.getMessage().contains("not authorized"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when product has no owner")
+        void shouldThrowExceptionWhenProductHasNoOwner() {
+            testProduct.setOwner(null);
+            
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(completedBooking));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.requestDeposit(1L, 5L, 50.0, "Reason");
+            });
+
+            assertTrue(exception.getMessage().contains("not authorized"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when return date has not passed")
+        void shouldThrowExceptionWhenReturnDateNotPassed() {
+            LocalDateTime futureBookingDate = LocalDateTime.now().plusDays(1);
+            LocalDateTime futureReturnDate = LocalDateTime.now().plusDays(3);
+            
+            Booking futureBooking = new Booking(testUser, testProduct, futureBookingDate, futureReturnDate, 100.0);
+            futureBooking.setId(2L);
+            futureBooking.setStatus(Booking.STATUS_PAID);
+
+            when(bookingRepository.findById(2L)).thenReturn(Optional.of(futureBooking));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.requestDeposit(2L, 5L, 50.0, "Reason");
+            });
+
+            assertTrue(exception.getMessage().contains("after the booking return date"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when booking status is not completed or paid")
+        void shouldThrowExceptionWhenBookingStatusInvalid() {
+            completedBooking.setStatus(Booking.STATUS_APPROVED);
+
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(completedBooking));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.requestDeposit(1L, 5L, 50.0, "Reason");
+            });
+
+            assertTrue(exception.getMessage().contains("completed or paid"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when deposit already requested")
+        void shouldThrowExceptionWhenDepositAlreadyRequested() {
+            completedBooking.setDepositRequested(true);
+
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(completedBooking));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.requestDeposit(1L, 5L, 50.0, "Reason");
+            });
+
+            assertTrue(exception.getMessage().contains("already been requested"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Pay Deposit Tests")
+    class PayDepositTests {
+
+        private User owner;
+        private Booking bookingWithDepositRequest;
+
+        @BeforeEach
+        void setUp() {
+            owner = new User("Owner", "owner@example.com", "password");
+            owner.setId(5L);
+            testProduct.setOwner(owner);
+
+            LocalDateTime pastBookingDate = LocalDateTime.now().minusDays(5);
+            LocalDateTime pastReturnDate = LocalDateTime.now().minusDays(2);
+            
+            bookingWithDepositRequest = new Booking(testUser, testProduct, pastBookingDate, pastReturnDate, 100.0);
+            bookingWithDepositRequest.setId(1L);
+            bookingWithDepositRequest.setStatus(Booking.STATUS_COMPLETED);
+            bookingWithDepositRequest.setDepositAmount(50.0);
+            bookingWithDepositRequest.setDepositRequested(true);
+            bookingWithDepositRequest.setDepositReason("Item damaged");
+        }
+
+        @Test
+        @DisplayName("Should pay deposit successfully")
+        void shouldPayDepositSuccessfully() {
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithDepositRequest));
+            when(bookingRepository.save(any(Booking.class))).thenReturn(bookingWithDepositRequest);
+            doNothing().when(notificationService).createDepositPaidNotification(any(), any());
+
+            BookingResponse response = bookingService.payDeposit(1L, 1L);
+
+            assertNotNull(response);
+            assertEquals(true, bookingWithDepositRequest.getDepositPaid());
+            assertNotNull(bookingWithDepositRequest.getDepositPaidAt());
+            verify(bookingRepository, times(1)).save(bookingWithDepositRequest);
+            verify(notificationService, times(1)).createDepositPaidNotification(eq(owner), eq(bookingWithDepositRequest));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when booking not found")
+        void shouldThrowExceptionWhenBookingNotFoundForPayment() {
+            when(bookingRepository.findById(999L)).thenReturn(Optional.empty());
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+                bookingService.payDeposit(999L, 1L);
+            });
+
+            assertTrue(exception.getMessage().contains("Booking not found"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when user is not the renter")
+        void shouldThrowExceptionWhenUserIsNotRenter() {
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithDepositRequest));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.payDeposit(1L, 999L);
+            });
+
+            assertTrue(exception.getMessage().contains("not authorized"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when deposit was not requested")
+        void shouldThrowExceptionWhenDepositNotRequested() {
+            bookingWithDepositRequest.setDepositRequested(false);
+
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithDepositRequest));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.payDeposit(1L, 1L);
+            });
+
+            assertTrue(exception.getMessage().contains("No deposit has been requested"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when deposit already paid")
+        void shouldThrowExceptionWhenDepositAlreadyPaid() {
+            bookingWithDepositRequest.setDepositPaid(true);
+
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithDepositRequest));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.payDeposit(1L, 1L);
+            });
+
+            assertTrue(exception.getMessage().contains("already been paid"));
+        }
+
+        @Test
+        @DisplayName("Should notify owner after deposit payment")
+        void shouldNotifyOwnerAfterDepositPayment() {
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithDepositRequest));
+            when(bookingRepository.save(any(Booking.class))).thenReturn(bookingWithDepositRequest);
+            doNothing().when(notificationService).createDepositPaidNotification(any(), any());
+
+            bookingService.payDeposit(1L, 1L);
+
+            verify(notificationService, times(1)).createDepositPaidNotification(owner, bookingWithDepositRequest);
+        }
+    }
 }

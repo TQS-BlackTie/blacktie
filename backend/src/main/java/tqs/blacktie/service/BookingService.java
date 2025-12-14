@@ -360,7 +360,83 @@ public class BookingService {
         response.setRejectionReason(booking.getRejectionReason());
         response.setApprovedAt(booking.getApprovedAt());
         response.setPaidAt(booking.getPaidAt());
+        response.setDepositAmount(booking.getDepositAmount());
+        response.setDepositRequested(booking.getDepositRequested());
+        response.setDepositReason(booking.getDepositReason());
+        response.setDepositRequestedAt(booking.getDepositRequestedAt());
+        response.setDepositPaid(booking.getDepositPaid());
+        response.setDepositPaidAt(booking.getDepositPaidAt());
         
         return response;
+    }
+
+    public BookingResponse requestDeposit(Long bookingId, Long ownerId, Double depositAmount, String reason) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+
+        // Verify the owner owns the product
+        if (booking.getProduct().getOwner() == null || 
+            !booking.getProduct().getOwner().getId().equals(ownerId)) {
+            throw new IllegalStateException("User is not authorized to request deposit for this booking");
+        }
+
+        // Only allow deposit request after booking return date has passed
+        if (booking.getReturnDate().isAfter(LocalDateTime.now())) {
+            throw new IllegalStateException("Deposit can only be requested after the booking return date");
+        }
+
+        // Verify booking is completed or paid
+        if (!Booking.STATUS_COMPLETED.equals(booking.getStatus()) && !Booking.STATUS_PAID.equals(booking.getStatus())) {
+            throw new IllegalStateException("Deposit can only be requested for completed or paid bookings");
+        }
+
+        // Check if deposit was already requested
+        if (Boolean.TRUE.equals(booking.getDepositRequested())) {
+            throw new IllegalStateException("Deposit has already been requested for this booking");
+        }
+
+        booking.setDepositAmount(depositAmount);
+        booking.setDepositRequested(true);
+        booking.setDepositReason(reason);
+        booking.setDepositRequestedAt(LocalDateTime.now());
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        // Notify renter that deposit is requested
+        notificationService.createDepositRequestedNotification(booking.getRenter(), savedBooking, depositAmount, reason);
+
+        return convertToResponse(savedBooking);
+    }
+
+    public BookingResponse payDeposit(Long bookingId, Long userId) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+
+        // Verify user is the renter
+        if (!booking.getRenter().getId().equals(userId)) {
+            throw new IllegalStateException("User is not authorized to pay deposit for this booking");
+        }
+
+        // Verify deposit was requested
+        if (!Boolean.TRUE.equals(booking.getDepositRequested())) {
+            throw new IllegalStateException("No deposit has been requested for this booking");
+        }
+
+        // Check if deposit was already paid
+        if (Boolean.TRUE.equals(booking.getDepositPaid())) {
+            throw new IllegalStateException("Deposit has already been paid for this booking");
+        }
+
+        booking.setDepositPaid(true);
+        booking.setDepositPaidAt(LocalDateTime.now());
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        // Notify owner that deposit was paid
+        if (booking.getProduct().getOwner() != null) {
+            notificationService.createDepositPaidNotification(booking.getProduct().getOwner(), savedBooking);
+        }
+
+        return convertToResponse(savedBooking);
     }
 }

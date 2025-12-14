@@ -4,6 +4,7 @@ export type Product = {
   description: string
   price: number
   available: boolean
+  depositAmount?: number
   imageUrl?: string
   owner?: {
     id: number
@@ -43,6 +44,7 @@ export type CreateProductInput = {
   name: string
   description: string
   price: number
+  depositAmount?: number
   image?: File
 }
 
@@ -53,6 +55,9 @@ export async function createProduct(userId: number, input: CreateProductInput): 
     formData.append("name", input.name)
     formData.append("description", input.description)
     formData.append("price", String(input.price))
+    if (input.depositAmount != null) {
+      formData.append("depositAmount", String(input.depositAmount))
+    }
     formData.append("image", input.image)
 
     const res = await fetch("/api/products/with-image", {
@@ -76,6 +81,7 @@ export async function createProduct(userId: number, input: CreateProductInput): 
       name: input.name,
       description: input.description,
       price: input.price,
+      depositAmount: input.depositAmount,
     }),
   })
 
@@ -199,6 +205,12 @@ export type Booking = {
   rejectionReason?: string
   approvedAt?: string
   paidAt?: string
+  depositAmount?: number
+  depositRequested?: boolean
+  depositReason?: string
+  depositRequestedAt?: string
+  depositPaid?: boolean
+  depositPaidAt?: string
 }
 
 export type CreateBookingInput = {
@@ -338,6 +350,49 @@ export async function processBookingPayment(userId: number, bookingId: number): 
   if (!res.ok) {
     const error = await res.text()
     throw new Error(error || "Failed to process payment")
+  }
+
+  return res.json()
+}
+
+export type RequestDepositInput = {
+  depositAmount: number
+  reason: string
+}
+
+export async function requestDeposit(
+  ownerId: number,
+  bookingId: number,
+  input: RequestDepositInput
+): Promise<Booking> {
+  const res = await fetch(`/api/bookings/${bookingId}/request-deposit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Id": String(ownerId),
+    },
+    body: JSON.stringify(input),
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to request deposit")
+  }
+
+  return res.json()
+}
+
+export async function payDeposit(userId: number, bookingId: number): Promise<Booking> {
+  const res = await fetch(`/api/bookings/${bookingId}/pay-deposit`, {
+    method: "POST",
+    headers: {
+      "X-User-Id": String(userId),
+    },
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to pay deposit")
   }
 
   return res.json()

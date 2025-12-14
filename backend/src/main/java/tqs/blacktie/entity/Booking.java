@@ -52,6 +52,14 @@ public class Booking {
     private LocalDateTime approvedAt;
     private LocalDateTime paidAt;
     
+    // Deposit-related fields
+    private Double depositAmount; // Amount of deposit required
+    private Boolean depositRequested = false; // Whether deposit has been requested
+    private String depositReason; // Reason for requesting deposit
+    private LocalDateTime depositRequestedAt; // When deposit was requested
+    private Boolean depositPaid = false; // Whether deposit has been paid
+    private LocalDateTime depositPaidAt; // When deposit was paid
+    
     public Booking(User renter, Product product, LocalDateTime bookingDate, LocalDateTime returnDate, Double totalPrice) {
         this.renter = renter;
         this.product = product;

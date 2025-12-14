@@ -26,6 +26,9 @@ public class Product {
     @Column(nullable = false)
     private Double price;
 
+    @Column(name = "deposit_amount")
+    private Double depositAmount;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

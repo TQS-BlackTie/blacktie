@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { getUserBookings, processBookingPayment, cancelBooking, type Booking } from '@/lib/api'
+import { getUserBookings, getRenterHistory, processBookingPayment, cancelBooking, payDeposit, type Booking, getReviewByBooking, type ReviewResponse } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Navbar } from '@/components/navbar'
 import { NotificationBell } from '@/components/notification-bell'
@@ -7,6 +7,8 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { createPaymentIntent } from '@/lib/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import ReviewModal from '@/components/ReviewModal'
+import ReviewDisplay from '@/components/ReviewDisplay'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -111,6 +113,7 @@ function PaymentForm({ amount, onSuccess, onCancel }: {
 
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [historyBookings, setHistoryBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
@@ -119,6 +122,11 @@ export default function MyBookingsPage() {
   const [processingPayment, setProcessingPayment] = useState(false)
   const [countdowns, setCountdowns] = useState<CountdownState>({})
   const [cancellingId, setCancellingId] = useState<number | null>(null)
+  const [depositModalOpen, setDepositModalOpen] = useState(false)
+  const [payingDeposit, setPayingDeposit] = useState(false)
+  const [openReviewFor, setOpenReviewFor] = useState<number | null>(null)
+  const [openReviewDisplayFor, setOpenReviewDisplayFor] = useState<number | null>(null)
+  const [reviewsMap, setReviewsMap] = useState<Record<number, ReviewResponse | undefined>>({})
 
   const userData = typeof window !== 'undefined' ? localStorage.getItem('user') : null
   const user = userData ? JSON.parse(userData) : null
@@ -134,6 +142,22 @@ export default function MyBookingsPage() {
       const data = await getUserBookings(userId)
       // Filter to show only active bookings (not COMPLETED or CANCELLED)
       setBookings(data.filter(b => b.status !== 'COMPLETED' && b.status !== 'CANCELLED'))
+      
+      // Fetch history (COMPLETED and CANCELLED)
+      const history = await getRenterHistory(userId)
+      setHistoryBookings(history)
+      
+      // Fetch existing reviews for completed bookings
+      const map: Record<number, ReviewResponse | undefined> = {}
+      await Promise.all(history.filter(h => h.status === 'COMPLETED').map(async (b) => {
+        try {
+          const r = await getReviewByBooking(b.id)
+          if (r) map[b.id] = r
+        } catch {
+          // ignore
+        }
+      }))
+      setReviewsMap(map)
     } catch (err: unknown) {
       console.error(err)
       setError('Failed to load bookings')
@@ -224,6 +248,29 @@ export default function MyBookingsPage() {
     return now < bookingDate && ['PENDING_APPROVAL', 'APPROVED'].includes(booking.status)
   }
 
+  const handleDepositClick = (booking: Booking) => {
+    setSelectedBooking(booking)
+    setDepositModalOpen(true)
+  }
+
+  const handlePayDeposit = async () => {
+    if (!selectedBooking || !userId) return
+
+    try {
+      setPayingDeposit(true)
+      await payDeposit(userId, selectedBooking.id)
+      
+      // Refresh bookings
+      await fetchBookings()
+      setDepositModalOpen(false)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      alert(message || "Failed to pay deposit")
+    } finally {
+      setPayingDeposit(false)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
       year: 'numeric',
@@ -293,7 +340,7 @@ export default function MyBookingsPage() {
             </div>
           )}
 
-          {bookings.length === 0 && !error && (
+          {bookings.length === 0 && historyBookings.length === 0 && !error && (
             <div className="rounded-3xl border border-white/15 bg-white/75 p-8 text-center shadow-2xl backdrop-blur">
               <p className="text-slate-600">
                 No bookings yet. Start renting to see your bookings here!
@@ -301,7 +348,11 @@ export default function MyBookingsPage() {
             </div>
           )}
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Active Bookings Section */}
+          {bookings.length > 0 && (
+            <>
+              <h2 className="text-2xl font-bold text-white mb-4">Active Bookings</h2>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
             {bookings.map((booking) => {
               const { label } = calculateCountdown(booking)
               const countdown = countdowns[booking.id] || ""
@@ -377,8 +428,8 @@ export default function MyBookingsPage() {
 
                   {booking.status === 'PAID' && booking.deliveryMethod && (
                     <div className="rounded-2xl bg-green-50 p-4 mb-4 border border-green-100">
-                      <p className="text-xs font-medium text-green-800 uppercase tracking-wider mb-2">✅ Payment Confirmed</p>
-                      <p className="text-sm font-medium">
+                      <p className="text-xs font-medium text-green-800 uppercase tracking-wider mb-2">Payment Confirmed</p>
+                      <p className="text-sm text-black font-medium">
                         Delivery: {booking.deliveryMethod === 'PICKUP' ? 'Pick-up' : 'Shipping'}
                       </p>
                       {booking.deliveryMethod === 'SHIPPING' && booking.deliveryCode && (
@@ -393,6 +444,28 @@ export default function MyBookingsPage() {
                           <p className="text-sm text-green-800">{booking.pickupLocation}</p>
                         </>
                       )}
+                    </div>
+                  )}
+
+                  {booking.depositRequested && !booking.depositPaid && (
+                    <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 mb-4">
+                      <p className="text-sm font-semibold text-amber-800 mb-1">Deposit Requested</p>
+                      <p className="text-xs text-amber-700 mb-2">{booking.depositReason}</p>
+                      <p className="text-lg font-bold text-amber-900">€{booking.depositAmount?.toFixed(2)}</p>
+                      <Button
+                        onClick={() => handleDepositClick(booking)}
+                        size="sm"
+                        className="w-full mt-2 bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        Pay Deposit
+                      </Button>
+                    </div>
+                  )}
+
+                  {booking.depositPaid && (
+                    <div className="rounded-2xl bg-green-50 border border-green-200 p-4 mb-4">
+                      <p className="text-sm font-semibold text-green-800">Deposit Paid</p>
+                      <p className="text-lg font-bold text-green-900">€{booking.depositAmount?.toFixed(2)}</p>
                     </div>
                   )}
 
@@ -414,9 +487,90 @@ export default function MyBookingsPage() {
               )
             })}
           </div>
+            </>
+          )}
+
+          {/* History Section */}
+          {historyBookings.length > 0 && (
+            <>
+              <h2 className="text-2xl font-bold text-white mb-4 mt-12">Booking History</h2>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {historyBookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    className="group rounded-3xl border border-white/15 bg-white/75 p-6 shadow-2xl backdrop-blur transition-all duration-300 hover:shadow-emerald-500/10 hover:-translate-y-1"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">{booking.productName}</h3>
+                        <p className="text-sm text-slate-600">
+                          Owner: {booking.ownerName || 'Unknown'}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(booking.status)}`}>
+                        {getStatusLabel(booking.status)}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">From</p>
+                        <p className="text-sm font-semibold text-slate-900">{formatDate(booking.bookingDate)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">To</p>
+                        <p className="text-sm font-semibold text-slate-900">{formatDate(booking.returnDate)}</p>
+                      </div>
+                    </div>
+
+                    {booking.status === 'REJECTED' && booking.rejectionReason && (
+                      <div className="rounded-2xl bg-red-50 p-4 mb-4 border border-red-100">
+                        <p className="text-xs font-medium text-red-600 uppercase tracking-wider mb-1">Rejection Reason</p>
+                        <p className="text-sm text-red-800">{booking.rejectionReason}</p>
+                      </div>
+                    )}
+
+                    {booking.status === 'COMPLETED' && booking.deliveryMethod && (
+                      <div className="rounded-2xl bg-green-50 p-4 mb-4 border border-green-100">
+                        <p className="text-xs font-medium text-green-800 uppercase tracking-wider mb-2">Completed</p>
+                        <p className="text-sm text-black font-medium">
+                          Delivery: {booking.deliveryMethod === 'PICKUP' ? 'Pick-up' : 'Shipping'}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <p className="text-lg font-bold text-slate-900">€{booking.totalPrice.toFixed(2)}</p>
+                      {booking.status === 'COMPLETED' && (
+                        reviewsMap[booking.id] ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full text-xs text-black"
+                            onClick={() => setOpenReviewDisplayFor(booking.id)}
+                          >
+                            View Review
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="rounded-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => setOpenReviewFor(booking.id)}
+                          >
+                            Leave Review
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </main>
 
+      {/* Payment Modal */}
       {showPaymentModal && clientSecret && (
         <Dialog open={showPaymentModal} onOpenChange={() => {
           setShowPaymentModal(false)
@@ -438,6 +592,73 @@ export default function MyBookingsPage() {
             </Elements>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Deposit Payment Modal */}
+      <Dialog open={depositModalOpen} onOpenChange={setDepositModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pay Deposit</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedBooking && (
+              <>
+                <div className="text-sm">
+                  <p className="mb-2"><strong>Product:</strong> {selectedBooking.productName}</p>
+                  <p className="mb-2"><strong>Owner:</strong> {selectedBooking.ownerName}</p>
+                  <div className="bg-amber-50 border border-amber-200 rounded p-3 mb-3">
+                    <p className="text-xs text-amber-700 font-medium mb-1">Reason:</p>
+                    <p className="text-sm text-amber-900">{selectedBooking.depositReason}</p>
+                  </div>
+                  <p className="text-lg font-bold text-amber-900">
+                    Amount: €{selectedBooking.depositAmount?.toFixed(2)}
+                  </p>
+                </div>
+
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDepositModalOpen(false)}
+                    disabled={payingDeposit}
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handlePayDeposit}
+                    disabled={payingDeposit}
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    {payingDeposit ? 'Processing...' : 'Confirm Payment'}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Modals */}
+      {openReviewFor && userId && (
+        <ReviewModal
+          bookingId={openReviewFor}
+          userId={userId}
+          onClose={() => setOpenReviewFor(null)}
+          onSuccess={(r) => {
+            setReviewsMap(prev => ({ ...prev, [r.bookingId ?? openReviewFor!]: r }))
+            if (r.productId) {
+              try {
+                window.dispatchEvent(new CustomEvent('review:created', { detail: { productId: r.productId } }))
+              } catch {
+                // ignore
+              }
+            }
+          }}
+        />
+      )}
+
+      {openReviewDisplayFor && reviewsMap[openReviewDisplayFor] && (
+        <ReviewDisplay review={reviewsMap[openReviewDisplayFor]} onClose={() => setOpenReviewDisplayFor(null)} />
       )}
     </div>
   )

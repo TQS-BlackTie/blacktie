@@ -55,6 +55,7 @@ public class ProductController {
 		@RequestParam("name") String name,
 		@RequestParam("description") String description,
 		@RequestParam("price") Double price,
+		@RequestParam(value = "depositAmount", required = false) Double depositAmount,
 		@RequestParam(value = "image", required = false) MultipartFile image,
 		@RequestHeader("X-User-Id") Long userId
 	) {
@@ -63,6 +64,7 @@ public class ProductController {
 			product.setName(name);
 			product.setDescription(description);
 			product.setPrice(price);
+			product.setDepositAmount(depositAmount);
 
 			if (image != null && !image.isEmpty()) {
 				String imageUrl = saveImage(image);
