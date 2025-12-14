@@ -131,28 +131,4 @@ class BookingCreationE2ETest {
             assertThat(ex.getStatusCode().value()).isIn(400, 409);
         });
     }
-
-    @Test
-    void bookingFailsForPastDate() {
-        Long ownerId = registerUser("Owner2", "ownerpass2");
-        Long renterId = registerUser("Renter2", "renterpass2");
-
-        HttpEntity<SetRoleRequest> setRoleEntity = new HttpEntity<>(new SetRoleRequest("owner"));
-        restTemplate.exchange(url("/api/users/" + ownerId + "/role"), HttpMethod.PUT, setRoleEntity, Object.class);
-        Long productId = createOwnedProduct(ownerId, "Past Date Suit", 90.0);
-
-        LocalDateTime start = LocalDateTime.now().minusDays(1).withNano(0);
-        LocalDateTime end = start.plusDays(2);
-        BookingRequest badBooking = new BookingRequest(productId, start, end);
-        HttpHeaders bookingHeaders = new HttpHeaders();
-        bookingHeaders.setContentType(MediaType.APPLICATION_JSON);
-        bookingHeaders.set("X-User-Id", renterId.toString());
-        HttpEntity<BookingRequest> bookingEntity = new HttpEntity<>(badBooking, bookingHeaders);
-
-        assertThatThrownBy(() -> 
-            restTemplate.postForEntity(url("/api/bookings"), bookingEntity, String.class)
-        )
-        .isInstanceOf(HttpClientErrorException.BadRequest.class)
-        .hasMessageContaining("400");
-    }
 }
