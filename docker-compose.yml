@@ -34,6 +34,8 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
     ports:
       - "8080:8080"
+    volumes:
+      - product-images:/app/uploads/products
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,3 +65,4 @@ networks:
 
 volumes:
   postgres-data:
+  product-images:

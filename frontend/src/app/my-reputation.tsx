@@ -2,16 +2,17 @@ import { useEffect, useState } from "react"
 import { getUserReputation, type User } from "../lib/api"
 import { Star, User as UserIcon, Shield, ShoppingBag } from "lucide-react"
 import { Navbar } from "../components/navbar"
+import { NotificationBell } from "../components/notification-bell"
 
 export default function MyReputationPage() {
     const [profile, setProfile] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
 
-    // Get user ID from local storage (simplified auth)
-    const userId = typeof window !== "undefined" ? Number(localStorage.getItem("userId")) : 0
-    const userName = typeof window !== "undefined" ? localStorage.getItem("userName") || "" : ""
-    const userRole = typeof window !== "undefined" ? localStorage.getItem("userRole") || "" : ""
+    // Get user data from localStorage
+    const userData = typeof window !== "undefined" ? localStorage.getItem("user") : null
+    const user = userData ? JSON.parse(userData) : null
+    const userId = user?.id
 
     const handleLogout = () => {
         localStorage.clear()
@@ -31,8 +32,13 @@ export default function MyReputationPage() {
     }, [userId])
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-200">
-            <Navbar userName={userName} userRole={userRole} onLogout={handleLogout} />
+        <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-200">
+            <Navbar 
+                userName={user?.name}
+                userRole={user?.role}
+                onLogout={handleLogout}
+                notificationBell={<NotificationBell userId={userId} />}
+            />
 
             <main className="container mx-auto px-4 py-8">
                 <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
