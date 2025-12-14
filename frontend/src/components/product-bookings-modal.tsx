@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
-import { cancelBooking, getBookingsByProduct, getReviewsByProduct, deleteProduct, type Booking, type Product, type ReviewResponse } from "@/lib/api"
+import { cancelBooking, getBookingsByProduct, getReviewsByProduct, deleteProduct, refundDeposit, createReview, type Booking, type Product, type ReviewResponse } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 type ProductBookingsModalProps = {
   product: Product
@@ -17,6 +18,14 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
   const [reviews, setReviews] = useState<ReviewResponse[]>([])
   const [loadingReviews, setLoadingReviews] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [refunding, setRefunding] = useState<number | null>(null)
+
+  // Review state
+  const [reviewingBooking, setReviewingBooking] = useState<number | null>(null)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState("")
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [ownerReviews, setOwnerReviews] = useState<Set<number>>(new Set())
 
   const loadBookings = useCallback(async () => {
     try {
@@ -31,22 +40,30 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
     }
   }, [product.id, userId])
 
+  const loadReviews = useCallback(async () => {
+    try {
+      setLoadingReviews(true)
+      const data = await getReviewsByProduct(product.id)
+      setReviews(data)
+      // Track which bookings have owner reviews
+      const ownerReviewedBookings = new Set<number>()
+      data.forEach(r => {
+        if ((r as any).reviewType === 'OWNER' && r.bookingId) {
+          ownerReviewedBookings.add(r.bookingId)
+        }
+      })
+      setOwnerReviews(ownerReviewedBookings)
+    } catch {
+      // Ignore review loading errors
+    } finally {
+      setLoadingReviews(false)
+    }
+  }, [product.id])
+
   useEffect(() => {
     void loadBookings()
-    // Load reviews
-    const loadReviews = async () => {
-      try {
-        setLoadingReviews(true)
-        const data = await getReviewsByProduct(product.id)
-        setReviews(data)
-      } catch {
-        // Ignore review loading errors
-      } finally {
-        setLoadingReviews(false)
-      }
-    }
     void loadReviews()
-  }, [loadBookings, product.id])
+  }, [loadBookings, loadReviews])
 
   const handleCancel = async (bookingId: number) => {
     try {
@@ -58,6 +75,41 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
       setError(err instanceof Error ? err.message : "Failed to cancel booking")
     } finally {
       setCanceling(null)
+    }
+  }
+
+  const handleRefundDeposit = async (bookingId: number) => {
+    if (!confirm("Are you sure you want to refund the deposit to the customer?")) {
+      return
+    }
+
+    try {
+      setRefunding(bookingId)
+      setError(null)
+      await refundDeposit(userId, bookingId)
+      await loadBookings()
+      alert("Deposit refunded successfully!")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to refund deposit")
+    } finally {
+      setRefunding(null)
+    }
+  }
+
+  const handleSubmitReview = async (bookingId: number) => {
+    try {
+      setSubmittingReview(true)
+      setError(null)
+      await createReview(userId, bookingId, reviewRating, reviewComment || undefined)
+      setReviewingBooking(null)
+      setReviewRating(5)
+      setReviewComment("")
+      await loadReviews()
+      alert("Review submitted successfully!")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit review")
+    } finally {
+      setSubmittingReview(false)
     }
   }
 
@@ -87,7 +139,7 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold">Bookings for {product.name}</h2>
@@ -128,30 +180,130 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
           <>
             <div className="divide-y mb-6">
               {bookings.map((b) => (
-                <div key={b.id} className="py-3 flex items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-900">{b.renterName}</p>
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${b.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                <div key={b.id} className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-gray-900">{b.renterName}</p>
+                        <span className={`px-2 py-0.5 text-xs rounded-full ${b.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
                           b.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
                             'bg-blue-100 text-blue-700'
-                        }`}>
-                        {b.status}
-                      </span>
+                          }`}>
+                          {b.status}
+                        </span>
+                        {b.depositRequested && (
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${b.depositPaid ? 'bg-amber-100 text-amber-700' : 'bg-orange-100 text-orange-700'
+                            }`}>
+                            {b.depositPaid ? '💰 Deposit Paid' : '⚠️ Deposit Requested'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {formatDate(b.bookingDate)} → {formatDate(b.returnDate)}
+                      </p>
+                      <p className="text-xs text-gray-500">Total: {b.totalPrice.toFixed(2)} €</p>
+                      {b.depositAmount && b.depositRequested && (
+                        <p className="text-xs text-amber-600">
+                          Deposit: {b.depositAmount.toFixed(2)} € {b.depositReason && `- ${b.depositReason}`}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600">
-                      {formatDate(b.bookingDate)} → {formatDate(b.returnDate)}
-                    </p>
-                    <p className="text-xs text-gray-500">Total: {b.totalPrice.toFixed(2)} €</p>
+
+                    <div className="flex flex-col gap-2">
+                      {/* Cancel button for active bookings */}
+                      {b.status !== 'CANCELLED' && b.status !== 'COMPLETED' && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancel(b.id)}
+                          disabled={canceling === b.id}
+                        >
+                          {canceling === b.id ? "Cancelling..." : "Cancel"}
+                        </Button>
+                      )}
+
+                      {/* Refund deposit button for completed bookings with deposit */}
+                      {b.status === 'COMPLETED' && b.depositRequested && b.depositPaid && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRefundDeposit(b.id)}
+                          disabled={refunding === b.id}
+                          className="text-green-600 border-green-600 hover:bg-green-50"
+                        >
+                          {refunding === b.id ? "Refunding..." : "Refund Deposit"}
+                        </Button>
+                      )}
+
+                      {/* Review customer button for completed bookings */}
+                      {b.status === 'COMPLETED' && !ownerReviews.has(b.id) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setReviewingBooking(b.id)}
+                          className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                        >
+                          Review Customer
+                        </Button>
+                      )}
+
+                      {b.status === 'COMPLETED' && ownerReviews.has(b.id) && (
+                        <span className="text-xs text-green-600">✓ Reviewed</span>
+                      )}
+                    </div>
                   </div>
-                  {b.status !== 'CANCELLED' && b.status !== 'COMPLETED' && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleCancel(b.id)}
-                      disabled={canceling === b.id}
-                    >
-                      {canceling === b.id ? "Cancelling..." : "Cancel booking"}
-                    </Button>
+
+                  {/* Review form */}
+                  {reviewingBooking === b.id && (
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                      <h4 className="text-sm font-semibold mb-3">Review Customer: {b.renterName}</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-gray-600 block mb-1">Rating</label>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setReviewRating(star)}
+                                className={`text-2xl transition-colors ${star <= reviewRating ? 'text-yellow-500' : 'text-gray-300'
+                                  }`}
+                              >
+                                ★
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-600 block mb-1">Comment (optional)</label>
+                          <Input
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            placeholder="Share your experience with this customer..."
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleSubmitReview(b.id)}
+                            disabled={submittingReview}
+                          >
+                            {submittingReview ? "Submitting..." : "Submit Review"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setReviewingBooking(null)
+                              setReviewRating(5)
+                              setReviewComment("")
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}
@@ -175,6 +327,14 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
                         <span className="text-xs text-gray-500">
                           {new Date(review.createdAt).toLocaleDateString()}
                         </span>
+                        {(review as any).reviewType && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${(review as any).reviewType === 'OWNER'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-blue-100 text-blue-700'
+                            }`}>
+                            by {(review as any).reviewType === 'OWNER' ? 'Owner' : 'Customer'}
+                          </span>
+                        )}
                       </div>
                       {review.comment && (
                         <p className="text-sm text-gray-700">{review.comment}</p>

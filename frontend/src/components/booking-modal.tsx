@@ -49,6 +49,7 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
   const [success, setSuccess] = useState(false)
 
   const today = useMemo(() => startOfDay(new Date()), [])
+  const hasDeposit = product.depositAmount && product.depositAmount > 0
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -92,13 +93,19 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
     return false
   }
 
-  const totalPrice = useMemo(() => {
-    if (!range.start || !range.end) return null
+  const { rentalPrice, totalDays } = useMemo(() => {
+    if (!range.start || !range.end) return { rentalPrice: null, totalDays: 0 }
     const start = parseDateKey(range.start)
     const end = parseDateKey(range.end)
     const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-    return diffDays > 0 ? diffDays * product.price : null
+    return {
+      rentalPrice: diffDays > 0 ? diffDays * product.price : null,
+      totalDays: diffDays > 0 ? diffDays : 0
+    }
   }, [product.price, range.end, range.start])
+
+  const depositAmount = hasDeposit ? product.depositAmount! : 0
+  const totalPrice = rentalPrice !== null ? rentalPrice + depositAmount : null
 
   const handleDayClick = (date: Date) => {
     if (isDateBlocked(date)) return
@@ -226,8 +233,8 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
 
     return (
       <div className="grid grid-cols-7 gap-1 text-sm">
-        {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
-          <div key={d} className="text-center text-gray-500 py-1">
+        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+          <div key={`${d}-${i}`} className="text-center text-gray-500 py-1">
             {d}
           </div>
         ))}
@@ -271,8 +278,13 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) onClose()
+      }}
+    >
+      <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl" style={{ margin: 'auto' }}>
         {success ? (
           <div className="space-y-4">
             <div className="text-center">
@@ -309,86 +321,108 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
         ) : (
           <>
             <h2 className="text-2xl font-bold mb-4">Reserve {product.name}</h2>
-        
-        <h2 className="text-2xl font-bold mb-4">Reserve {product.name}</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-600 mb-2">{product.description}</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {product.price.toFixed(2)} € / day
-            </p>
-          </div>
-
-          {error && (
-            <div className="text-red-600 text-sm bg-red-50 p-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <p className="text-sm font-medium">Select booking range</p>
+                <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {product.price.toFixed(2)} € / day
+                </p>
+                {hasDeposit && (
+                  <p className="text-sm text-amber-600 flex items-center gap-1 mt-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    + {product.depositAmount!.toFixed(2)} € security deposit (refundable)
+                  </p>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Button type="button" size="sm" variant="outline" onClick={() => moveMonth(-1)}>
-                  ‹
-                </Button>
-                <span className="text-sm font-semibold">
-                  {viewMonth.toLocaleString(undefined, { month: "long", year: "numeric" })}
-                </span>
-                <Button type="button" size="sm" variant="outline" onClick={() => moveMonth(1)}>
-                  ›
-                </Button>
-              </div>
-            </div>
 
-            <div className="rounded-lg border p-3 bg-gray-50">
-              {calendarLoading ? (
-                <p className="text-sm text-gray-500">Loading calendar…</p>
-              ) : (
-                renderCalendarDays()
+              {error && (
+                <div className="text-red-600 text-sm bg-red-50 p-3 rounded">
+                  {error}
+                </div>
               )}
-            </div>
 
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <span className="font-medium">Selected:</span>
-              <span>
-                {range.start
-                  ? `${range.start}${range.end ? ` → ${range.end}` : ""}`
-                  : "No dates chosen"}
-              </span>
-            </div>
-          </div>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Select booking range</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => moveMonth(-1)}>
+                      ‹
+                    </Button>
+                    <span className="text-sm font-semibold">
+                      {viewMonth.toLocaleString(undefined, { month: "long", year: "numeric" })}
+                    </span>
+                    <Button type="button" size="sm" variant="outline" onClick={() => moveMonth(1)}>
+                      ›
+                    </Button>
+                  </div>
+                </div>
 
-          {totalPrice !== null && (
-            <div className="bg-gray-50 p-3 rounded">
-              <p className="text-sm text-gray-600">Total Price</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {totalPrice.toFixed(2)} €
-              </p>
-            </div>
-          )}
+                <div className="rounded-lg border p-3 bg-gray-50">
+                  {calendarLoading ? (
+                    <p className="text-sm text-gray-500">Loading calendar…</p>
+                  ) : (
+                    renderCalendarDays()
+                  )}
+                </div>
 
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1 bg-gray-200 text-gray-800 hover:bg-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || totalPrice === null}
-              className="flex-1"
-            >
-              {loading ? "Submitting..." : "Submit Booking Request"}
-            </Button>
-          </div>
-        </form>
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <span className="font-medium">Selected:</span>
+                  <span>
+                    {range.start
+                      ? `${range.start}${range.end ? ` → ${range.end}` : ""}`
+                      : "No dates chosen"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Price Breakdown */}
+              {rentalPrice !== null && (
+                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Rental ({totalDays} {totalDays === 1 ? 'day' : 'days'})</span>
+                    <span>{rentalPrice.toFixed(2)} €</span>
+                  </div>
+                  {hasDeposit && (
+                    <div className="flex justify-between text-sm text-amber-700">
+                      <span>Security Deposit (refundable)</span>
+                      <span>+{depositAmount.toFixed(2)} €</span>
+                    </div>
+                  )}
+                  <div className="border-t pt-2 flex justify-between font-bold text-gray-900">
+                    <span>Total at Checkout</span>
+                    <span>{totalPrice!.toFixed(2)} €</span>
+                  </div>
+                  {hasDeposit && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      The security deposit will be refunded after the item is returned in good condition.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  onClick={onClose}
+                  disabled={loading}
+                  className="flex-1 bg-gray-200 text-gray-800 hover:bg-gray-300"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={loading || totalPrice === null}
+                  className="flex-1"
+                >
+                  {loading ? "Submitting..." : "Submit Booking Request"}
+                </Button>
+              </div>
+            </form>
           </>
         )}
       </div>

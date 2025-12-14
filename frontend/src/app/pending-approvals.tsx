@@ -202,13 +202,13 @@ export default function PendingApprovalsPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       onClick={() => handleApproveClick(booking)}
                       className="bg-green-600 hover:bg-green-700"
                     >
                       Approve
                     </Button>
-                    <Button 
+                    <Button
                       onClick={() => handleRejectClick(booking)}
                       variant="destructive"
                     >
@@ -224,7 +224,7 @@ export default function PendingApprovalsPage() {
 
       {/* Approve Modal */}
       <Dialog open={showApproveModal} onOpenChange={setShowApproveModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md text-gray-900">
           <DialogHeader>
             <DialogTitle>Approve Booking</DialogTitle>
             <DialogDescription>
@@ -233,7 +233,7 @@ export default function PendingApprovalsPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Delivery Method</Label>
+              <Label className="text-gray-900 font-medium">Delivery Method</Label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -244,7 +244,7 @@ export default function PendingApprovalsPage() {
                     onChange={() => setDeliveryMethod('PICKUP')}
                     className="w-4 h-4"
                   />
-                  <span>Pick-up at Location</span>
+                  <span className="text-gray-900">Pick-up at Location</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -255,14 +255,14 @@ export default function PendingApprovalsPage() {
                     onChange={() => setDeliveryMethod('SHIPPING')}
                     className="w-4 h-4"
                   />
-                  <span>Shipping by Mail</span>
+                  <span className="text-gray-900">Shipping by Mail</span>
                 </label>
               </div>
             </div>
 
             {deliveryMethod === 'PICKUP' && (
               <div className="space-y-2">
-                <Label htmlFor="pickupLocation">Pick-up Location / Instructions</Label>
+                <Label htmlFor="pickupLocation" className="text-gray-900 font-medium">Pick-up Location / Instructions</Label>
                 <Textarea
                   id="pickupLocation"
                   placeholder="Enter the address or instructions for pick-up..."
@@ -274,7 +274,7 @@ export default function PendingApprovalsPage() {
             )}
 
             {deliveryMethod === 'SHIPPING' && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-600">
                 A delivery code will be generated automatically after the customer completes payment.
               </p>
             )}
@@ -283,7 +283,7 @@ export default function PendingApprovalsPage() {
             <Button variant="outline" onClick={() => setShowApproveModal(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleApproveSubmit}
               disabled={submitting}
               className="bg-green-600 hover:bg-green-700"
@@ -319,7 +319,7 @@ export default function PendingApprovalsPage() {
             <Button variant="outline" onClick={() => setShowRejectModal(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleRejectSubmit}
               disabled={submitting}
               variant="destructive"

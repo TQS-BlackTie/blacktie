@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookingResponse {
-    
+
     private Long id;
     private Long renterId;
     private String renterName;
@@ -36,10 +36,11 @@ public class BookingResponse {
     private LocalDateTime depositRequestedAt;
     private Boolean depositPaid;
     private LocalDateTime depositPaidAt;
-    
-    public BookingResponse(Long id, Long renterId, String renterName, Long productId, String productName, 
-                          Long ownerId, String ownerName, LocalDateTime bookingDate, LocalDateTime returnDate, 
-                          Double totalPrice, String status) {
+    private Double productDepositAmount; // The security deposit from the product
+
+    public BookingResponse(Long id, Long renterId, String renterName, Long productId, String productName,
+            Long ownerId, String ownerName, LocalDateTime bookingDate, LocalDateTime returnDate,
+            Double totalPrice, String status) {
         this.id = id;
         this.renterId = renterId;
         this.renterName = renterName;

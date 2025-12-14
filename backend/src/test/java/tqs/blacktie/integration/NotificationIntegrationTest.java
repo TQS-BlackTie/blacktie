@@ -14,6 +14,7 @@ import tqs.blacktie.entity.User;
 import tqs.blacktie.repository.BookingRepository;
 import tqs.blacktie.repository.NotificationRepository;
 import tqs.blacktie.repository.ProductRepository;
+import tqs.blacktie.repository.ReviewRepository;
 import tqs.blacktie.repository.UserRepository;
 import tqs.blacktie.service.NotificationService;
 
@@ -43,6 +44,9 @@ class NotificationIntegrationTest {
     @Autowired
     private BookingRepository bookingRepository;
 
+    @Autowired
+    private ReviewRepository reviewRepository;
+
     private User owner;
     private User renter;
     private Product product;
@@ -50,7 +54,9 @@ class NotificationIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Clean up in proper order (respect foreign key constraints)
         notificationRepository.deleteAll();
+        reviewRepository.deleteAll();
         bookingRepository.deleteAll();
         productRepository.deleteAll();
         userRepository.deleteAll();
@@ -115,8 +121,8 @@ class NotificationIntegrationTest {
         List<NotificationResponse> notifications = notificationService.getUserNotifications(owner.getId());
 
         assertThat(notifications)
-            .hasSize(2)
-            .allMatch(n -> !n.getIsRead());
+                .hasSize(2)
+                .allMatch(n -> !n.getIsRead());
     }
 
     @Test
@@ -167,8 +173,8 @@ class NotificationIntegrationTest {
 
         Long notificationId = savedNotification.getId();
         assertThatThrownBy(() -> notificationService.markAsRead(notificationId, renter.getId()))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("not authorized");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("not authorized");
     }
 
     @Test
@@ -186,8 +192,8 @@ class NotificationIntegrationTest {
 
         List<Notification> allNotifications = notificationRepository.findByUserOrderByCreatedAtDesc(owner);
         assertThat(allNotifications)
-            .isNotEmpty()
-            .allMatch(Notification::getIsRead);
+                .isNotEmpty()
+                .allMatch(Notification::getIsRead);
     }
 
     @Test

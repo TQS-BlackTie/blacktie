@@ -56,6 +56,11 @@ public class ProductController {
 		@RequestParam("description") String description,
 		@RequestParam("price") Double price,
 		@RequestParam(value = "depositAmount", required = false) Double depositAmount,
+		@RequestParam(value = "address", required = false) String address,
+		@RequestParam(value = "city", required = false) String city,
+		@RequestParam(value = "postalCode", required = false) String postalCode,
+		@RequestParam(value = "latitude", required = false) Double latitude,
+		@RequestParam(value = "longitude", required = false) Double longitude,
 		@RequestParam(value = "image", required = false) MultipartFile image,
 		@RequestHeader("X-User-Id") Long userId
 	) {
@@ -65,6 +70,11 @@ public class ProductController {
 			product.setDescription(description);
 			product.setPrice(price);
 			product.setDepositAmount(depositAmount);
+			product.setAddress(address);
+			product.setCity(city);
+			product.setPostalCode(postalCode);
+			product.setLatitude(latitude);
+			product.setLongitude(longitude);
 
 			if (image != null && !image.isEmpty()) {
 				String imageUrl = saveImage(image);

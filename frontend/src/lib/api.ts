@@ -6,6 +6,11 @@ export type Product = {
   available: boolean
   depositAmount?: number
   imageUrl?: string
+  address?: string
+  city?: string
+  postalCode?: string
+  latitude?: number
+  longitude?: number
   owner?: {
     id: number
     name?: string
@@ -46,6 +51,11 @@ export type CreateProductInput = {
   price: number
   depositAmount?: number
   image?: File
+  address?: string
+  city?: string
+  postalCode?: string
+  latitude?: number
+  longitude?: number
 }
 
 export async function createProduct(userId: number, input: CreateProductInput): Promise<Product> {
@@ -57,6 +67,21 @@ export async function createProduct(userId: number, input: CreateProductInput): 
     formData.append("price", String(input.price))
     if (input.depositAmount != null) {
       formData.append("depositAmount", String(input.depositAmount))
+    }
+    if (input.address) {
+      formData.append("address", input.address)
+    }
+    if (input.city) {
+      formData.append("city", input.city)
+    }
+    if (input.postalCode) {
+      formData.append("postalCode", input.postalCode)
+    }
+    if (input.latitude != null) {
+      formData.append("latitude", String(input.latitude))
+    }
+    if (input.longitude != null) {
+      formData.append("longitude", String(input.longitude))
     }
     formData.append("image", input.image)
 
@@ -82,6 +107,11 @@ export async function createProduct(userId: number, input: CreateProductInput): 
       description: input.description,
       price: input.price,
       depositAmount: input.depositAmount,
+      address: input.address,
+      city: input.city,
+      postalCode: input.postalCode,
+      latitude: input.latitude,
+      longitude: input.longitude,
     }),
   })
 
@@ -102,6 +132,91 @@ export async function deleteProduct(userId: number, productId: number): Promise<
     const error = await res.json().catch(() => ({ message: 'Failed to delete product' }))
     throw new Error(error.message || 'Failed to delete product')
   }
+}
+
+// Cache for Portuguese municipalities
+let municipalitiesCache: string[] | null = null
+let municipalitiesFetchPromise: Promise<string[]> | null = null
+
+// Fetch all Portuguese municipalities from geoapi.pt
+async function fetchAllMunicipalities(): Promise<string[]> {
+  if (municipalitiesCache) {
+    return municipalitiesCache
+  }
+
+  // If already fetching, return the existing promise
+  if (municipalitiesFetchPromise) {
+    return municipalitiesFetchPromise
+  }
+
+  municipalitiesFetchPromise = (async () => {
+    try {
+      const res = await fetch('https://json.geoapi.pt/municipios')
+      if (!res.ok) {
+        return []
+      }
+      const data = await res.json()
+
+      // The API returns a plain JSON array of municipality names
+      if (Array.isArray(data)) {
+        municipalitiesCache = data
+        return data
+      }
+
+      return []
+    } catch {
+      return []
+    } finally {
+      municipalitiesFetchPromise = null
+    }
+  })()
+
+  return municipalitiesFetchPromise
+}
+
+// Get municipality suggestions based on query (filtered locally)
+export async function getPortugueseMunicipalities(query: string): Promise<string[]> {
+  if (!query || query.length < 2) {
+    return []
+  }
+
+  const allMunicipalities = await fetchAllMunicipalities()
+  const normalizedQuery = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  // Filter municipalities that match the query (case-insensitive, accent-insensitive)
+  const matches = allMunicipalities.filter(municipality => {
+    const normalizedMunicipality = municipality.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    return normalizedMunicipality.includes(normalizedQuery)
+  })
+
+  // Sort: prioritize matches that start with the query
+  matches.sort((a, b) => {
+    const normalizedA = a.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const normalizedB = b.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const aStartsWith = normalizedA.startsWith(normalizedQuery)
+    const bStartsWith = normalizedB.startsWith(normalizedQuery)
+
+    if (aStartsWith && !bStartsWith) return -1
+    if (!aStartsWith && bStartsWith) return 1
+    return a.localeCompare(b, 'pt')
+  })
+
+  return matches.slice(0, 10)
+}
+
+// Validate if a string is a valid Portuguese municipality
+export async function isValidPortugueseMunicipality(name: string): Promise<boolean> {
+  if (!name || name.trim().length === 0) {
+    return false
+  }
+
+  const allMunicipalities = await fetchAllMunicipalities()
+  const normalizedName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  return allMunicipalities.some(municipality => {
+    const normalizedMunicipality = municipality.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    return normalizedMunicipality === normalizedName
+  })
 }
 
 // User types and functions
@@ -211,6 +326,7 @@ export type Booking = {
   depositRequestedAt?: string
   depositPaid?: boolean
   depositPaidAt?: string
+  productDepositAmount?: number // The security deposit from the product
 }
 
 export type CreateBookingInput = {
@@ -393,6 +509,22 @@ export async function payDeposit(userId: number, bookingId: number): Promise<Boo
   if (!res.ok) {
     const error = await res.text()
     throw new Error(error || "Failed to pay deposit")
+  }
+
+  return res.json()
+}
+
+export async function refundDeposit(userId: number, bookingId: number): Promise<Booking> {
+  const res = await fetch(`/api/bookings/${bookingId}/refund-deposit`, {
+    method: "POST",
+    headers: {
+      "X-User-Id": String(userId),
+    },
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || "Failed to refund deposit")
   }
 
   return res.json()
