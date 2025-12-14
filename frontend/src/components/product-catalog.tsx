@@ -336,10 +336,11 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
                   Your listing
                 </div>
               )}
-              {showReviews && ratingsMap[p.id] && ratingsMap[p.id].count > 0 && (
+              {showReviews && ratingsMap[p.id]?.count > 0 && (
                 <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 text-sm font-medium text-yellow-600 shadow">
                   <span>⭐</span>
                   <span>{ratingsMap[p.id].avg.toFixed(1)}</span>
+                  <span className="text-xs text-gray-500">({ratingsMap[p.id].count})</span>
                 </div>
               )}
             </div>
