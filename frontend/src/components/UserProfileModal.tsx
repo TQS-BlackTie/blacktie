@@ -53,12 +53,12 @@ export default function UserProfileModal({ userId, onClose }: Props) {
                     ) : profile ? (
                         <>
                             <div className="mb-6">
-                                <h2 className="text-2xl font-bold text-gray-900">{profile.name}</h2>
-                                <div className="text-sm text-gray-500 capitalize">{profile.role}</div>
+                                <h2 className="text-2xl font-bold text-slate-900">{profile.name}</h2>
+                                <div className="text-sm text-slate-500 capitalize">{profile.role}</div>
                                 {profile.businessInfo && (
-                                    <p className="mt-2 text-sm text-gray-600">{profile.businessInfo}</p>
+                                    <p className="mt-2 text-sm text-slate-600">{profile.businessInfo}</p>
                                 )}
-                                <div className="mt-1 text-xs text-gray-400">
+                                <div className="mt-1 text-xs text-slate-500">
                                     Member since {new Date(profile.createdAt).toLocaleDateString()}
                                 </div>
                             </div>
@@ -103,9 +103,9 @@ export default function UserProfileModal({ userId, onClose }: Props) {
                                 </div>
                             </div>
 
-                            <div className="mt-6 pt-6 border-t flex justify-between items-center text-sm text-gray-500">
-                                <div>Total Reviews: <span className="font-medium text-gray-900">{profile.totalReviews || 0}</span></div>
-                                <div>Overall Rating: <span className="font-medium text-gray-900">{(profile.averageRating || 0).toFixed(1)}</span> / 5.0</div>
+                            <div className="mt-6 pt-6 border-t flex justify-between items-center text-sm text-slate-500">
+                                <div>Total Reviews: <span className="font-medium text-slate-900">{profile.totalReviews || 0}</span></div>
+                                <div>Overall Rating: <span className="font-medium text-slate-900">{(profile.averageRating || 0).toFixed(1)}</span> / 5.0</div>
                             </div>
                         </>
                     ) : null}

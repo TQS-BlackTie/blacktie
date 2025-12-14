@@ -320,12 +320,12 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
           </div>
         ) : (
           <>
-            <h2 className="text-2xl font-bold mb-4">Reserve {product.name}</h2>
+            <h2 className="text-2xl font-bold mb-4 text-slate-900">Reserve {product.name}</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600 mb-2">{product.description}</p>
-                <p className="text-lg font-semibold text-gray-900">
+                <p className="text-sm text-slate-600 mb-2">{product.description}</p>
+                <p className="text-lg font-semibold text-slate-900">
                   {product.price.toFixed(2)} € / day
                 </p>
                 {hasDeposit && (

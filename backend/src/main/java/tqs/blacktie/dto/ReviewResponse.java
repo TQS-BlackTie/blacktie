@@ -17,4 +17,5 @@ public class ReviewResponse {
     private Integer rating;
     private String comment;
     private LocalDateTime createdAt;
+    private String reviewType; // "OWNER" or "RENTER"
 }
