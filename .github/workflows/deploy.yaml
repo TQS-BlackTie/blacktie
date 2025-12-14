@@ -20,14 +20,3 @@ jobs:
           docker compose -f docker-compose.yml build
           docker compose -f docker-compose.yml up -d --remove-orphans
           docker image prune -f
-
-      - name: Diagnostics
-        run: |
-          set -euxo pipefail
-          whoami
-          pwd
-          ls -la
-          ls -la docker-compose.yml
-          docker --version
-          docker compose version
-          docker info
