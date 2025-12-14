@@ -13,8 +13,8 @@ type Props = {
 
 export default function ReviewDisplay({ review, onClose }: Props) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-      <div className="bg-white rounded shadow-lg w-full max-w-md p-6">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center text-black z-50">
+      <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 z-50">
         <h2 className="text-lg font-bold mb-2">Your Review</h2>
         <p className="text-sm text-muted-foreground mb-4">Submitted: {new Date(review.createdAt).toLocaleString()}</p>
 

@@ -30,6 +30,12 @@ public class BookingResponse {
     private String rejectionReason;
     private LocalDateTime approvedAt;
     private LocalDateTime paidAt;
+    private Double depositAmount;
+    private Boolean depositRequested;
+    private String depositReason;
+    private LocalDateTime depositRequestedAt;
+    private Boolean depositPaid;
+    private LocalDateTime depositPaidAt;
     
     public BookingResponse(Long id, Long renterId, String renterName, Long productId, String productName, 
                           Long ownerId, String ownerName, LocalDateTime bookingDate, LocalDateTime returnDate, 

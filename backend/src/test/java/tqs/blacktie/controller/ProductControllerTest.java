@@ -210,6 +210,7 @@ class ProductControllerTest {
                     "Smoking",
                     "Classic black",
                     80.0,
+                    null,
                     imageFile,
                     1L
             );
@@ -237,6 +238,7 @@ class ProductControllerTest {
                     "Tuxedo",
                     "Navy blue",
                     120.0,
+                    null,
                     null,
                     1L
             );
@@ -269,6 +271,7 @@ class ProductControllerTest {
                     "Suit",
                     "Gray",
                     90.0,
+                    null,
                     emptyFile,
                     1L
             );
@@ -297,6 +300,7 @@ class ProductControllerTest {
                     "Smoking",
                     "Classic black",
                     80.0,
+                    null,
                     imageFile,
                     1L
             );
@@ -322,6 +326,7 @@ class ProductControllerTest {
                     "Smoking",
                     "Classic black",
                     80.0,
+                    null,
                     imageFile,
                     999L
             );

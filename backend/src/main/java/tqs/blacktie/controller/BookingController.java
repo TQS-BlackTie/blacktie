@@ -8,6 +8,7 @@ import tqs.blacktie.dto.BookingRequest;
 import tqs.blacktie.dto.BookingResponse;
 import tqs.blacktie.dto.ApproveBookingRequest;
 import tqs.blacktie.dto.RejectBookingRequest;
+import tqs.blacktie.dto.RequestDepositRequest;
 import tqs.blacktie.service.BookingService;
 
 import java.util.List;
@@ -161,6 +162,35 @@ public class BookingController {
             @RequestHeader("X-User-Id") Long userId) {
         try {
             BookingResponse booking = bookingService.processPayment(bookingId, userId);
+            return ResponseEntity.ok(booking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{bookingId}/request-deposit")
+    public ResponseEntity<?> requestDeposit(
+            @PathVariable Long bookingId,
+            @RequestHeader("X-User-Id") Long ownerId,
+            @Valid @RequestBody RequestDepositRequest request) {
+        try {
+            BookingResponse booking = bookingService.requestDeposit(bookingId, ownerId, request.getDepositAmount(), request.getReason());
+            return ResponseEntity.ok(booking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{bookingId}/pay-deposit")
+    public ResponseEntity<?> payDeposit(
+            @PathVariable Long bookingId,
+            @RequestHeader("X-User-Id") Long userId) {
+        try {
+            BookingResponse booking = bookingService.payDeposit(bookingId, userId);
             return ResponseEntity.ok(booking);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

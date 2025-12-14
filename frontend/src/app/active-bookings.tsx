@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { type Booking, getActiveBookings, cancelBooking } from "@/lib/api"
+import { type Booking, getActiveBookings, cancelBooking, payDeposit } from "@/lib/api"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
 type CountdownState = {
     [bookingId: number]: string
@@ -54,6 +56,9 @@ export default function ActiveBookingsPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [cancellingId, setCancellingId] = useState<number | null>(null)
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+    const [depositModalOpen, setDepositModalOpen] = useState(false)
+    const [payingDeposit, setPayingDeposit] = useState(false)
 
     // TODO: Replace with actual user ID from auth context
     const userId = 1
@@ -118,6 +123,29 @@ export default function ActiveBookingsPage() {
         return now < bookingDate // Can only cancel if booking hasn't started
     }
 
+    const handleDepositClick = (booking: Booking) => {
+        setSelectedBooking(booking)
+        setDepositModalOpen(true)
+    }
+
+    const handlePayDeposit = async () => {
+        if (!selectedBooking) return
+
+        try {
+            setPayingDeposit(true)
+            await payDeposit(userId, selectedBooking.id)
+            
+            // Refresh bookings
+            const data = await getActiveBookings(userId)
+            setBookings(data)
+            setDepositModalOpen(false)
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Failed to pay deposit")
+        } finally {
+            setPayingDeposit(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -171,6 +199,28 @@ export default function ActiveBookingsPage() {
                                     <p className="text-2xl font-bold text-blue-700">{countdown}</p>
                                 </div>
 
+                                {booking.depositRequested && !booking.depositPaid && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                                        <p className="text-sm font-semibold text-amber-800 mb-1">Deposit Requested</p>
+                                        <p className="text-xs text-amber-700 mb-2">{booking.depositReason}</p>
+                                        <p className="text-lg font-bold text-amber-900">€{booking.depositAmount?.toFixed(2)}</p>
+                                        <Button
+                                            onClick={() => handleDepositClick(booking)}
+                                            size="sm"
+                                            className="w-full mt-2 bg-amber-600 hover:bg-amber-700 text-white"
+                                        >
+                                            Pay Deposit
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {booking.depositPaid && (
+                                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                                        <p className="text-sm font-semibold text-green-800">Deposit Paid</p>
+                                        <p className="text-lg font-bold text-green-900">€{booking.depositAmount?.toFixed(2)}</p>
+                                    </div>
+                                )}
+
                                 {canCancel(booking) && (
                                     <button
                                         onClick={() => handleCancel(booking.id)}
@@ -185,6 +235,50 @@ export default function ActiveBookingsPage() {
                     })}
                 </div>
             )}
+
+            {/* Deposit Payment Modal */}
+            <Dialog open={depositModalOpen} onOpenChange={setDepositModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Pay Deposit</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {selectedBooking && (
+                            <>
+                                <div className="text-sm">
+                                    <p className="mb-2"><strong>Product:</strong> {selectedBooking.productName}</p>
+                                    <p className="mb-2"><strong>Owner:</strong> {selectedBooking.ownerName}</p>
+                                    <div className="bg-amber-50 border border-amber-200 rounded p-3 mb-3">
+                                        <p className="text-xs text-amber-700 font-medium mb-1">Reason:</p>
+                                        <p className="text-sm text-amber-900">{selectedBooking.depositReason}</p>
+                                    </div>
+                                    <p className="text-lg font-bold text-amber-900">
+                                        Amount: €{selectedBooking.depositAmount?.toFixed(2)}
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-3 justify-end">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setDepositModalOpen(false)}
+                                        disabled={payingDeposit}
+                                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        onClick={handlePayDeposit}
+                                        disabled={payingDeposit}
+                                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                                    >
+                                        {payingDeposit ? 'Processing...' : 'Confirm Payment'}
+                                    </Button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

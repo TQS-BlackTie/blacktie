@@ -113,6 +113,24 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    public void createDepositRequestedNotification(User renter, Booking booking, Double depositAmount, String reason) {
+        String message = String.format("A deposit of €%.2f has been requested for your booking of '%s'. Reason: %s", 
+            depositAmount,
+            booking.getProduct().getName(),
+            reason);
+        Notification notification = new Notification(renter, Notification.TYPE_DEPOSIT_REQUESTED, message, booking);
+        notificationRepository.save(notification);
+    }
+
+    public void createDepositPaidNotification(User owner, Booking booking) {
+        String message = String.format("Deposit of €%.2f paid by %s for booking of '%s'", 
+            booking.getDepositAmount(),
+            booking.getRenter().getName(),
+            booking.getProduct().getName());
+        Notification notification = new Notification(owner, Notification.TYPE_DEPOSIT_PAID, message, booking);
+        notificationRepository.save(notification);
+    }
+
     public List<NotificationResponse> getUserNotifications(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND_MSG + userId));
