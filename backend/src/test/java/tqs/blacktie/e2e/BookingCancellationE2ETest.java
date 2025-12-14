@@ -64,7 +64,7 @@ class BookingCancellationE2ETest {
         HttpEntity<SetRoleRequest> setRoleEntity = new HttpEntity<>(new SetRoleRequest("owner"));
         ResponseEntity<?> roleRes = restTemplate.exchange(
             url("/api/users/" + ownerId + "/role"),
-            HttpMethod.POST,
+            HttpMethod.PUT,
             setRoleEntity,
             Object.class
         );

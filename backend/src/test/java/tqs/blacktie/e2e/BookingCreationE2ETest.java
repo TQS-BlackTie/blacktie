@@ -81,7 +81,7 @@ class BookingCreationE2ETest {
         HttpEntity<SetRoleRequest> setRoleEntity = new HttpEntity<>(new SetRoleRequest("owner"));
         ResponseEntity<?> roleRes = restTemplate.exchange(
             url("/api/users/" + ownerId + "/role"),
-            HttpMethod.POST,
+            HttpMethod.PUT,
             setRoleEntity,
             Object.class
         );
@@ -138,7 +138,7 @@ class BookingCreationE2ETest {
         Long renterId = registerUser("Renter2", "renterpass2");
 
         HttpEntity<SetRoleRequest> setRoleEntity = new HttpEntity<>(new SetRoleRequest("owner"));
-        restTemplate.exchange(url("/api/users/" + ownerId + "/role"), HttpMethod.POST, setRoleEntity, Object.class);
+        restTemplate.exchange(url("/api/users/" + ownerId + "/role"), HttpMethod.PUT, setRoleEntity, Object.class);
         Long productId = createOwnedProduct(ownerId, "Past Date Suit", 90.0);
 
         LocalDateTime start = LocalDateTime.now().minusDays(1).withNano(0);
