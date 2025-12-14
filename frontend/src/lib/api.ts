@@ -86,6 +86,18 @@ export async function createProduct(userId: number, input: CreateProductInput): 
   return res.json()
 }
 
+export async function deleteProduct(userId: number, productId: number): Promise<void> {
+  const res = await fetch(`/api/products/${productId}`, {
+    method: "DELETE",
+    headers: { "X-User-Id": String(userId) },
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Failed to delete product' }))
+    throw new Error(error.message || 'Failed to delete product')
+  }
+}
+
 // User types and functions
 export type User = {
   id: number

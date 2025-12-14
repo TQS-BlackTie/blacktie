@@ -392,6 +392,10 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
           product={manageProduct}
           userId={userId}
           onClose={() => setManageProduct(null)}
+          onProductDeleted={() => {
+            setManageProduct(null)
+            void loadProducts()
+          }}
         />
       )}
 

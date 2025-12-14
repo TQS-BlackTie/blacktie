@@ -119,4 +119,19 @@ public class ProductController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
+
+	@DeleteMapping("/{productId}")
+	public ResponseEntity<?> deleteProduct(
+		@PathVariable Long productId,
+		@RequestHeader("X-User-Id") Long userId
+	) {
+		try {
+			productService.deleteProduct(productId, userId);
+			return ResponseEntity.noContent().build();
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (IllegalStateException e) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+		}
+	}
 }
