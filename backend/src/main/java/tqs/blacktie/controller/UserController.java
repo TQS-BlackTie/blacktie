@@ -8,8 +8,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import tqs.blacktie.dto.SetRoleRequest;
 import tqs.blacktie.dto.UpdateProfileRequest;
+import tqs.blacktie.dto.UpdateProfileRequest;
 import tqs.blacktie.dto.UserResponse;
 import tqs.blacktie.entity.User;
+import tqs.blacktie.service.ReviewService;
 import tqs.blacktie.service.UserService;
 
 import java.util.HashMap;
@@ -21,9 +23,11 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/users")
 public class UserController {
 
+    private final ReviewService reviewService;
     private final UserService userService;
 
-    public UserController(UserService userService) {
+    public UserController(ReviewService reviewService, UserService userService) {
+        this.reviewService = reviewService;
         this.userService = userService;
     }
 
@@ -43,36 +47,32 @@ public class UserController {
             .collect(Collectors.toList());
     }
 
-    @PostMapping("/{userId}/role")
-    public ResponseEntity<?> setUserRole(
-            @PathVariable Long userId,
-            @Valid @RequestBody SetRoleRequest request) {
-        
+    @PutMapping("/{id}/role")
+    public ResponseEntity<?> setUserRole(@PathVariable Long id, @Valid @RequestBody SetRoleRequest request) {
         try {
-            User updatedUser = userService.setUserRole(userId, request.getRole());
-            UserResponse response = new UserResponse(
-                updatedUser.getId(),
-                updatedUser.getName(),
-                updatedUser.getEmail(),
-                updatedUser.getRole(),
-                updatedUser.getPhone(),
-                updatedUser.getAddress(),
-                updatedUser.getBusinessInfo(),
-                updatedUser.getCreatedAt().toString()
-            );
-            return ResponseEntity.ok(response);
+            User updated = userService.setUserRole(id, request.getRole());
+            return ResponseEntity.ok(new UserResponse(
+                updated.getId(),
+                updated.getName(),
+                updated.getEmail(),
+                updated.getRole(),
+                updated.getPhone(),
+                updated.getAddress(),
+                updated.getBusinessInfo(),
+                updated.getCreatedAt().toString()
+            ));
         } catch (IllegalArgumentException e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            return ResponseEntity.badRequest().body(error);
         }
     }
 
-    @GetMapping("/{userId}/profile")
-    public ResponseEntity<?> getUserProfile(@PathVariable Long userId) {
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserProfile(@PathVariable Long id) {
         try {
-            User user = userService.getUserById(userId);
-            UserResponse response = new UserResponse(
+            User user = userService.getUserById(id);
+            return ResponseEntity.ok(new UserResponse(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
@@ -81,8 +81,7 @@ public class UserController {
                 user.getAddress(),
                 user.getBusinessInfo(),
                 user.getCreatedAt().toString()
-            );
-            return ResponseEntity.ok(response);
+            ));
         } catch (IllegalArgumentException e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", e.getMessage());
@@ -90,33 +89,32 @@ public class UserController {
         }
     }
 
-    @PutMapping("/{userId}/profile")
-    public ResponseEntity<?> updateUserProfile(
-            @PathVariable Long userId,
-            @Valid @RequestBody UpdateProfileRequest request) {
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUserProfile(@PathVariable Long id, @Valid @RequestBody UpdateProfileRequest request) {
         try {
-            User updatedUser = userService.updateProfile(userId, request);
-            UserResponse response = new UserResponse(
-                updatedUser.getId(),
-                updatedUser.getName(),
-                updatedUser.getEmail(),
-                updatedUser.getRole(),
-                updatedUser.getPhone(),
-                updatedUser.getAddress(),
-                updatedUser.getBusinessInfo(),
-                updatedUser.getCreatedAt().toString()
-            );
-            return ResponseEntity.ok(response);
+            User updated = userService.updateProfile(id, request);
+            return ResponseEntity.ok(new UserResponse(
+                updated.getId(),
+                updated.getName(),
+                updated.getEmail(),
+                updated.getRole(),
+                updated.getPhone(),
+                updated.getAddress(),
+                updated.getBusinessInfo(),
+                updated.getCreatedAt().toString()
+            ));
         } catch (IllegalArgumentException e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            return ResponseEntity.badRequest().body(error);
         }
     }
 
-    /**
-     * Handler para erros de validação
-     */
+    @GetMapping("/{id}/reputation")
+    public ResponseEntity<UserResponse> getUserReputation(@PathVariable Long id) {
+        return ResponseEntity.ok(reviewService.getUserReputation(id));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(
             MethodArgumentNotValidException ex) {
@@ -129,5 +127,6 @@ public class UserController {
         errors.put("message", "Validation failed");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
-}
 
+
+}

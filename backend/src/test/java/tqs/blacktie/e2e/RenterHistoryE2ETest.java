@@ -64,9 +64,9 @@ class RenterHistoryE2ETest {
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(request, headers);
         restTemplate.exchange(
                 url("/api/users/" + userId + "/role"),
-                HttpMethod.POST,
+                HttpMethod.PUT,
                 entity,
-                Void.class
+                Object.class
         );
     }
 
