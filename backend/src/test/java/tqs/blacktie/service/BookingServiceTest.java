@@ -79,7 +79,7 @@ class BookingServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(bookingRepository.findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
-                any(), any(), any())).thenReturn(Collections.emptyList());
+                    any(), any(), any())).thenReturn(Collections.emptyList());
             when(bookingRepository.save(any(Booking.class))).thenReturn(testBooking);
 
             BookingResponse response = bookingService.createBooking(1L, testRequest);
@@ -98,7 +98,7 @@ class BookingServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> bookingService.createBooking(1L, testRequest));
+                    () -> bookingService.createBooking(1L, testRequest));
 
             assertEquals("User not found with id: 1", exception.getMessage());
             verify(bookingRepository, never()).save(any());
@@ -111,7 +111,7 @@ class BookingServiceTest {
             when(productRepository.findById(1L)).thenReturn(Optional.empty());
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> bookingService.createBooking(1L, testRequest));
+                    () -> bookingService.createBooking(1L, testRequest));
 
             assertEquals("Product not found with id: 1", exception.getMessage());
             verify(bookingRepository, never()).save(any());
@@ -125,7 +125,7 @@ class BookingServiceTest {
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
 
             IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> bookingService.createBooking(1L, testRequest));
+                    () -> bookingService.createBooking(1L, testRequest));
 
             assertEquals("Product is not available for booking", exception.getMessage());
             verify(bookingRepository, never()).save(any());
@@ -142,7 +142,7 @@ class BookingServiceTest {
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> bookingService.createBooking(1L, invalidRequest));
+                    () -> bookingService.createBooking(1L, invalidRequest));
 
             assertEquals("Return date must be after booking date", exception.getMessage());
             verify(bookingRepository, never()).save(any());
@@ -159,7 +159,7 @@ class BookingServiceTest {
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> bookingService.createBooking(1L, pastRequest));
+                    () -> bookingService.createBooking(1L, pastRequest));
 
             assertEquals("Booking date cannot be in the past", exception.getMessage());
             verify(bookingRepository, never()).save(any());
@@ -172,10 +172,10 @@ class BookingServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(bookingRepository.findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
-                any(), any(), any())).thenReturn(Arrays.asList(testBooking));
+                    any(), any(), any())).thenReturn(Arrays.asList(testBooking));
 
             IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> bookingService.createBooking(1L, testRequest));
+                    () -> bookingService.createBooking(1L, testRequest));
 
             assertEquals("Product is already booked for the selected dates", exception.getMessage());
             verify(bookingRepository, never()).save(any());
@@ -185,15 +185,15 @@ class BookingServiceTest {
         @DisplayName("Should allow booking when previous booking was cancelled")
         void shouldAllowBookingWhenPreviousBookingWasCancelled() {
             // Create a cancelled booking for the same dates
-            Booking cancelledBooking = new Booking(testUser, testProduct, 
-                testRequest.getBookingDate(), testRequest.getReturnDate(), 100.0);
+            Booking cancelledBooking = new Booking(testUser, testProduct,
+                    testRequest.getBookingDate(), testRequest.getReturnDate(), 100.0);
             cancelledBooking.setId(99L);
             cancelledBooking.setStatus(Booking.STATUS_CANCELLED);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(bookingRepository.findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
-                any(), any(), any())).thenReturn(Arrays.asList(cancelledBooking));
+                    any(), any(), any())).thenReturn(Arrays.asList(cancelledBooking));
             when(bookingRepository.save(any(Booking.class))).thenReturn(testBooking);
 
             BookingResponse response = bookingService.createBooking(1L, testRequest);
@@ -259,7 +259,7 @@ class BookingServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> bookingService.getBookingsByProduct(99L, 1L));
+                    () -> bookingService.getBookingsByProduct(99L, 1L));
 
             assertEquals("Product not found with id: 99", exception.getMessage());
             verify(bookingRepository, never()).findByProduct(any());
@@ -278,7 +278,7 @@ class BookingServiceTest {
             when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
 
             IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> bookingService.getBookingsByProduct(1L, 10L));
+                    () -> bookingService.getBookingsByProduct(1L, 10L));
 
             assertEquals("User is not authorized to view bookings for this product", exception.getMessage());
             verify(bookingRepository, never()).findByProduct(any());
@@ -316,14 +316,14 @@ class BookingServiceTest {
             when(bookingRepository.findById(1L)).thenReturn(Optional.empty());
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> bookingService.getBookingById(1L));
+                    () -> bookingService.getBookingById(1L));
 
             assertEquals("Booking not found with id: 1", exception.getMessage());
         }
     }
 
     @Nested
-        @DisplayName("Cancel Booking Tests")
+    @DisplayName("Cancel Booking Tests")
     class CancelBookingTests {
 
         @Test
@@ -346,7 +346,7 @@ class BookingServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> bookingService.cancelBooking(1L, 1L));
+                    () -> bookingService.cancelBooking(1L, 1L));
 
             assertEquals("Booking not found with id: 1", exception.getMessage());
             verify(bookingRepository, never()).delete(any());
@@ -358,7 +358,7 @@ class BookingServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> bookingService.cancelBooking(1L, 1L));
+                    () -> bookingService.cancelBooking(1L, 1L));
 
             assertEquals("User not found with id: 1", exception.getMessage());
             verify(bookingRepository, never()).delete(any());
@@ -371,7 +371,7 @@ class BookingServiceTest {
             when(userRepository.findById(999L)).thenReturn(Optional.of(testUser));
 
             IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> bookingService.cancelBooking(1L, 999L));
+                    () -> bookingService.cancelBooking(1L, 999L));
 
             assertEquals("User is not authorized to cancel this booking", exception.getMessage());
             verify(bookingRepository, never()).delete(any());
@@ -406,7 +406,7 @@ class BookingServiceTest {
             when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
 
             IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> bookingService.cancelBooking(1L, 10L));
+                    () -> bookingService.cancelBooking(1L, 10L));
 
             assertEquals("User is not authorized to cancel this booking", ex.getMessage());
             verify(bookingRepository, never()).delete(any());
@@ -421,7 +421,7 @@ class BookingServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> bookingService.cancelBooking(1L, 1L));
+                    () -> bookingService.cancelBooking(1L, 1L));
 
             assertEquals("Cannot cancel a booking that has already started", exception.getMessage());
             verify(bookingRepository, never()).delete(any());
@@ -433,7 +433,7 @@ class BookingServiceTest {
             User owner = new User("Owner", "owner@example.com", "pass", "owner");
             owner.setId(10L);
             testProduct.setOwner(owner); // Set the owner of the product
-            
+
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
             when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
 
@@ -462,14 +462,14 @@ class BookingServiceTest {
             cancelledBooking.setId(2L);
             cancelledBooking.setStatus("CANCELLED");
 
-            Booking activeBooking = new Booking(testUser, testProduct, 
-                LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(3), 100.0);
+            Booking activeBooking = new Booking(testUser, testProduct,
+                    LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(3), 100.0);
             activeBooking.setId(3L);
             activeBooking.setStatus("ACTIVE");
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(bookingRepository.findByRenterId(1L))
-                .thenReturn(Arrays.asList(completedBooking, cancelledBooking, activeBooking));
+                    .thenReturn(Arrays.asList(completedBooking, cancelledBooking, activeBooking));
 
             List<BookingResponse> history = bookingService.getRenterHistory(1L);
 
@@ -563,19 +563,19 @@ class BookingServiceTest {
             activeBooking.setId(1L);
             activeBooking.setStatus(Booking.STATUS_PAID);
 
-            Booking completedBooking = new Booking(testUser, testProduct, 
-                LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(7), 150.0);
+            Booking completedBooking = new Booking(testUser, testProduct,
+                    LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(7), 150.0);
             completedBooking.setId(2L);
             completedBooking.setStatus("COMPLETED");
 
-            Booking cancelledBooking = new Booking(testUser, testProduct, 
-                LocalDateTime.now().plusDays(5), LocalDateTime.now().plusDays(7), 200.0);
+            Booking cancelledBooking = new Booking(testUser, testProduct,
+                    LocalDateTime.now().plusDays(5), LocalDateTime.now().plusDays(7), 200.0);
             cancelledBooking.setId(3L);
             cancelledBooking.setStatus("CANCELLED");
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(bookingRepository.findByRenterId(1L))
-                .thenReturn(Arrays.asList(activeBooking, completedBooking, cancelledBooking));
+                    .thenReturn(Arrays.asList(activeBooking, completedBooking, cancelledBooking));
 
             List<BookingResponse> activeBookings = bookingService.getActiveBookingsByRenter(1L);
 
@@ -623,7 +623,7 @@ class BookingServiceTest {
 
             LocalDateTime pastBookingDate = LocalDateTime.now().minusDays(5);
             LocalDateTime pastReturnDate = LocalDateTime.now().minusDays(2);
-            
+
             completedBooking = new Booking(testUser, testProduct, pastBookingDate, pastReturnDate, 100.0);
             completedBooking.setId(1L);
             completedBooking.setStatus(Booking.STATUS_COMPLETED);
@@ -645,14 +645,14 @@ class BookingServiceTest {
             assertNotNull(completedBooking.getDepositRequestedAt());
             verify(bookingRepository, times(1)).save(completedBooking);
             verify(notificationService, times(1)).createDepositRequestedNotification(
-                eq(testUser), eq(completedBooking), eq(50.0), eq("Item damaged"));
+                    eq(testUser), eq(completedBooking), eq(50.0), eq("Item damaged"));
         }
 
         @Test
         @DisplayName("Should request deposit for paid booking after return date")
         void shouldRequestDepositForPaidBooking() {
             completedBooking.setStatus(Booking.STATUS_PAID);
-            
+
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(completedBooking));
             when(bookingRepository.save(any(Booking.class))).thenReturn(completedBooking);
             doNothing().when(notificationService).createDepositRequestedNotification(any(), any(), any(), any());
@@ -692,7 +692,7 @@ class BookingServiceTest {
         @DisplayName("Should throw exception when product has no owner")
         void shouldThrowExceptionWhenProductHasNoOwner() {
             testProduct.setOwner(null);
-            
+
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(completedBooking));
 
             IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -707,7 +707,7 @@ class BookingServiceTest {
         void shouldThrowExceptionWhenReturnDateNotPassed() {
             LocalDateTime futureBookingDate = LocalDateTime.now().plusDays(1);
             LocalDateTime futureReturnDate = LocalDateTime.now().plusDays(3);
-            
+
             Booking futureBooking = new Booking(testUser, testProduct, futureBookingDate, futureReturnDate, 100.0);
             futureBooking.setId(2L);
             futureBooking.setStatus(Booking.STATUS_PAID);
@@ -765,7 +765,7 @@ class BookingServiceTest {
 
             LocalDateTime pastBookingDate = LocalDateTime.now().minusDays(5);
             LocalDateTime pastReturnDate = LocalDateTime.now().minusDays(2);
-            
+
             bookingWithDepositRequest = new Booking(testUser, testProduct, pastBookingDate, pastReturnDate, 100.0);
             bookingWithDepositRequest.setId(1L);
             bookingWithDepositRequest.setStatus(Booking.STATUS_COMPLETED);
@@ -787,7 +787,8 @@ class BookingServiceTest {
             assertEquals(true, bookingWithDepositRequest.getDepositPaid());
             assertNotNull(bookingWithDepositRequest.getDepositPaidAt());
             verify(bookingRepository, times(1)).save(bookingWithDepositRequest);
-            verify(notificationService, times(1)).createDepositPaidNotification(eq(owner), eq(bookingWithDepositRequest));
+            verify(notificationService, times(1)).createDepositPaidNotification(eq(owner),
+                    eq(bookingWithDepositRequest));
         }
 
         @Test
@@ -852,6 +853,131 @@ class BookingServiceTest {
             bookingService.payDeposit(1L, 1L);
 
             verify(notificationService, times(1)).createDepositPaidNotification(owner, bookingWithDepositRequest);
+        }
+    }
+
+    @Nested
+    @DisplayName("Refund Deposit Tests")
+    class RefundDepositTests {
+
+        private User owner;
+        private Booking bookingWithPaidDeposit;
+
+        @BeforeEach
+        void setUp() {
+            owner = new User("Owner", "owner@example.com", "password");
+            owner.setId(5L);
+            owner.setRole("owner");
+            testProduct.setOwner(owner);
+
+            LocalDateTime pastBookingDate = LocalDateTime.now().minusDays(10);
+            LocalDateTime pastReturnDate = LocalDateTime.now().minusDays(7);
+
+            bookingWithPaidDeposit = new Booking(testUser, testProduct, pastBookingDate, pastReturnDate, 100.0);
+            bookingWithPaidDeposit.setId(1L);
+            bookingWithPaidDeposit.setStatus(Booking.STATUS_COMPLETED);
+            bookingWithPaidDeposit.setDepositAmount(50.0);
+            bookingWithPaidDeposit.setDepositRequested(true);
+            bookingWithPaidDeposit.setDepositReason("Item damaged");
+            bookingWithPaidDeposit.setDepositPaid(true);
+        }
+
+        @Test
+        @DisplayName("Should refund deposit successfully")
+        void shouldRefundDepositSuccessfully() {
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithPaidDeposit));
+            when(bookingRepository.save(any(Booking.class))).thenReturn(bookingWithPaidDeposit);
+            doNothing().when(notificationService).createDepositRefundedNotification(any(), any(), any());
+
+            BookingResponse response = bookingService.refundDeposit(1L, 5L);
+
+            assertNotNull(response);
+            assertEquals(false, bookingWithPaidDeposit.getDepositRequested());
+            assertEquals(false, bookingWithPaidDeposit.getDepositPaid());
+            assertNull(bookingWithPaidDeposit.getDepositAmount());
+            assertNull(bookingWithPaidDeposit.getDepositReason());
+            verify(bookingRepository, times(1)).save(bookingWithPaidDeposit);
+            verify(notificationService, times(1)).createDepositRefundedNotification(
+                    eq(testUser), eq(bookingWithPaidDeposit), eq(50.0));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when booking not found")
+        void shouldThrowExceptionWhenBookingNotFound() {
+            when(bookingRepository.findById(999L)).thenReturn(Optional.empty());
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+                bookingService.refundDeposit(999L, 5L);
+            });
+
+            assertTrue(exception.getMessage().contains("Booking not found"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when user is not the owner")
+        void shouldThrowExceptionWhenUserIsNotOwner() {
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithPaidDeposit));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.refundDeposit(1L, 999L);
+            });
+
+            assertTrue(exception.getMessage().contains("not authorized"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when product has no owner")
+        void shouldThrowExceptionWhenProductHasNoOwner() {
+            testProduct.setOwner(null);
+
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithPaidDeposit));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.refundDeposit(1L, 5L);
+            });
+
+            assertTrue(exception.getMessage().contains("not authorized"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when deposit was not requested")
+        void shouldThrowExceptionWhenDepositNotRequested() {
+            bookingWithPaidDeposit.setDepositRequested(false);
+
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithPaidDeposit));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.refundDeposit(1L, 5L);
+            });
+
+            assertTrue(exception.getMessage().contains("No deposit has been requested"));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when booking is not completed")
+        void shouldThrowExceptionWhenBookingNotCompleted() {
+            bookingWithPaidDeposit.setStatus(Booking.STATUS_PAID);
+
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithPaidDeposit));
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                bookingService.refundDeposit(1L, 5L);
+            });
+
+            assertTrue(exception.getMessage().contains("completed bookings"));
+        }
+
+        @Test
+        @DisplayName("Should notify renter after deposit refund")
+        void shouldNotifyRenterAfterDepositRefund() {
+            when(bookingRepository.findById(1L)).thenReturn(Optional.of(bookingWithPaidDeposit));
+            when(bookingRepository.save(any(Booking.class))).thenReturn(bookingWithPaidDeposit);
+            doNothing().when(notificationService).createDepositRefundedNotification(any(), any(), any());
+
+            bookingService.refundDeposit(1L, 5L);
+
+            verify(notificationService, times(1)).createDepositRefundedNotification(
+                    testUser, bookingWithPaidDeposit, 50.0);
         }
     }
 }

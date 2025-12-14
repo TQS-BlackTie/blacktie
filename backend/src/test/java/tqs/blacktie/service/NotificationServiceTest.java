@@ -91,12 +91,13 @@ class NotificationServiceTest {
 
     @Test
     void testGetUserNotifications() {
-        Notification notification2 = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Second notification", booking);
+        Notification notification2 = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Second notification",
+                booking);
         notification2.setId(2L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
         when(notificationRepository.findByUserOrderByCreatedAtDesc(owner))
-            .thenReturn(Arrays.asList(notification2, notification));
+                .thenReturn(Arrays.asList(notification2, notification));
 
         List<NotificationResponse> result = notificationService.getUserNotifications(1L);
 
@@ -111,26 +112,27 @@ class NotificationServiceTest {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> notificationService.getUserNotifications(999L))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("User not found");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("User not found");
     }
 
     @Test
     void testGetUnreadNotifications() {
         notification.setIsRead(false);
-        Notification notification2 = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Unread notification", booking);
+        Notification notification2 = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Unread notification",
+                booking);
         notification2.setId(2L);
         notification2.setIsRead(false);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
         when(notificationRepository.findByUserAndIsReadOrderByCreatedAtDesc(owner, false))
-            .thenReturn(Arrays.asList(notification2, notification));
+                .thenReturn(Arrays.asList(notification2, notification));
 
         List<NotificationResponse> result = notificationService.getUnreadNotifications(1L);
 
         assertThat(result)
-            .hasSize(2)
-            .allMatch(n -> !n.getIsRead());
+                .hasSize(2)
+                .allMatch(n -> !n.getIsRead());
     }
 
     @Test
@@ -161,8 +163,8 @@ class NotificationServiceTest {
         when(notificationRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> notificationService.markAsRead(999L, 1L))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Notification not found");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Notification not found");
     }
 
     @Test
@@ -170,8 +172,8 @@ class NotificationServiceTest {
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
 
         assertThatThrownBy(() -> notificationService.markAsRead(1L, 999L))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("not authorized");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("not authorized");
     }
 
     @Test
@@ -184,7 +186,7 @@ class NotificationServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
         when(notificationRepository.findByUserAndIsReadOrderByCreatedAtDesc(owner, false))
-            .thenReturn(unreadNotifications);
+                .thenReturn(unreadNotifications);
         when(notificationRepository.saveAll(unreadNotifications)).thenReturn(unreadNotifications);
 
         notificationService.markAllAsRead(1L);
@@ -199,7 +201,26 @@ class NotificationServiceTest {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> notificationService.markAllAsRead(999L))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("User not found");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("User not found");
+    }
+
+    @Test
+    void testCreateDepositRefundedNotification() {
+        booking.setDepositAmount(50.0);
+        when(notificationRepository.save(any(Notification.class))).thenReturn(notification);
+
+        notificationService.createDepositRefundedNotification(renter, booking, 50.0);
+
+        verify(notificationRepository).save(any(Notification.class));
+    }
+
+    @Test
+    void testCreateDepositRefundedNotification_WithNullAmount() {
+        when(notificationRepository.save(any(Notification.class))).thenReturn(notification);
+
+        notificationService.createDepositRefundedNotification(renter, booking, null);
+
+        verify(notificationRepository).save(any(Notification.class));
     }
 }

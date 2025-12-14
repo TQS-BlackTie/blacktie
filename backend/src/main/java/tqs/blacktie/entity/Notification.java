@@ -14,7 +14,7 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Notification {
-    
+
     public static final String TYPE_NEW_BOOKING = "NEW_BOOKING";
     public static final String TYPE_BOOKING_CANCELLED_BY_RENTER = "BOOKING_CANCELLED_BY_RENTER";
     public static final String TYPE_BOOKING_CANCELLED_BY_OWNER = "BOOKING_CANCELLED_BY_OWNER";
@@ -28,7 +28,8 @@ public class Notification {
     public static final String TYPE_PRODUCT_DELETED_BY_ADMIN = "PRODUCT_DELETED_BY_ADMIN";
     public static final String TYPE_DEPOSIT_REQUESTED = "DEPOSIT_REQUESTED";
     public static final String TYPE_DEPOSIT_PAID = "DEPOSIT_PAID";
-    
+    public static final String TYPE_DEPOSIT_REFUNDED = "DEPOSIT_REFUNDED";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

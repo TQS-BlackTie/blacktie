@@ -16,6 +16,7 @@ import tqs.blacktie.entity.User;
 import tqs.blacktie.repository.BookingRepository;
 import tqs.blacktie.repository.NotificationRepository;
 import tqs.blacktie.repository.ProductRepository;
+import tqs.blacktie.repository.ReviewRepository;
 import tqs.blacktie.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -45,6 +46,9 @@ class NotificationE2ETest {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private ReviewRepository reviewRepository;
+
     private String baseUrl;
     private User owner;
     private User renter;
@@ -54,9 +58,10 @@ class NotificationE2ETest {
     @BeforeEach
     void setUp() {
         baseUrl = "http://localhost:" + port + "/api/notifications";
-        
-        // Clean up
+
+        // Clean up in proper order (respect foreign key constraints)
         notificationRepository.deleteAll();
+        reviewRepository.deleteAll();
         bookingRepository.deleteAll();
         productRepository.deleteAll();
         userRepository.deleteAll();
@@ -91,9 +96,8 @@ class NotificationE2ETest {
         notificationRepository.save(notification2);
 
         ResponseEntity<NotificationResponse[]> response = restTemplate.getForEntity(
-            baseUrl + "?userId=" + owner.getId(),
-            NotificationResponse[].class
-        );
+                baseUrl + "?userId=" + owner.getId(),
+                NotificationResponse[].class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull().hasSize(2);
@@ -111,9 +115,8 @@ class NotificationE2ETest {
         notificationRepository.save(read);
 
         ResponseEntity<NotificationResponse[]> response = restTemplate.getForEntity(
-            baseUrl + "/unread?userId=" + owner.getId(),
-            NotificationResponse[].class
-        );
+                baseUrl + "/unread?userId=" + owner.getId(),
+                NotificationResponse[].class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull().hasSize(1);
@@ -130,9 +133,8 @@ class NotificationE2ETest {
         }
 
         ResponseEntity<Map> response = restTemplate.getForEntity(
-            baseUrl + "/unread/count?userId=" + owner.getId(),
-            Map.class
-        );
+                baseUrl + "/unread/count?userId=" + owner.getId(),
+                Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull().containsEntry("count", 3);
@@ -140,17 +142,17 @@ class NotificationE2ETest {
 
     @Test
     void testMarkAsRead() {
-        Notification notification = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Test notification", booking);
+        Notification notification = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Test notification",
+                booking);
         notification.setIsRead(false);
         notification = notificationRepository.save(notification);
 
         HttpHeaders headers = new HttpHeaders();
         ResponseEntity<Void> response = restTemplate.exchange(
-            baseUrl + "/" + notification.getId() + "/read?userId=" + owner.getId(),
-            HttpMethod.PUT,
-            new HttpEntity<>(headers),
-            Void.class
-        );
+                baseUrl + "/" + notification.getId() + "/read?userId=" + owner.getId(),
+                HttpMethod.PUT,
+                new HttpEntity<>(headers),
+                Void.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -161,16 +163,16 @@ class NotificationE2ETest {
 
     @Test
     void testMarkAsRead_UnauthorizedUser() {
-        Notification notification = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Test notification", booking);
+        Notification notification = new Notification(owner, Notification.TYPE_NEW_BOOKING, "Test notification",
+                booking);
         notification = notificationRepository.save(notification);
 
         HttpHeaders headers = new HttpHeaders();
         ResponseEntity<String> response = restTemplate.exchange(
-            baseUrl + "/" + notification.getId() + "/read?userId=" + renter.getId(),
-            HttpMethod.PUT,
-            new HttpEntity<>(headers),
-            String.class
-        );
+                baseUrl + "/" + notification.getId() + "/read?userId=" + renter.getId(),
+                HttpMethod.PUT,
+                new HttpEntity<>(headers),
+                String.class);
 
         // Should fail because renter is trying to mark owner's notification
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -187,11 +189,10 @@ class NotificationE2ETest {
 
         HttpHeaders headers = new HttpHeaders();
         ResponseEntity<Void> response = restTemplate.exchange(
-            baseUrl + "/read-all?userId=" + owner.getId(),
-            HttpMethod.PUT,
-            new HttpEntity<>(headers),
-            Void.class
-        );
+                baseUrl + "/read-all?userId=" + owner.getId(),
+                HttpMethod.PUT,
+                new HttpEntity<>(headers),
+                Void.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -206,12 +207,13 @@ class NotificationE2ETest {
         long initialCount = notificationRepository.countByUserAndIsRead(owner, false);
 
         // Create a new booking which should trigger notification creation
-        Booking newBooking = new Booking(renter, product, LocalDateTime.now().plusDays(5), LocalDateTime.now().plusDays(6), 50.0);
+        Booking newBooking = new Booking(renter, product, LocalDateTime.now().plusDays(5),
+                LocalDateTime.now().plusDays(6), 50.0);
         bookingRepository.save(newBooking);
 
         // Manually create notification since we're testing E2E
-        Notification notification = new Notification(owner, Notification.TYPE_NEW_BOOKING, 
-            "New booking for your product '" + product.getName() + "' by " + renter.getName(), newBooking);
+        Notification notification = new Notification(owner, Notification.TYPE_NEW_BOOKING,
+                "New booking for your product '" + product.getName() + "' by " + renter.getName(), newBooking);
         notificationRepository.save(notification);
 
         long finalCount = notificationRepository.countByUserAndIsRead(owner, false);

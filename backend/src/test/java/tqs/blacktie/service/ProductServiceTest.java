@@ -18,7 +18,8 @@ class ProductServiceTest {
 
     private final ProductRepository productRepository = Mockito.mock(ProductRepository.class);
     private final UserRepository userRepository = Mockito.mock(UserRepository.class);
-    private final ProductService productService = new ProductService(productRepository, userRepository);
+    private final LocationService locationService = Mockito.mock(LocationService.class);
+    private final ProductService productService = new ProductService(productRepository, userRepository, locationService);
 
     @Test
     void whenNoFilters_thenReturnsAllAvailable() {

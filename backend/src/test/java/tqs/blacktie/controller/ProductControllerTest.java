@@ -212,6 +212,11 @@ class ProductControllerTest {
                     "Classic black",
                     80.0,
                     null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                     imageFile,
                     1L
             );
@@ -239,6 +244,11 @@ class ProductControllerTest {
                     "Tuxedo",
                     "Navy blue",
                     120.0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                     null,
                     null,
                     1L
@@ -273,6 +283,11 @@ class ProductControllerTest {
                     "Gray",
                     90.0,
                     null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                     emptyFile,
                     1L
             );
@@ -302,6 +317,11 @@ class ProductControllerTest {
                     "Classic black",
                     80.0,
                     null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                     imageFile,
                     1L
             );
@@ -328,11 +348,17 @@ class ProductControllerTest {
                     "Classic black",
                     80.0,
                     null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                     imageFile,
                     999L
             );
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("User not found", response.getBody());
             assertEquals("User not found", response.getBody());
         }
     }

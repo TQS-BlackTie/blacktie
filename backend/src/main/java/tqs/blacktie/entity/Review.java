@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 @Entity
-@Table(name = "reviews", uniqueConstraints = {@UniqueConstraint(columnNames = {"booking_id", "review_type"})})
+@Table(name = "reviews", uniqueConstraints = { @UniqueConstraint(columnNames = { "booking_id", "review_type" }) })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,7 +19,7 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "booking_id", nullable = false)
     private Booking booking;
 

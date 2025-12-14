@@ -26,10 +26,10 @@ public class BookingService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
-    public BookingService(BookingRepository bookingRepository, 
-                         ProductRepository productRepository,
-                         UserRepository userRepository,
-                         NotificationService notificationService) {
+    public BookingService(BookingRepository bookingRepository,
+            ProductRepository productRepository,
+            UserRepository userRepository,
+            NotificationService notificationService) {
         this.bookingRepository = bookingRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
@@ -39,11 +39,12 @@ public class BookingService {
     public BookingResponse createBooking(Long userId, BookingRequest request) {
         // Validate user exists
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
         // Validate product exists
         Product product = productRepository.findById(request.getProductId())
-            .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + request.getProductId()));
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Product not found with id: " + request.getProductId()));
 
         // Validate product is available
         if (product.getAvailable() == null || !product.getAvailable()) {
@@ -61,12 +62,12 @@ public class BookingService {
 
         // Check for overlapping bookings (only APPROVED and PAID bookings)
         List<Booking> overlappingBookings = bookingRepository
-            .findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
-                product, request.getReturnDate(), request.getBookingDate())
-            .stream()
-            .filter(booking -> Booking.STATUS_APPROVED.equals(booking.getStatus()) 
-                            || Booking.STATUS_PAID.equals(booking.getStatus()))
-            .toList();
+                .findByProductAndBookingDateLessThanEqualAndReturnDateGreaterThanEqual(
+                        product, request.getReturnDate(), request.getBookingDate())
+                .stream()
+                .filter(booking -> Booking.STATUS_APPROVED.equals(booking.getStatus())
+                        || Booking.STATUS_PAID.equals(booking.getStatus()))
+                .toList();
 
         if (!overlappingBookings.isEmpty()) {
             throw new IllegalStateException("Product is already booked for the selected dates");
@@ -94,61 +95,61 @@ public class BookingService {
     public List<BookingResponse> getUserBookings(Long userId) {
         List<Booking> bookings = bookingRepository.findByRenterId(userId);
         return bookings.stream()
-            .filter(booking -> !Booking.STATUS_COMPLETED.equals(booking.getStatus()) 
-                            && !Booking.STATUS_CANCELLED.equals(booking.getStatus())
-                            && !Booking.STATUS_REJECTED.equals(booking.getStatus()))
-            .map(this::convertToResponse)
-            .toList();
+                .filter(booking -> !Booking.STATUS_COMPLETED.equals(booking.getStatus())
+                        && !Booking.STATUS_CANCELLED.equals(booking.getStatus())
+                        && !Booking.STATUS_REJECTED.equals(booking.getStatus()))
+                .map(this::convertToResponse)
+                .toList();
     }
 
     public List<BookingResponse> getOwnerBookings(Long ownerId) {
         // Get all bookings for products owned by the owner
         List<Booking> bookings = bookingRepository.findByProductOwnerId(ownerId);
         return bookings.stream()
-            .map(this::convertToResponse)
-            .collect(Collectors.toList());
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
     }
 
     public List<BookingResponse> getAllBookings() {
         List<Booking> bookings = bookingRepository.findAll();
         return bookings.stream()
-            .map(this::convertToResponse)
-            .toList();
+                .map(this::convertToResponse)
+                .toList();
     }
 
     public List<BookingResponse> getBookingsByProduct(Long productId, Long requesterId) {
         User requester = userRepository.findById(requesterId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + requesterId));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + requesterId));
 
         Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
 
         if (ROLE_OWNER.equalsIgnoreCase(requester.getRole())
-            && product.getOwner() != null
-            && !product.getOwner().getId().equals(requester.getId())) {
+                && product.getOwner() != null
+                && !product.getOwner().getId().equals(requester.getId())) {
             throw new IllegalStateException("User is not authorized to view bookings for this product");
         }
 
         List<Booking> bookings = bookingRepository.findByProduct(product);
         return bookings.stream()
-            .filter(booking -> Booking.STATUS_PAID.equals(booking.getStatus()) || 
-                             Booking.STATUS_COMPLETED.equals(booking.getStatus()))
-            .map(this::convertToResponse)
-            .toList();
+                .filter(booking -> Booking.STATUS_PAID.equals(booking.getStatus()) ||
+                        Booking.STATUS_COMPLETED.equals(booking.getStatus()))
+                .map(this::convertToResponse)
+                .toList();
     }
 
     public BookingResponse getBookingById(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
         return convertToResponse(booking);
     }
 
     public void cancelBooking(Long bookingId, Long userId) {
         User requester = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
         Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         // Check if booking is already cancelled
         if (Booking.STATUS_CANCELLED.equals(booking.getStatus())) {
@@ -157,10 +158,11 @@ public class BookingService {
 
         boolean isRenter = booking.getRenter().getId().equals(userId);
         boolean isOwner = ROLE_OWNER.equalsIgnoreCase(requester.getRole()) &&
-            booking.getProduct().getOwner() != null &&
-            booking.getProduct().getOwner().getId().equals(requester.getId());
+                booking.getProduct().getOwner() != null &&
+                booking.getProduct().getOwner().getId().equals(requester.getId());
 
-        // Verify the booking belongs to the user or requester is an owner (managing products)
+        // Verify the booking belongs to the user or requester is an owner (managing
+        // products)
         if (!isRenter && !isOwner) {
             throw new IllegalStateException("User is not authorized to cancel this booking");
         }
@@ -187,55 +189,57 @@ public class BookingService {
     public List<BookingResponse> getRenterHistory(Long userId) {
         // Verify user exists
         userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
         // Get all bookings for the renter (COMPLETED and CANCELLED)
         List<Booking> allBookings = bookingRepository.findByRenterId(userId);
-        
+
         return allBookings.stream()
-            .filter(booking -> Booking.STATUS_COMPLETED.equals(booking.getStatus()) || Booking.STATUS_CANCELLED.equals(booking.getStatus()))
-            .map(this::convertToResponse)
-            .toList();
+                .filter(booking -> Booking.STATUS_COMPLETED.equals(booking.getStatus())
+                        || Booking.STATUS_CANCELLED.equals(booking.getStatus()))
+                .map(this::convertToResponse)
+                .toList();
     }
 
     public List<BookingResponse> getPendingApprovalBookings(Long ownerId) {
         // Verify user is owner
         User owner = userRepository.findById(ownerId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + ownerId));
-        
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + ownerId));
+
         if (!"owner".equalsIgnoreCase(owner.getRole())) {
             throw new IllegalStateException("User is not an owner");
         }
 
         List<Booking> bookings = bookingRepository.findByProductOwnerId(ownerId);
         return bookings.stream()
-            .filter(booking -> Booking.STATUS_PENDING_APPROVAL.equals(booking.getStatus()))
-            .map(this::convertToResponse)
-            .toList();
+                .filter(booking -> Booking.STATUS_PENDING_APPROVAL.equals(booking.getStatus()))
+                .map(this::convertToResponse)
+                .toList();
     }
 
     public List<BookingResponse> getActiveBookingsByRenter(Long userId) {
         // Verify user exists
         userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
-        // Get all bookings for the renter with APPROVED or PAID status (active bookings)
+        // Get all bookings for the renter with APPROVED or PAID status (active
+        // bookings)
         List<Booking> allBookings = bookingRepository.findByRenterId(userId);
-        
+
         return allBookings.stream()
-            .filter(booking -> Booking.STATUS_APPROVED.equals(booking.getStatus()) 
-                            || Booking.STATUS_PAID.equals(booking.getStatus()))
-            .map(this::convertToResponse)
-            .toList();
+                .filter(booking -> Booking.STATUS_APPROVED.equals(booking.getStatus())
+                        || Booking.STATUS_PAID.equals(booking.getStatus()))
+                .map(this::convertToResponse)
+                .toList();
     }
 
     public BookingResponse approveBooking(Long bookingId, Long ownerId, String deliveryMethod, String pickupLocation) {
         Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         // Verify the owner owns the product
-        if (booking.getProduct().getOwner() == null || 
-            !booking.getProduct().getOwner().getId().equals(ownerId)) {
+        if (booking.getProduct().getOwner() == null ||
+                !booking.getProduct().getOwner().getId().equals(ownerId)) {
             throw new IllegalStateException("User is not authorized to approve this booking");
         }
 
@@ -250,7 +254,8 @@ public class BookingService {
         }
 
         // If PICKUP, require pickup location
-        if (Booking.DELIVERY_PICKUP.equals(deliveryMethod) && (pickupLocation == null || pickupLocation.trim().isEmpty())) {
+        if (Booking.DELIVERY_PICKUP.equals(deliveryMethod)
+                && (pickupLocation == null || pickupLocation.trim().isEmpty())) {
             throw new IllegalArgumentException("Pickup location is required for PICKUP delivery method");
         }
 
@@ -269,11 +274,11 @@ public class BookingService {
 
     public BookingResponse rejectBooking(Long bookingId, Long ownerId, String reason) {
         Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         // Verify the owner owns the product
-        if (booking.getProduct().getOwner() == null || 
-            !booking.getProduct().getOwner().getId().equals(ownerId)) {
+        if (booking.getProduct().getOwner() == null ||
+                !booking.getProduct().getOwner().getId().equals(ownerId)) {
             throw new IllegalStateException("User is not authorized to reject this booking");
         }
 
@@ -295,7 +300,7 @@ public class BookingService {
 
     public BookingResponse processPayment(Long bookingId, Long userId) {
         Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         // Verify user is the renter
         if (!booking.getRenter().getId().equals(userId)) {
@@ -338,22 +343,22 @@ public class BookingService {
 
     private BookingResponse convertToResponse(Booking booking) {
         Long ownerId = booking.getProduct().getOwner() != null ? booking.getProduct().getOwner().getId() : null;
-        String ownerName = booking.getProduct().getOwner() != null ? booking.getProduct().getOwner().getName() : "Unknown";
-        
+        String ownerName = booking.getProduct().getOwner() != null ? booking.getProduct().getOwner().getName()
+                : "Unknown";
+
         BookingResponse response = new BookingResponse(
-            booking.getId(),
-            booking.getRenter().getId(),
-            booking.getRenter().getName(),
-            booking.getProduct().getId(),
-            booking.getProduct().getName(),
-            ownerId,
-            ownerName,
-            booking.getBookingDate(),
-            booking.getReturnDate(),
-            booking.getTotalPrice(),
-            booking.getStatus()
-        );
-        
+                booking.getId(),
+                booking.getRenter().getId(),
+                booking.getRenter().getName(),
+                booking.getProduct().getId(),
+                booking.getProduct().getName(),
+                ownerId,
+                ownerName,
+                booking.getBookingDate(),
+                booking.getReturnDate(),
+                booking.getTotalPrice(),
+                booking.getStatus());
+
         response.setDeliveryMethod(booking.getDeliveryMethod());
         response.setDeliveryCode(booking.getDeliveryCode());
         response.setPickupLocation(booking.getPickupLocation());
@@ -366,17 +371,18 @@ public class BookingService {
         response.setDepositRequestedAt(booking.getDepositRequestedAt());
         response.setDepositPaid(booking.getDepositPaid());
         response.setDepositPaidAt(booking.getDepositPaidAt());
-        
+        response.setProductDepositAmount(booking.getProduct().getDepositAmount());
+
         return response;
     }
 
     public BookingResponse requestDeposit(Long bookingId, Long ownerId, Double depositAmount, String reason) {
         Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         // Verify the owner owns the product
-        if (booking.getProduct().getOwner() == null || 
-            !booking.getProduct().getOwner().getId().equals(ownerId)) {
+        if (booking.getProduct().getOwner() == null ||
+                !booking.getProduct().getOwner().getId().equals(ownerId)) {
             throw new IllegalStateException("User is not authorized to request deposit for this booking");
         }
 
@@ -403,14 +409,15 @@ public class BookingService {
         Booking savedBooking = bookingRepository.save(booking);
 
         // Notify renter that deposit is requested
-        notificationService.createDepositRequestedNotification(booking.getRenter(), savedBooking, depositAmount, reason);
+        notificationService.createDepositRequestedNotification(booking.getRenter(), savedBooking, depositAmount,
+                reason);
 
         return convertToResponse(savedBooking);
     }
 
     public BookingResponse payDeposit(Long bookingId, Long userId) {
         Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         // Verify user is the renter
         if (!booking.getRenter().getId().equals(userId)) {
@@ -436,6 +443,43 @@ public class BookingService {
         if (booking.getProduct().getOwner() != null) {
             notificationService.createDepositPaidNotification(booking.getProduct().getOwner(), savedBooking);
         }
+
+        return convertToResponse(savedBooking);
+    }
+
+    public BookingResponse refundDeposit(Long bookingId, Long ownerId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+
+        // Verify the owner owns the product
+        if (booking.getProduct().getOwner() == null ||
+                !booking.getProduct().getOwner().getId().equals(ownerId)) {
+            throw new IllegalStateException("User is not authorized to refund deposit for this booking");
+        }
+
+        // Verify deposit was requested
+        if (!Boolean.TRUE.equals(booking.getDepositRequested())) {
+            throw new IllegalStateException("No deposit has been requested for this booking");
+        }
+
+        // Verify booking is completed
+        if (!Booking.STATUS_COMPLETED.equals(booking.getStatus())) {
+            throw new IllegalStateException("Deposit can only be refunded for completed bookings");
+        }
+
+        // Clear deposit fields to indicate refund
+        Double refundedAmount = booking.getDepositAmount();
+        booking.setDepositRequested(false);
+        booking.setDepositPaid(false);
+        booking.setDepositAmount(null);
+        booking.setDepositReason(null);
+        booking.setDepositRequestedAt(null);
+        booking.setDepositPaidAt(null);
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        // Notify renter that deposit was refunded
+        notificationService.createDepositRefundedNotification(booking.getRenter(), savedBooking, refundedAmount);
 
         return convertToResponse(savedBooking);
     }

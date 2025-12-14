@@ -45,9 +45,8 @@ class BookingControllerTest {
         testRequest = new BookingRequest(1L, bookingDate, returnDate);
 
         testResponse = new BookingResponse(
-            1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
-            bookingDate, returnDate, 100.0, "ACTIVE"
-        );
+                1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                bookingDate, returnDate, 100.0, "ACTIVE");
     }
 
     @Nested
@@ -58,7 +57,7 @@ class BookingControllerTest {
         @DisplayName("Should create booking successfully")
         void shouldCreateBookingSuccessfully() {
             when(bookingService.createBooking(eq(1L), any(BookingRequest.class)))
-                .thenReturn(testResponse);
+                    .thenReturn(testResponse);
 
             ResponseEntity<?> response = bookingController.createBooking(1L, testRequest);
 
@@ -74,7 +73,7 @@ class BookingControllerTest {
         @DisplayName("Should return bad request when IllegalArgumentException thrown")
         void shouldReturnBadRequestOnIllegalArgumentException() {
             when(bookingService.createBooking(eq(1L), any(BookingRequest.class)))
-                .thenThrow(new IllegalArgumentException("User not found"));
+                    .thenThrow(new IllegalArgumentException("User not found"));
 
             ResponseEntity<?> response = bookingController.createBooking(1L, testRequest);
 
@@ -86,7 +85,7 @@ class BookingControllerTest {
         @DisplayName("Should return conflict when IllegalStateException thrown")
         void shouldReturnConflictOnIllegalStateException() {
             when(bookingService.createBooking(eq(1L), any(BookingRequest.class)))
-                .thenThrow(new IllegalStateException("Product not available"));
+                    .thenThrow(new IllegalStateException("Product not available"));
 
             ResponseEntity<?> response = bookingController.createBooking(1L, testRequest);
 
@@ -147,7 +146,7 @@ class BookingControllerTest {
         @DisplayName("Should return not found when booking not found")
         void shouldReturnNotFoundWhenBookingNotFound() {
             when(bookingService.getBookingById(1L))
-                .thenThrow(new IllegalArgumentException("Booking not found"));
+                    .thenThrow(new IllegalArgumentException("Booking not found"));
 
             ResponseEntity<?> response = bookingController.getBookingById(1L);
 
@@ -187,7 +186,7 @@ class BookingControllerTest {
         @DisplayName("Should return not found when product not found for bookings")
         void shouldReturnNotFoundWhenProductMissing() {
             when(bookingService.getBookingsByProduct(1L, 1L))
-                .thenThrow(new IllegalArgumentException("Product not found"));
+                    .thenThrow(new IllegalArgumentException("Product not found"));
 
             ResponseEntity<?> response = bookingController.getBookingsByProduct(1L, 1L);
 
@@ -198,7 +197,7 @@ class BookingControllerTest {
         @DisplayName("Should return forbidden when owner not authorized for product bookings")
         void shouldReturnForbiddenWhenOwnerUnauthorized() {
             when(bookingService.getBookingsByProduct(1L, 1L))
-                .thenThrow(new IllegalStateException("User is not authorized to view bookings for this product"));
+                    .thenThrow(new IllegalStateException("User is not authorized to view bookings for this product"));
 
             ResponseEntity<?> response = bookingController.getBookingsByProduct(1L, 1L);
 
@@ -226,7 +225,7 @@ class BookingControllerTest {
         @DisplayName("Should return not found when booking not found")
         void shouldReturnNotFoundWhenBookingNotFound() {
             doThrow(new IllegalArgumentException("Booking not found"))
-                .when(bookingService).cancelBooking(1L, 1L);
+                    .when(bookingService).cancelBooking(1L, 1L);
 
             ResponseEntity<?> response = bookingController.cancelBooking(1L, 1L);
 
@@ -237,7 +236,7 @@ class BookingControllerTest {
         @DisplayName("Should return forbidden when user not authorized")
         void shouldReturnForbiddenWhenUserNotAuthorized() {
             doThrow(new IllegalStateException("User is not authorized"))
-                .when(bookingService).cancelBooking(1L, 1L);
+                    .when(bookingService).cancelBooking(1L, 1L);
 
             ResponseEntity<?> response = bookingController.cancelBooking(1L, 1L);
 
@@ -268,14 +267,12 @@ class BookingControllerTest {
             LocalDateTime pastReturnDate = LocalDateTime.now().minusDays(7);
 
             BookingResponse completedBooking = new BookingResponse(
-                1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
-                pastBookingDate, pastReturnDate, 150.0, "COMPLETED"
-            );
+                    1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                    pastBookingDate, pastReturnDate, 150.0, "COMPLETED");
 
             BookingResponse cancelledBooking = new BookingResponse(
-                2L, 1L, "John Doe", 2L, "Suit", 5L, "Owner Name",
-                pastBookingDate, pastReturnDate, 200.0, "CANCELLED"
-            );
+                    2L, 1L, "John Doe", 2L, "Suit", 5L, "Owner Name",
+                    pastBookingDate, pastReturnDate, 200.0, "CANCELLED");
 
             List<BookingResponse> history = Arrays.asList(completedBooking, cancelledBooking);
 
@@ -313,7 +310,7 @@ class BookingControllerTest {
         @DisplayName("Should return not found when user does not exist")
         void shouldReturnNotFoundWhenUserDoesNotExist() {
             when(bookingService.getRenterHistory(999L))
-                .thenThrow(new IllegalArgumentException("User not found"));
+                    .thenThrow(new IllegalArgumentException("User not found"));
 
             ResponseEntity<?> response = bookingController.getRenterHistory(999L);
 
@@ -332,9 +329,8 @@ class BookingControllerTest {
             LocalDateTime futureReturnDate = LocalDateTime.now().plusDays(3);
 
             BookingResponse activeBooking = new BookingResponse(
-                1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
-                futureBookingDate, futureReturnDate, 100.0, "ACTIVE"
-            );
+                    1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                    futureBookingDate, futureReturnDate, 100.0, "ACTIVE");
 
             List<BookingResponse> activeBookings = Arrays.asList(activeBooking);
 
@@ -371,7 +367,7 @@ class BookingControllerTest {
         @DisplayName("Should return not found when user does not exist")
         void shouldReturnNotFoundWhenUserDoesNotExistForActiveBookings() {
             when(bookingService.getActiveBookingsByRenter(999L))
-                .thenThrow(new IllegalArgumentException("User not found"));
+                    .thenThrow(new IllegalArgumentException("User not found"));
 
             ResponseEntity<?> response = bookingController.getActiveBookings(999L);
 
@@ -388,15 +384,14 @@ class BookingControllerTest {
         void shouldRequestDepositSuccessfully() {
             RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
             BookingResponse expectedResponse = new BookingResponse(
-                1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
-                LocalDateTime.now(), LocalDateTime.now().plusDays(1), 100.0, "COMPLETED"
-            );
+                    1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                    LocalDateTime.now(), LocalDateTime.now().plusDays(1), 100.0, "COMPLETED");
             expectedResponse.setDepositAmount(50.0);
             expectedResponse.setDepositRequested(true);
             expectedResponse.setDepositReason("Damaged item");
 
             when(bookingService.requestDeposit(eq(1L), eq(5L), eq(50.0), eq("Damaged item")))
-                .thenReturn(expectedResponse);
+                    .thenReturn(expectedResponse);
 
             ResponseEntity<?> response = bookingController.requestDeposit(1L, 5L, depositRequest);
 
@@ -414,9 +409,9 @@ class BookingControllerTest {
         @DisplayName("Should return bad request when booking not found")
         void shouldReturnBadRequestWhenBookingNotFoundForDeposit() {
             RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
-            
+
             when(bookingService.requestDeposit(eq(999L), eq(5L), eq(50.0), eq("Damaged item")))
-                .thenThrow(new IllegalArgumentException("Booking not found with id: 999"));
+                    .thenThrow(new IllegalArgumentException("Booking not found with id: 999"));
 
             ResponseEntity<?> response = bookingController.requestDeposit(999L, 5L, depositRequest);
 
@@ -428,9 +423,9 @@ class BookingControllerTest {
         @DisplayName("Should return forbidden when user is not owner")
         void shouldReturnForbiddenWhenUserIsNotOwner() {
             RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
-            
+
             when(bookingService.requestDeposit(eq(1L), eq(999L), eq(50.0), eq("Damaged item")))
-                .thenThrow(new IllegalStateException("User is not authorized to request deposit for this booking"));
+                    .thenThrow(new IllegalStateException("User is not authorized to request deposit for this booking"));
 
             ResponseEntity<?> response = bookingController.requestDeposit(1L, 999L, depositRequest);
 
@@ -442,9 +437,10 @@ class BookingControllerTest {
         @DisplayName("Should return forbidden when booking not completed")
         void shouldReturnForbiddenWhenBookingNotCompleted() {
             RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
-            
+
             when(bookingService.requestDeposit(eq(1L), eq(5L), eq(50.0), eq("Damaged item")))
-                .thenThrow(new IllegalStateException("Deposit can only be requested after the booking return date"));
+                    .thenThrow(
+                            new IllegalStateException("Deposit can only be requested after the booking return date"));
 
             ResponseEntity<?> response = bookingController.requestDeposit(1L, 5L, depositRequest);
 
@@ -456,9 +452,9 @@ class BookingControllerTest {
         @DisplayName("Should return forbidden when deposit already requested")
         void shouldReturnForbiddenWhenDepositAlreadyRequested() {
             RequestDepositRequest depositRequest = new RequestDepositRequest(50.0, "Damaged item");
-            
+
             when(bookingService.requestDeposit(eq(1L), eq(5L), eq(50.0), eq("Damaged item")))
-                .thenThrow(new IllegalStateException("Deposit has already been requested for this booking"));
+                    .thenThrow(new IllegalStateException("Deposit has already been requested for this booking"));
 
             ResponseEntity<?> response = bookingController.requestDeposit(1L, 5L, depositRequest);
 
@@ -475,16 +471,15 @@ class BookingControllerTest {
         @DisplayName("Should pay deposit successfully")
         void shouldPayDepositSuccessfully() {
             BookingResponse expectedResponse = new BookingResponse(
-                1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
-                LocalDateTime.now(), LocalDateTime.now().plusDays(1), 100.0, "COMPLETED"
-            );
+                    1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                    LocalDateTime.now(), LocalDateTime.now().plusDays(1), 100.0, "COMPLETED");
             expectedResponse.setDepositAmount(50.0);
             expectedResponse.setDepositRequested(true);
             expectedResponse.setDepositPaid(true);
             expectedResponse.setDepositPaidAt(LocalDateTime.now());
 
             when(bookingService.payDeposit(eq(1L), eq(1L)))
-                .thenReturn(expectedResponse);
+                    .thenReturn(expectedResponse);
 
             ResponseEntity<?> response = bookingController.payDeposit(1L, 1L);
 
@@ -501,7 +496,7 @@ class BookingControllerTest {
         @DisplayName("Should return bad request when booking not found")
         void shouldReturnBadRequestWhenBookingNotFoundForPayment() {
             when(bookingService.payDeposit(eq(999L), eq(1L)))
-                .thenThrow(new IllegalArgumentException("Booking not found with id: 999"));
+                    .thenThrow(new IllegalArgumentException("Booking not found with id: 999"));
 
             ResponseEntity<?> response = bookingController.payDeposit(999L, 1L);
 
@@ -513,7 +508,7 @@ class BookingControllerTest {
         @DisplayName("Should return forbidden when user is not renter")
         void shouldReturnForbiddenWhenUserIsNotRenter() {
             when(bookingService.payDeposit(eq(1L), eq(999L)))
-                .thenThrow(new IllegalStateException("User is not authorized to pay deposit for this booking"));
+                    .thenThrow(new IllegalStateException("User is not authorized to pay deposit for this booking"));
 
             ResponseEntity<?> response = bookingController.payDeposit(1L, 999L);
 
@@ -525,7 +520,7 @@ class BookingControllerTest {
         @DisplayName("Should return forbidden when deposit not requested")
         void shouldReturnForbiddenWhenDepositNotRequested() {
             when(bookingService.payDeposit(eq(1L), eq(1L)))
-                .thenThrow(new IllegalStateException("No deposit has been requested for this booking"));
+                    .thenThrow(new IllegalStateException("No deposit has been requested for this booking"));
 
             ResponseEntity<?> response = bookingController.payDeposit(1L, 1L);
 
@@ -537,12 +532,91 @@ class BookingControllerTest {
         @DisplayName("Should return forbidden when deposit already paid")
         void shouldReturnForbiddenWhenDepositAlreadyPaid() {
             when(bookingService.payDeposit(eq(1L), eq(1L)))
-                .thenThrow(new IllegalStateException("Deposit has already been paid for this booking"));
+                    .thenThrow(new IllegalStateException("Deposit has already been paid for this booking"));
 
             ResponseEntity<?> response = bookingController.payDeposit(1L, 1L);
 
             assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
             assertTrue(response.getBody().toString().contains("already been paid"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Refund Deposit Tests")
+    class RefundDepositTests {
+
+        @Test
+        @DisplayName("Should refund deposit successfully")
+        void shouldRefundDepositSuccessfully() {
+            BookingResponse expectedResponse = new BookingResponse(
+                    1L, 1L, "John Doe", 1L, "Tuxedo", 5L, "Owner Name",
+                    LocalDateTime.now(), LocalDateTime.now().plusDays(1), 100.0, "COMPLETED");
+            // After refund, deposit fields should be cleared
+            expectedResponse.setDepositAmount(null);
+            expectedResponse.setDepositRequested(false);
+            expectedResponse.setDepositPaid(false);
+
+            when(bookingService.refundDeposit(eq(1L), eq(5L)))
+                    .thenReturn(expectedResponse);
+
+            ResponseEntity<?> response = bookingController.refundDeposit(1L, 5L);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody() instanceof BookingResponse);
+            BookingResponse body = (BookingResponse) response.getBody();
+            assertNull(body.getDepositAmount());
+            assertEquals(false, body.getDepositRequested());
+            assertEquals(false, body.getDepositPaid());
+            verify(bookingService, times(1)).refundDeposit(eq(1L), eq(5L));
+        }
+
+        @Test
+        @DisplayName("Should return bad request when booking not found")
+        void shouldReturnBadRequestWhenBookingNotFound() {
+            when(bookingService.refundDeposit(eq(999L), eq(5L)))
+                    .thenThrow(new IllegalArgumentException("Booking not found with id: 999"));
+
+            ResponseEntity<?> response = bookingController.refundDeposit(999L, 5L);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("Booking not found with id: 999", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when user is not owner")
+        void shouldReturnForbiddenWhenUserIsNotOwner() {
+            when(bookingService.refundDeposit(eq(1L), eq(999L)))
+                    .thenThrow(new IllegalStateException("User is not authorized to refund deposit for this booking"));
+
+            ResponseEntity<?> response = bookingController.refundDeposit(1L, 999L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertEquals("User is not authorized to refund deposit for this booking", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when deposit not requested")
+        void shouldReturnForbiddenWhenDepositNotRequested() {
+            when(bookingService.refundDeposit(eq(1L), eq(5L)))
+                    .thenThrow(new IllegalStateException("No deposit has been requested for this booking"));
+
+            ResponseEntity<?> response = bookingController.refundDeposit(1L, 5L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertTrue(response.getBody().toString().contains("No deposit has been requested"));
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when booking not completed")
+        void shouldReturnForbiddenWhenBookingNotCompleted() {
+            when(bookingService.refundDeposit(eq(1L), eq(5L)))
+                    .thenThrow(new IllegalStateException("Deposit can only be refunded for completed bookings"));
+
+            ResponseEntity<?> response = bookingController.refundDeposit(1L, 5L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertTrue(response.getBody().toString().contains("completed bookings"));
         }
     }
 }

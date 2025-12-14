@@ -132,7 +132,7 @@ public class BookingController {
             @Valid @RequestBody ApproveBookingRequest request) {
         try {
             BookingResponse booking = bookingService.approveBooking(
-                bookingId, ownerId, request.getDeliveryMethod(), request.getPickupLocation());
+                    bookingId, ownerId, request.getDeliveryMethod(), request.getPickupLocation());
             return ResponseEntity.ok(booking);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -176,7 +176,8 @@ public class BookingController {
             @RequestHeader("X-User-Id") Long ownerId,
             @Valid @RequestBody RequestDepositRequest request) {
         try {
-            BookingResponse booking = bookingService.requestDeposit(bookingId, ownerId, request.getDepositAmount(), request.getReason());
+            BookingResponse booking = bookingService.requestDeposit(bookingId, ownerId, request.getDepositAmount(),
+                    request.getReason());
             return ResponseEntity.ok(booking);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -191,6 +192,20 @@ public class BookingController {
             @RequestHeader("X-User-Id") Long userId) {
         try {
             BookingResponse booking = bookingService.payDeposit(bookingId, userId);
+            return ResponseEntity.ok(booking);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{bookingId}/refund-deposit")
+    public ResponseEntity<?> refundDeposit(
+            @PathVariable Long bookingId,
+            @RequestHeader("X-User-Id") Long ownerId) {
+        try {
+            BookingResponse booking = bookingService.refundDeposit(bookingId, ownerId);
             return ResponseEntity.ok(booking);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

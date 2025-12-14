@@ -443,7 +443,7 @@ export default function OwnerBookingsPage() {
                           onClick={() => handleRequestDepositClick(booking)}
                           size="sm"
                           variant="outline"
-                          className="text-xs"
+                          className="text-xs text-black"
                         >
                           Request Deposit
                         </Button>

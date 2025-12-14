@@ -11,11 +11,14 @@ type PaymentFormProps = {
   onCancel: () => void
 }
 
-function CheckoutForm({ booking, onSuccess, onCancel }: Omit<PaymentFormProps, 'userId'>) {
+function CheckoutForm({ booking, totalAmount, onSuccess, onCancel }: Omit<PaymentFormProps, 'userId'> & { totalAmount: number }) {
   const stripe = useStripe()
   const elements = useElements()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const hasDeposit = booking.productDepositAmount && booking.productDepositAmount > 0
+  const depositAmount = hasDeposit ? booking.productDepositAmount! : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,12 +53,35 @@ function CheckoutForm({ booking, onSuccess, onCancel }: Omit<PaymentFormProps, '
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="bg-gray-50 p-4 rounded-lg">
-        <h3 className="font-semibold mb-2">Payment Summary</h3>
+        <h3 className="font-semibold mb-2 text-gray-900">Payment Summary</h3>
         <p className="text-sm text-gray-600">Product: {booking.productName}</p>
         <p className="text-sm text-gray-600">
           Dates: {new Date(booking.bookingDate).toLocaleDateString()} - {new Date(booking.returnDate).toLocaleDateString()}
         </p>
-        <p className="text-lg font-bold mt-2">Total: €{booking.totalPrice.toFixed(2)}</p>
+
+        {/* Price breakdown */}
+        <div className="mt-3 pt-3 border-t border-gray-200 space-y-1">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Rental</span>
+            <span>€{booking.totalPrice.toFixed(2)}</span>
+          </div>
+          {hasDeposit && (
+            <div className="flex justify-between text-sm text-amber-700">
+              <span>Security Deposit (refundable)</span>
+              <span>+€{depositAmount.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between font-bold text-gray-900 pt-2 border-t mt-2">
+            <span>Total</span>
+            <span>€{totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+
+        {hasDeposit && (
+          <p className="text-xs text-gray-500 mt-2">
+            The security deposit will be refunded after the item is returned in good condition.
+          </p>
+        )}
       </div>
 
       {error && (
@@ -80,7 +106,7 @@ function CheckoutForm({ booking, onSuccess, onCancel }: Omit<PaymentFormProps, '
           disabled={!stripe || loading}
           className="flex-1"
         >
-          {loading ? 'Processing...' : `Pay €${booking.totalPrice.toFixed(2)}`}
+          {loading ? 'Processing...' : `Pay €${totalAmount.toFixed(2)}`}
         </Button>
       </div>
     </form>
@@ -92,11 +118,17 @@ export function PaymentModal({ booking, userId, onSuccess, onCancel }: PaymentFo
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Calculate total including deposit
+  const hasDeposit = booking.productDepositAmount && booking.productDepositAmount > 0
+  const depositAmount = hasDeposit ? booking.productDepositAmount! : 0
+  const totalAmount = booking.totalPrice + depositAmount
+
   useState(() => {
     const initPayment = async () => {
       try {
         setLoading(true)
-        const amountInCents = Math.round(booking.totalPrice * 100)
+        // Calculate total in cents (rental + deposit)
+        const amountInCents = Math.round(totalAmount * 100)
         const response = await createPaymentIntent(userId, {
           bookingId: booking.id,
           amount: amountInCents,
@@ -125,13 +157,18 @@ export function PaymentModal({ booking, userId, onSuccess, onCancel }: PaymentFo
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-        <h2 className="text-2xl font-bold mb-4">Complete Payment</h2>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) onCancel()
+      }}
+    >
+      <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl" style={{ margin: 'auto' }}>
+        <h2 className="text-2xl font-bold mb-4 text-gray-900">Complete Payment</h2>
 
         {loading && (
           <div className="text-center py-8">
-            <p>Loading payment form...</p>
+            <p className="text-gray-600">Loading payment form...</p>
           </div>
         )}
 
@@ -144,7 +181,12 @@ export function PaymentModal({ booking, userId, onSuccess, onCancel }: PaymentFo
 
         {clientSecret && !loading && (
           <Elements stripe={stripePromise} options={{ clientSecret }}>
-            <CheckoutForm booking={booking} onSuccess={onSuccess} onCancel={onCancel} />
+            <CheckoutForm
+              booking={booking}
+              totalAmount={totalAmount}
+              onSuccess={onSuccess}
+              onCancel={onCancel}
+            />
           </Elements>
         )}
       </div>

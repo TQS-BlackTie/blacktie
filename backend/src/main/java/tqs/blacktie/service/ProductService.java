@@ -1,6 +1,7 @@
 package tqs.blacktie.service;
 
 import org.springframework.stereotype.Service;
+import tqs.blacktie.dto.LocationDTO;
 import tqs.blacktie.entity.Product;
 import tqs.blacktie.entity.User;
 import tqs.blacktie.repository.ProductRepository;
@@ -13,10 +14,12 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final LocationService locationService;
 
-    public ProductService(ProductRepository productRepository, UserRepository userRepository) {
+    public ProductService(ProductRepository productRepository, UserRepository userRepository, LocationService locationService) {
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.locationService = locationService;
     }
 
     public List<Product> getAvailableProducts(String name, Double maxPrice, Long requesterId) {
@@ -72,6 +75,29 @@ public class ProductService {
         if (product.getAvailable() == null) {
             product.setAvailable(true);
         }
+        
+        // Geocode location if address is provided
+        if (product.getAddress() != null && !product.getAddress().isBlank()) {
+            LocationDTO location = locationService.geocodeAddress(
+                product.getAddress(), 
+                product.getCity(), 
+                product.getPostalCode()
+            );
+            product.setLatitude(location.getLatitude());
+            product.setLongitude(location.getLongitude());
+            product.setCity(location.getCity());
+            product.setPostalCode(location.getPostalCode());
+        } else if (product.getLatitude() != null && product.getLongitude() != null) {
+            // Reverse geocode if only coordinates are provided
+            LocationDTO location = locationService.reverseGeocode(
+                product.getLatitude(), 
+                product.getLongitude()
+            );
+            product.setAddress(location.getAddress());
+            product.setCity(location.getCity());
+            product.setPostalCode(location.getPostalCode());
+        }
+        
         return productRepository.save(product);
     }
 

@@ -38,6 +38,21 @@ public class Product {
     @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "city")
+    private String city;
+
+    @Column(name = "postal_code")
+    private String postalCode;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     @ManyToOne
     @JoinColumn(name = "owner_id")
     private User owner;
