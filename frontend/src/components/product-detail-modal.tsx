@@ -47,20 +47,13 @@ export function ProductDetailModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100] overflow-y-auto"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-      }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >
       <div
-        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col md:flex-row my-auto"
+        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col md:flex-row"
       >
         {/* Left side - Image */}
         <div className="md:w-1/2 relative bg-gray-100 flex-shrink-0">

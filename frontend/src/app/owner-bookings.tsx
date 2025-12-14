@@ -3,7 +3,6 @@ import { Navbar } from '@/components/navbar'
 import { NotificationBell } from '@/components/notification-bell'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { requestDeposit } from '@/lib/api'
 
 interface User {
@@ -29,6 +28,7 @@ interface Booking {
   depositRequestedAt?: string
   depositPaid?: boolean
   depositPaidAt?: string
+  productDepositAmount?: number // The security deposit from the product
 }
 
 export default function OwnerBookingsPage() {
@@ -43,7 +43,6 @@ export default function OwnerBookingsPage() {
   const [selectedWeek, setSelectedWeek] = useState<number>(1)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [depositModalOpen, setDepositModalOpen] = useState(false)
-  const [depositAmount, setDepositAmount] = useState('')
   const [depositReason, setDepositReason] = useState('')
   const [depositError, setDepositError] = useState<string | null>(null)
   const [depositSubmitting, setDepositSubmitting] = useState(false)
@@ -57,7 +56,7 @@ export default function OwnerBookingsPage() {
 
     try {
       const parsedUser = JSON.parse(userData) as User
-      
+
       if (parsedUser.role !== 'owner') {
         window.location.href = '/'
         return
@@ -116,15 +115,15 @@ export default function OwnerBookingsPage() {
     } else if (filterType === 'month') {
       filtered = filtered.filter(booking => {
         const bookingDate = new Date(booking.bookingDate)
-        return bookingDate.getFullYear() === selectedYear && 
-               bookingDate.getMonth() + 1 === selectedMonth
+        return bookingDate.getFullYear() === selectedYear &&
+          bookingDate.getMonth() + 1 === selectedMonth
       })
     } else if (filterType === 'week') {
       filtered = filtered.filter(booking => {
         const bookingDate = new Date(booking.bookingDate)
-        return bookingDate.getFullYear() === selectedYear && 
-               bookingDate.getMonth() + 1 === selectedMonth &&
-               getWeekOfMonth(bookingDate) === selectedWeek
+        return bookingDate.getFullYear() === selectedYear &&
+          bookingDate.getMonth() + 1 === selectedMonth &&
+          getWeekOfMonth(bookingDate) === selectedWeek
       })
     }
 
@@ -205,16 +204,22 @@ export default function OwnerBookingsPage() {
   const canRequestDeposit = (booking: Booking) => {
     const returnDate = new Date(booking.returnDate)
     const now = new Date()
+    // Only allow deposit request if:
+    // 1. Booking is COMPLETED or PAID
+    // 2. Return date has passed
+    // 3. Deposit hasn't been requested yet
+    // 4. Product has a deposit configured (productDepositAmount > 0)
     return (
       (booking.status === 'COMPLETED' || booking.status === 'PAID') &&
       returnDate < now &&
-      !booking.depositRequested
+      !booking.depositRequested &&
+      booking.productDepositAmount != null &&
+      booking.productDepositAmount > 0
     )
   }
 
   const handleRequestDepositClick = (booking: Booking) => {
     setSelectedBooking(booking)
-    setDepositAmount('')
     setDepositReason('')
     setDepositError(null)
     setDepositModalOpen(true)
@@ -223,14 +228,15 @@ export default function OwnerBookingsPage() {
   const handleRequestDepositSubmit = async () => {
     if (!selectedBooking || !user) return
 
-    const amount = Number(depositAmount)
-    if (!depositAmount || isNaN(amount) || amount <= 0) {
-      setDepositError('Please enter a valid deposit amount')
+    // Use the product's deposit amount (fixed, not user-editable)
+    const amount = selectedBooking.productDepositAmount
+    if (!amount || amount <= 0) {
+      setDepositError('No deposit configured for this product')
       return
     }
 
     if (!depositReason.trim()) {
-      setDepositError('Please provide a reason for the deposit')
+      setDepositError('Please provide a reason for claiming the deposit')
       return
     }
 
@@ -241,12 +247,12 @@ export default function OwnerBookingsPage() {
         depositAmount: amount,
         reason: depositReason.trim()
       })
-      
+
       // Refresh bookings
       await fetchBookings(user.id)
       setDepositModalOpen(false)
     } catch (error) {
-      setDepositError(error instanceof Error ? error.message : 'Failed to request deposit')
+      setDepositError(error instanceof Error ? error.message : 'Failed to claim deposit')
     } finally {
       setDepositSubmitting(false)
     }
@@ -262,13 +268,13 @@ export default function OwnerBookingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
-      <Navbar 
+      <Navbar
         userName={user?.name}
         userRole={user?.role}
         onLogout={handleLogout}
         notificationBell={user ? <NotificationBell userId={user.id} /> : undefined}
       />
-      
+
       <div className="container mx-auto p-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Booking History</h1>
@@ -445,7 +451,7 @@ export default function OwnerBookingsPage() {
                           variant="outline"
                           className="text-xs text-black"
                         >
-                          Request Deposit
+                          Claim Deposit
                         </Button>
                       ) : booking.depositRequested ? (
                         <div className="text-xs text-muted-foreground">
@@ -497,11 +503,11 @@ export default function OwnerBookingsPage() {
         )}
       </div>
 
-      {/* Deposit Request Modal */}
+      {/* Deposit Claim Modal */}
       <Dialog open={depositModalOpen} onOpenChange={setDepositModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md text-black">
           <DialogHeader>
-            <DialogTitle>Request Deposit</DialogTitle>
+            <DialogTitle>Claim Security Deposit</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {selectedBooking && (
@@ -510,7 +516,26 @@ export default function OwnerBookingsPage() {
                 <p><strong>Renter:</strong> {selectedBooking.renterName}</p>
               </div>
             )}
-            
+
+            {/* Deposit amount info box */}
+            {selectedBooking?.productDepositAmount && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <span className="font-medium text-amber-800">Security Deposit Claim</span>
+                </div>
+                <p className="text-sm text-amber-700">
+                  The renter paid a security deposit of <strong>€{selectedBooking.productDepositAmount.toFixed(2)}</strong> upfront.
+                  By claiming this deposit, you confirm that the item was returned with issues.
+                </p>
+                <p className="text-lg font-bold text-amber-900 mt-2">
+                  Amount to claim: €{selectedBooking.productDepositAmount.toFixed(2)}
+                </p>
+              </div>
+            )}
+
             {depositError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
                 {depositError}
@@ -518,32 +543,20 @@ export default function OwnerBookingsPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Deposit Amount (€)
-              </label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Enter amount"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                disabled={depositSubmitting}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Reason for Deposit
+              <label className="block text-sm font-medium mb-2 text-black">
+                Reason for Claiming Deposit <span className="text-red-500">*</span>
               </label>
               <textarea
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
                 rows={4}
-                placeholder="Explain why you're requesting this deposit..."
+                placeholder="Describe the damage or issue with the returned item (e.g., scratches, missing parts, stains)..."
                 value={depositReason}
                 onChange={(e) => setDepositReason(e.target.value)}
                 disabled={depositSubmitting}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                This reason will be shared with the renter.
+              </p>
             </div>
 
             <div className="flex gap-3 justify-end">
@@ -558,9 +571,9 @@ export default function OwnerBookingsPage() {
               <Button
                 onClick={handleRequestDepositSubmit}
                 disabled={depositSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-amber-600 hover:bg-amber-700 text-white"
               >
-                {depositSubmitting ? 'Requesting...' : 'Request Deposit'}
+                {depositSubmitting ? 'Claiming...' : `Claim €${selectedBooking?.productDepositAmount?.toFixed(2) || '0.00'}`}
               </Button>
             </div>
           </div>

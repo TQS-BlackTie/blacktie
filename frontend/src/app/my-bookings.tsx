@@ -54,16 +54,20 @@ function calculateCountdown(booking: Booking): { label: string; countdown: strin
   return { label, countdown: countdown.trim() }
 }
 
-function PaymentForm({ amount, onSuccess, onCancel }: { 
-  amount: number
+function PaymentForm({ booking, onSuccess, onCancel }: {
+  booking: Booking
   onSuccess: () => void
   onCancel: () => void
 }) {
   const stripe = useStripe()
-  // bookingId is used for payment processing context
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
+
+  // Calculate totals
+  const hasDeposit = booking.productDepositAmount && booking.productDepositAmount > 0
+  const depositAmount = hasDeposit ? booking.productDepositAmount! : 0
+  const totalAmount = booking.totalPrice + depositAmount
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -92,19 +96,40 @@ function PaymentForm({ amount, onSuccess, onCancel }: {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
+    <form onSubmit={handleSubmit} className="space-y-3">
+      {/* Payment Summary - Compact */}
+      <div className="bg-gray-50 p-3 rounded-lg text-sm">
+        <p className="text-slate-500 mb-2">Product: {booking.productName}</p>
+        <div className="space-y-1">
+          <div className="flex justify-between text-slate-600">
+            <span>Rental</span>
+            <span>€{booking.totalPrice.toFixed(2)}</span>
+          </div>
+          {hasDeposit && (
+            <div className="flex justify-between text-amber-700">
+              <span>Deposit (refundable)</span>
+              <span>+€{depositAmount.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between font-bold text-slate-900 pt-1 border-t">
+            <span>Total</span>
+            <span>€{totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <PaymentElement options={{ layout: 'tabs' }} />
       {error && (
-        <div className="text-red-600 text-sm bg-red-50 p-3 rounded">
+        <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
           {error}
         </div>
       )}
-      <div className="flex gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={processing}>
+      <div className="flex gap-2 pt-2">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={processing} size="sm">
           Cancel
         </Button>
-        <Button type="submit" disabled={!stripe || processing} className="flex-1">
-          {processing ? 'Processing...' : `Pay €${(amount / 100).toFixed(2)}`}
+        <Button type="submit" disabled={!stripe || processing} className="flex-1" size="sm">
+          {processing ? 'Processing...' : `Pay €${totalAmount.toFixed(2)}`}
         </Button>
       </div>
     </form>
@@ -142,11 +167,11 @@ export default function MyBookingsPage() {
       const data = await getUserBookings(userId)
       // Filter to show only active bookings (not COMPLETED or CANCELLED)
       setBookings(data.filter(b => b.status !== 'COMPLETED' && b.status !== 'CANCELLED'))
-      
+
       // Fetch history (COMPLETED and CANCELLED)
       const history = await getRenterHistory(userId)
       setHistoryBookings(history)
-      
+
       // Fetch existing reviews for completed bookings
       const map: Record<number, ReviewResponse | undefined> = {}
       await Promise.all(history.filter(h => h.status === 'COMPLETED').map(async (b) => {
@@ -190,16 +215,20 @@ export default function MyBookingsPage() {
     return () => clearInterval(interval)
   }, [bookings])
 
-  
+
 
   const handlePayClick = async (booking: Booking) => {
     setSelectedBooking(booking)
     setProcessingPayment(true)
-    
+
     try {
+      // Calculate total including deposit
+      const depositAmount = booking.productDepositAmount || 0
+      const totalAmount = booking.totalPrice + depositAmount
+
       const paymentIntent = await createPaymentIntent(userId, {
         bookingId: booking.id,
-        amount: Math.round(booking.totalPrice * 100)
+        amount: Math.round(totalAmount * 100) // Include deposit in payment
       })
       setClientSecret(paymentIntent.clientSecret)
       setShowPaymentModal(true)
@@ -259,7 +288,7 @@ export default function MyBookingsPage() {
     try {
       setPayingDeposit(true)
       await payDeposit(userId, selectedBooking.id)
-      
+
       // Refresh bookings
       await fetchBookings()
       setDepositModalOpen(false)
@@ -353,140 +382,140 @@ export default function MyBookingsPage() {
             <>
               <h2 className="text-2xl font-bold text-white mb-4">Active Bookings</h2>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
-            {bookings.map((booking) => {
-              const { label } = calculateCountdown(booking)
-              const countdown = countdowns[booking.id] || ""
-              const showCountdown = booking.status === 'PAID' || booking.status === 'COMPLETED'
+                {bookings.map((booking) => {
+                  const { label } = calculateCountdown(booking)
+                  const countdown = countdowns[booking.id] || ""
+                  const showCountdown = booking.status === 'PAID' || booking.status === 'COMPLETED'
 
-              return (
-                <div
-                  key={booking.id}
-                  className="group rounded-3xl border border-white/15 bg-white/75 p-6 shadow-2xl backdrop-blur transition-all duration-300 hover:shadow-emerald-500/10 hover:-translate-y-1"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-900">{booking.productName}</h3>
-                      <p className="text-sm text-slate-600">
-                        Owner: {booking.ownerName || 'Unknown'}
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(booking.status)}`}>
-                      {getStatusLabel(booking.status)}
-                    </span>
-                  </div>
+                  return (
+                    <div
+                      key={booking.id}
+                      className="group rounded-3xl border border-white/15 bg-white/75 p-6 shadow-2xl backdrop-blur transition-all duration-300 hover:shadow-emerald-500/10 hover:-translate-y-1"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900">{booking.productName}</h3>
+                          <p className="text-sm text-slate-600">
+                            Owner: {booking.ownerName || 'Unknown'}
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(booking.status)}`}>
+                          {getStatusLabel(booking.status)}
+                        </span>
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">From</p>
-                      <p className="text-sm font-semibold text-slate-900">{formatDate(booking.bookingDate)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">To</p>
-                      <p className="text-sm font-semibold text-slate-900">{formatDate(booking.returnDate)}</p>
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">From</p>
+                          <p className="text-sm font-semibold text-slate-900">{formatDate(booking.bookingDate)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">To</p>
+                          <p className="text-sm font-semibold text-slate-900">{formatDate(booking.returnDate)}</p>
+                        </div>
+                      </div>
 
-                  {showCountdown && countdown && (
-                    <div className="rounded-2xl bg-gradient-to-br from-emerald-50 via-cyan-50 to-blue-50 p-4 mb-4 border border-emerald-100">
-                      <p className="text-xs font-medium text-emerald-700 uppercase tracking-wider">{label}</p>
-                      <p className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
-                        {countdown}
-                      </p>
-                    </div>
-                  )}
-
-                  {booking.status === 'PENDING_APPROVAL' && (
-                    <div className="rounded-2xl bg-yellow-50 p-4 mb-4 border border-yellow-100">
-                      <p className="text-sm text-yellow-700">
-                        ⏳ Waiting for owner approval...
-                      </p>
-                    </div>
-                  )}
-
-                  {booking.status === 'REJECTED' && booking.rejectionReason && (
-                    <div className="rounded-2xl bg-red-50 p-4 mb-4 border border-red-100">
-                      <p className="text-xs font-medium text-red-600 uppercase tracking-wider mb-1">Rejection Reason</p>
-                      <p className="text-sm text-red-800">{booking.rejectionReason}</p>
-                    </div>
-                  )}
-
-                  {booking.status === 'APPROVED' && (
-                    <div className="rounded-2xl bg-blue-50 p-4 mb-4 border border-blue-100">
-                      <p className="text-sm text-blue-700 mb-3">
-                        ✅ Booking approved! Proceed with payment.
-                      </p>
-                      <Button 
-                        onClick={() => handlePayClick(booking)}
-                        disabled={processingPayment}
-                        className="w-full bg-green-600 hover:bg-green-700 rounded-full"
-                        size="sm"
-                      >
-                        {processingPayment ? 'Loading...' : 'Pay Now'}
-                      </Button>
-                    </div>
-                  )}
-
-                  {booking.status === 'PAID' && booking.deliveryMethod && (
-                    <div className="rounded-2xl bg-green-50 p-4 mb-4 border border-green-100">
-                      <p className="text-xs font-medium text-green-800 uppercase tracking-wider mb-2">Payment Confirmed</p>
-                      <p className="text-sm text-black font-medium">
-                        Delivery: {booking.deliveryMethod === 'PICKUP' ? 'Pick-up' : 'Shipping'}
-                      </p>
-                      {booking.deliveryMethod === 'SHIPPING' && booking.deliveryCode && (
-                        <>
-                          <p className="text-xs font-medium text-green-700 mt-2 uppercase tracking-wider">Delivery Code</p>
-                          <p className="text-lg font-mono font-bold text-green-700">{booking.deliveryCode}</p>
-                        </>
+                      {showCountdown && countdown && (
+                        <div className="rounded-2xl bg-gradient-to-br from-emerald-50 via-cyan-50 to-blue-50 p-4 mb-4 border border-emerald-100">
+                          <p className="text-xs font-medium text-emerald-700 uppercase tracking-wider">{label}</p>
+                          <p className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                            {countdown}
+                          </p>
+                        </div>
                       )}
-                      {booking.deliveryMethod === 'PICKUP' && booking.pickupLocation && (
-                        <>
-                          <p className="text-xs font-medium text-green-700 mt-2 uppercase tracking-wider">Pick-up Location</p>
-                          <p className="text-sm text-green-800">{booking.pickupLocation}</p>
-                        </>
+
+                      {booking.status === 'PENDING_APPROVAL' && (
+                        <div className="rounded-2xl bg-yellow-50 p-4 mb-4 border border-yellow-100">
+                          <p className="text-sm text-yellow-700">
+                            ⏳ Waiting for owner approval...
+                          </p>
+                        </div>
                       )}
-                    </div>
-                  )}
 
-                  {booking.depositRequested && !booking.depositPaid && (
-                    <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 mb-4">
-                      <p className="text-sm font-semibold text-amber-800 mb-1">Deposit Requested</p>
-                      <p className="text-xs text-amber-700 mb-2">{booking.depositReason}</p>
-                      <p className="text-lg font-bold text-amber-900">€{booking.depositAmount?.toFixed(2)}</p>
-                      <Button
-                        onClick={() => handleDepositClick(booking)}
-                        size="sm"
-                        className="w-full mt-2 bg-amber-600 hover:bg-amber-700 text-white"
-                      >
-                        Pay Deposit
-                      </Button>
-                    </div>
-                  )}
+                      {booking.status === 'REJECTED' && booking.rejectionReason && (
+                        <div className="rounded-2xl bg-red-50 p-4 mb-4 border border-red-100">
+                          <p className="text-xs font-medium text-red-600 uppercase tracking-wider mb-1">Rejection Reason</p>
+                          <p className="text-sm text-red-800">{booking.rejectionReason}</p>
+                        </div>
+                      )}
 
-                  {booking.depositPaid && (
-                    <div className="rounded-2xl bg-green-50 border border-green-200 p-4 mb-4">
-                      <p className="text-sm font-semibold text-green-800">Deposit Paid</p>
-                      <p className="text-lg font-bold text-green-900">€{booking.depositAmount?.toFixed(2)}</p>
-                    </div>
-                  )}
+                      {booking.status === 'APPROVED' && (
+                        <div className="rounded-2xl bg-blue-50 p-4 mb-4 border border-blue-100">
+                          <p className="text-sm text-blue-700 mb-3">
+                            ✅ Booking approved! Proceed with payment.
+                          </p>
+                          <Button
+                            onClick={() => handlePayClick(booking)}
+                            disabled={processingPayment}
+                            className="w-full bg-green-600 hover:bg-green-700 rounded-full"
+                            size="sm"
+                          >
+                            {processingPayment ? 'Loading...' : 'Pay Now'}
+                          </Button>
+                        </div>
+                      )}
 
-                  <div className="flex items-center justify-between">
-                    <p className="text-lg font-bold text-slate-900">€{booking.totalPrice.toFixed(2)}</p>
-                    {canCancel(booking) && (
-                      <Button
-                        onClick={() => handleCancel(booking.id)}
-                        disabled={cancellingId === booking.id}
-                        variant="destructive"
-                        size="sm"
-                        className="rounded-full"
-                      >
-                        {cancellingId === booking.id ? "Cancelling..." : "Cancel"}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                      {booking.status === 'PAID' && booking.deliveryMethod && (
+                        <div className="rounded-2xl bg-green-50 p-4 mb-4 border border-green-100">
+                          <p className="text-xs font-medium text-green-800 uppercase tracking-wider mb-2">Payment Confirmed</p>
+                          <p className="text-sm text-black font-medium">
+                            Delivery: {booking.deliveryMethod === 'PICKUP' ? 'Pick-up' : 'Shipping'}
+                          </p>
+                          {booking.deliveryMethod === 'SHIPPING' && booking.deliveryCode && (
+                            <>
+                              <p className="text-xs font-medium text-green-700 mt-2 uppercase tracking-wider">Delivery Code</p>
+                              <p className="text-lg font-mono font-bold text-green-700">{booking.deliveryCode}</p>
+                            </>
+                          )}
+                          {booking.deliveryMethod === 'PICKUP' && booking.pickupLocation && (
+                            <>
+                              <p className="text-xs font-medium text-green-700 mt-2 uppercase tracking-wider">Pick-up Location</p>
+                              <p className="text-sm text-green-800">{booking.pickupLocation}</p>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {booking.depositRequested && !booking.depositPaid && (
+                        <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 mb-4">
+                          <p className="text-sm font-semibold text-amber-800 mb-1">Deposit Requested</p>
+                          <p className="text-xs text-amber-700 mb-2">{booking.depositReason}</p>
+                          <p className="text-lg font-bold text-amber-900">€{booking.depositAmount?.toFixed(2)}</p>
+                          <Button
+                            onClick={() => handleDepositClick(booking)}
+                            size="sm"
+                            className="w-full mt-2 bg-amber-600 hover:bg-amber-700 text-white"
+                          >
+                            Pay Deposit
+                          </Button>
+                        </div>
+                      )}
+
+                      {booking.depositPaid && (
+                        <div className="rounded-2xl bg-green-50 border border-green-200 p-4 mb-4">
+                          <p className="text-sm font-semibold text-green-800">Deposit Paid</p>
+                          <p className="text-lg font-bold text-green-900">€{booking.depositAmount?.toFixed(2)}</p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <p className="text-lg font-bold text-slate-900">€{booking.totalPrice.toFixed(2)}</p>
+                        {canCancel(booking) && (
+                          <Button
+                            onClick={() => handleCancel(booking.id)}
+                            disabled={cancellingId === booking.id}
+                            variant="destructive"
+                            size="sm"
+                            className="rounded-full"
+                          >
+                            {cancellingId === booking.id ? "Cancelling..." : "Cancel"}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </>
           )}
 
@@ -576,13 +605,13 @@ export default function MyBookingsPage() {
           setShowPaymentModal(false)
           setClientSecret(null)
         }}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-[400px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Complete Payment</DialogTitle>
             </DialogHeader>
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <PaymentForm
-                amount={Math.round(selectedBooking!.totalPrice * 100)}
+                booking={selectedBooking!}
                 onSuccess={handlePaymentSuccess}
                 onCancel={() => {
                   setShowPaymentModal(false)

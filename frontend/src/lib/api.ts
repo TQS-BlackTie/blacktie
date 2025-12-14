@@ -602,7 +602,7 @@ export type ReviewResponse = {
   rating: number
   comment?: string
   createdAt: string
-  reviewType?: 'OWNER' | 'CUSTOMER'
+  reviewType?: 'OWNER' | 'RENTER'
 }
 
 export async function getReviewByBooking(bookingId: number): Promise<ReviewResponse | null> {
