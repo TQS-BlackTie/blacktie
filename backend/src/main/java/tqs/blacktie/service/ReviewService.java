@@ -107,10 +107,10 @@ public class ReviewService {
 
         // Total
         int totalCount = ownerReviews.size() + renterReviews.size();
-        double totalSum = ownerReviews.stream()
+        double totalSum = (double) ownerReviews.stream()
                               .filter(r -> r.getRating() != null)
                               .mapToInt(Review::getRating).sum() + 
-                          renterReviews.stream()
+                          (double) renterReviews.stream()
                               .filter(r -> r.getRating() != null)
                               .mapToInt(Review::getRating).sum();
         
