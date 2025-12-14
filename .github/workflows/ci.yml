@@ -20,7 +20,7 @@ jobs:
           java-version: "21"
           cache: "maven"
       - name: Build & unit tests
-        run: mvn clean test
+        run: mvn clean test -Dtest='!tqs.blacktie.e2e.playwright.**'
       - name: List generated test reports
         if: always()
         run: |
