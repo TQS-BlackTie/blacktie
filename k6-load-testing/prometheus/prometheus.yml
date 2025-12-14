@@ -1,0 +1,26 @@
+# Prometheus Configuration for k6 Load Testing
+# ==============================================================================
+
+global:
+  scrape_interval: 15s          # How frequently to scrape targets
+  evaluation_interval: 15s      # How frequently to evaluate rules
+  external_labels:
+    monitor: 'k6-load-testing'
+
+# Scrape configuration
+scrape_configs:
+  # Prometheus self-scraping
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          instance: 'prometheus'
+
+  # k6 metrics (if using k6 with StatsD or other exporters)
+  - job_name: 'k6'
+    static_configs:
+      - targets: ['k6:6565']
+        labels:
+          instance: 'k6-runner'
+    # k6 exposes metrics via remote write, so this is optional
+    # but useful if you want to scrape additional k6 endpoints
