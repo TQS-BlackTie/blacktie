@@ -22,6 +22,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -328,6 +329,56 @@ class ProductControllerTest {
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertEquals("User not found", response.getBody());
+        }
+    }
+
+    @Nested
+    @DisplayName("Delete Product Tests")
+    class DeleteProductTests {
+
+        @Test
+        @DisplayName("Should successfully delete product when owner")
+        void whenOwnerDeletesProduct_thenReturnNoContent() {
+            // No exception means success
+            ResponseEntity<?> response = productController.deleteProduct(1L, 1L);
+
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Should return bad request when product not found")
+        void whenProductNotFound_thenReturnBadRequest() {
+            doThrow(new IllegalArgumentException("Product not found with id: 999"))
+                    .when(productService).deleteProduct(999L, 1L);
+
+            ResponseEntity<?> response = productController.deleteProduct(999L, 1L);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("Product not found with id: 999", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when non-owner tries to delete")
+        void whenNonOwnerDeletesProduct_thenReturnForbidden() {
+            doThrow(new IllegalStateException("You can only delete your own products"))
+                    .when(productService).deleteProduct(1L, 2L);
+
+            ResponseEntity<?> response = productController.deleteProduct(1L, 2L);
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertEquals("You can only delete your own products", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return bad request when user not found")
+        void whenUserNotFound_thenReturnBadRequest() {
+            doThrow(new IllegalArgumentException("User not found with id: 999"))
+                    .when(productService).deleteProduct(1L, 999L);
+
+            ResponseEntity<?> response = productController.deleteProduct(1L, 999L);
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("User not found with id: 999", response.getBody());
         }
     }
 }

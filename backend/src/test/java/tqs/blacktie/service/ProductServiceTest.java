@@ -137,4 +137,78 @@ class ProductServiceTest {
 
         assertThat(result.getAvailable()).isTrue();
     }
+
+    @Test
+    void shouldMarkProductAsUnavailableWhenDeleted() {
+        User owner = new User("Owner", "o@example.com", "pass", "owner");
+        owner.setId(1L);
+        
+        Product product = new Product("Smoking", "Desc", 80.0);
+        product.setId(1L);
+        product.setOwner(owner);
+        product.setAvailable(true);
+
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(owner));
+        when(productRepository.findById(1L)).thenReturn(java.util.Optional.of(product));
+        when(productRepository.save(any(Product.class))).thenReturn(product);
+
+        productService.deleteProduct(1L, 1L);
+
+        verify(productRepository).save(product);
+        assertThat(product.getAvailable()).isFalse();
+    }
+
+    @Test
+    void shouldThrowWhenDeletingProductNotFound() {
+        when(productRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+            () -> productService.deleteProduct(999L, 1L));
+    }
+
+    @Test
+    void shouldThrowWhenUserNotFoundOnDelete() {
+        Product product = new Product("Smoking", "Desc", 80.0);
+        product.setId(1L);
+        User owner = new User("Owner", "o@example.com", "pass", "owner");
+        owner.setId(1L);
+        product.setOwner(owner);
+
+        when(productRepository.findById(1L)).thenReturn(java.util.Optional.of(product));
+        when(userRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+            () -> productService.deleteProduct(1L, 999L));
+    }
+
+    @Test
+    void shouldThrowWhenNonOwnerTriesToDelete() {
+        User owner = new User("Owner", "o@example.com", "pass", "owner");
+        owner.setId(1L);
+        
+        User otherUser = new User("Other", "other@example.com", "pass", "owner");
+        otherUser.setId(2L);
+
+        Product product = new Product("Smoking", "Desc", 80.0);
+        product.setId(1L);
+        product.setOwner(owner);
+
+        when(productRepository.findById(1L)).thenReturn(java.util.Optional.of(product));
+        when(userRepository.findById(2L)).thenReturn(java.util.Optional.of(otherUser));
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+            () -> productService.deleteProduct(1L, 2L));
+    }
+
+    @Test
+    void shouldThrowWhenProductIdIsNull() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+            () -> productService.deleteProduct(null, 1L));
+    }
+
+    @Test
+    void shouldThrowWhenUserIdIsNull() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+            () -> productService.deleteProduct(1L, null));
+    }
 }

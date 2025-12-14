@@ -1,20 +1,22 @@
 import { useCallback, useEffect, useState } from "react"
-import { cancelBooking, getBookingsByProduct, getReviewsByProduct, type Booking, type Product, type ReviewResponse } from "@/lib/api"
+import { cancelBooking, getBookingsByProduct, getReviewsByProduct, deleteProduct, type Booking, type Product, type ReviewResponse } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 
 type ProductBookingsModalProps = {
   product: Product
   userId: number
   onClose: () => void
+  onProductDeleted?: () => void
 }
 
-export function ProductBookingsModal({ product, userId, onClose }: ProductBookingsModalProps) {
+export function ProductBookingsModal({ product, userId, onClose, onProductDeleted }: ProductBookingsModalProps) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [canceling, setCanceling] = useState<number | null>(null)
   const [reviews, setReviews] = useState<ReviewResponse[]>([])
   const [loadingReviews, setLoadingReviews] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const loadBookings = useCallback(async () => {
     try {
@@ -59,6 +61,25 @@ export function ProductBookingsModal({ product, userId, onClose }: ProductBookin
     }
   }
 
+  const handleDeleteProduct = async () => {
+    if (!confirm("Are you sure you want to remove this listing? This action cannot be undone.")) {
+      return
+    }
+
+    try {
+      setDeleting(true)
+      setError(null)
+      await deleteProduct(userId, product.id)
+      alert("Product removed successfully!")
+      onProductDeleted?.()
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete product")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const formatDate = (value: string) => {
     const d = new Date(value)
     return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
@@ -83,9 +104,14 @@ export function ProductBookingsModal({ product, userId, onClose }: ProductBookin
               </div>
             )}
           </div>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="destructive" onClick={handleDeleteProduct} disabled={deleting}>
+              {deleting ? "Removing..." : "Remove Listing"}
+            </Button>
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </div>
         </div>
 
         {error && (

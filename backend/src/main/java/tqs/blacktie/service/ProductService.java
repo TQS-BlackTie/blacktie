@@ -74,4 +74,28 @@ public class ProductService {
         }
         return productRepository.save(product);
     }
+
+    public void deleteProduct(Long productId, Long userId) {
+        if (productId == null) {
+            throw new IllegalArgumentException("Product id is required");
+        }
+        if (userId == null) {
+            throw new IllegalArgumentException("User id is required");
+        }
+
+        var product = productRepository.findById(productId)
+            .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+        
+        var user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        // Only the owner can delete their product
+        if (!product.getOwner().getId().equals(userId)) {
+            throw new IllegalStateException("You can only delete your own products");
+        }
+
+        // Mark product as unavailable instead of deleting to preserve referential integrity
+        product.setAvailable(false);
+        productRepository.save(product);
+    }
 }
