@@ -8,7 +8,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import tqs.blacktie.entity.Product;
 import tqs.blacktie.service.ProductService;
 
@@ -18,6 +21,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -177,6 +181,153 @@ class ProductControllerTest {
 
             assertEquals(HttpStatus.CREATED, response.getStatusCode());
             assertFalse(((Product) response.getBody()).getAvailable());
+        }
+    }
+
+    @Nested
+    @DisplayName("Create Product With Image Tests")
+    class CreateProductWithImageTests {
+
+        @Test
+        @DisplayName("Should create product with image successfully")
+        void whenCreateProductWithImage_thenReturnCreated() {
+            MockMultipartFile imageFile = new MockMultipartFile(
+                    "image",
+                    "suit.jpg",
+                    "image/jpeg",
+                    "test image content".getBytes()
+            );
+
+            Product savedProduct = new Product("Smoking", "Classic black", 80.0);
+            savedProduct.setId(1L);
+            savedProduct.setAvailable(true);
+            savedProduct.setImageUrl("/api/products/images/test-uuid.jpg");
+
+            when(productService.createProduct(any(Product.class), anyLong()))
+                    .thenReturn(savedProduct);
+
+            ResponseEntity<?> response = productController.createProductWithImage(
+                    "Smoking",
+                    "Classic black",
+                    80.0,
+                    imageFile,
+                    1L
+            );
+
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertNotNull(response.getBody());
+            Product body = (Product) response.getBody();
+            assertEquals(1L, body.getId());
+            assertEquals("Smoking", body.getName());
+            assertNotNull(body.getImageUrl());
+            assertTrue(body.getImageUrl().contains("/api/products/images/"));
+        }
+
+        @Test
+        @DisplayName("Should create product without image when image is null")
+        void whenCreateProductWithoutImage_thenReturnCreated() {
+            Product savedProduct = new Product("Tuxedo", "Navy blue", 120.0);
+            savedProduct.setId(2L);
+            savedProduct.setAvailable(true);
+
+            when(productService.createProduct(any(Product.class), anyLong()))
+                    .thenReturn(savedProduct);
+
+            ResponseEntity<?> response = productController.createProductWithImage(
+                    "Tuxedo",
+                    "Navy blue",
+                    120.0,
+                    null,
+                    1L
+            );
+
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertNotNull(response.getBody());
+            Product body = (Product) response.getBody();
+            assertEquals("Tuxedo", body.getName());
+            assertNull(body.getImageUrl());
+        }
+
+        @Test
+        @DisplayName("Should create product without image when image is empty")
+        void whenCreateProductWithEmptyImage_thenReturnCreated() {
+            MockMultipartFile emptyFile = new MockMultipartFile(
+                    "image",
+                    "empty.jpg",
+                    "image/jpeg",
+                    new byte[0]
+            );
+
+            Product savedProduct = new Product("Suit", "Gray", 90.0);
+            savedProduct.setId(3L);
+            savedProduct.setAvailable(true);
+
+            when(productService.createProduct(any(Product.class), anyLong()))
+                    .thenReturn(savedProduct);
+
+            ResponseEntity<?> response = productController.createProductWithImage(
+                    "Suit",
+                    "Gray",
+                    90.0,
+                    emptyFile,
+                    1L
+            );
+
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertNotNull(response.getBody());
+            Product body = (Product) response.getBody();
+            assertEquals("Suit", body.getName());
+            assertNull(body.getImageUrl());
+        }
+
+        @Test
+        @DisplayName("Should return forbidden when non-owner tries to create product")
+        void whenNonOwnerCreatesProduct_thenReturnForbidden() {
+            MockMultipartFile imageFile = new MockMultipartFile(
+                    "image",
+                    "suit.jpg",
+                    "image/jpeg",
+                    "test image content".getBytes()
+            );
+
+            when(productService.createProduct(any(Product.class), anyLong()))
+                    .thenThrow(new IllegalStateException("Only owners can create products"));
+
+            ResponseEntity<?> response = productController.createProductWithImage(
+                    "Smoking",
+                    "Classic black",
+                    80.0,
+                    imageFile,
+                    1L
+            );
+
+            assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+            assertEquals("Only owners can create products", response.getBody());
+        }
+
+        @Test
+        @DisplayName("Should return bad request when user not found")
+        void whenUserNotFound_thenReturnBadRequest() {
+            MockMultipartFile imageFile = new MockMultipartFile(
+                    "image",
+                    "suit.jpg",
+                    "image/jpeg",
+                    "test image content".getBytes()
+            );
+
+            when(productService.createProduct(any(Product.class), anyLong()))
+                    .thenThrow(new IllegalArgumentException("User not found"));
+
+            ResponseEntity<?> response = productController.createProductWithImage(
+                    "Smoking",
+                    "Classic black",
+                    80.0,
+                    imageFile,
+                    999L
+            );
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertEquals("User not found", response.getBody());
         }
     }
 }
