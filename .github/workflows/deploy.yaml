@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: self-hosted # add extra labels here if your runner uses them
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
       - name: Build and deploy stack
