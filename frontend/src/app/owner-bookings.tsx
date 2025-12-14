@@ -23,9 +23,14 @@ interface Booking {
 
 export default function OwnerBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [user, setUser] = useState<User | null>(null)
+  const [filterType, setFilterType] = useState<'all' | 'year' | 'month' | 'week'>('all')
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1)
+  const [selectedWeek, setSelectedWeek] = useState<number>(1)
 
   useEffect(() => {
     const userData = window.localStorage.getItem('user')
@@ -65,11 +70,60 @@ export default function OwnerBookingsPage() {
 
       const data = await response.json()
       setBookings(data)
+      setFilteredBookings(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
+  }
+
+  useEffect(() => {
+    applyFilters()
+  }, [filterType, selectedYear, selectedMonth, selectedWeek, bookings])
+
+  const getWeekOfMonth = (date: Date) => {
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
+    const dayOfMonth = date.getDate()
+    const dayOfWeek = firstDay.getDay()
+    return Math.ceil((dayOfMonth + dayOfWeek) / 7)
+  }
+
+  const applyFilters = () => {
+    let filtered = [...bookings]
+
+    if (filterType === 'year') {
+      filtered = filtered.filter(booking => {
+        const bookingYear = new Date(booking.bookingDate).getFullYear()
+        return bookingYear === selectedYear
+      })
+    } else if (filterType === 'month') {
+      filtered = filtered.filter(booking => {
+        const bookingDate = new Date(booking.bookingDate)
+        return bookingDate.getFullYear() === selectedYear && 
+               bookingDate.getMonth() + 1 === selectedMonth
+      })
+    } else if (filterType === 'week') {
+      filtered = filtered.filter(booking => {
+        const bookingDate = new Date(booking.bookingDate)
+        return bookingDate.getFullYear() === selectedYear && 
+               bookingDate.getMonth() + 1 === selectedMonth &&
+               getWeekOfMonth(bookingDate) === selectedWeek
+      })
+    }
+
+    setFilteredBookings(filtered)
+  }
+
+  const getAvailableYears = () => {
+    const years = bookings.map(b => new Date(b.bookingDate).getFullYear())
+    return [...new Set(years)].sort((a, b) => b - a)
+  }
+
+  const getWeeksInMonth = () => {
+    const lastDay = new Date(selectedYear, selectedMonth, 0).getDate()
+    const firstDayOfWeek = new Date(selectedYear, selectedMonth - 1, 1).getDay()
+    return Math.ceil((lastDay + firstDayOfWeek) / 7)
   }
 
   const formatDate = (dateString: string) => {
@@ -111,17 +165,17 @@ export default function OwnerBookingsPage() {
   const mapStatusToLabel = (status: string) => {
     switch (status) {
       case 'PENDING_APPROVAL':
-        return 'Pendente'
+        return 'Pending'
       case 'APPROVED':
-        return 'Aprovada'
+        return 'Approved'
       case 'REJECTED':
-        return 'Rejeitada'
+        return 'Rejected'
       case 'PAID':
-        return 'Paga'
+        return 'Paid'
       case 'COMPLETED':
-        return 'Concluída'
+        return 'Completed'
       case 'CANCELLED':
-        return 'Cancelada'
+        return 'Cancelled'
       default:
         return status
     }
@@ -135,7 +189,7 @@ export default function OwnerBookingsPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-lg">A carregar reservas...</div>
+        <div className="text-lg">Loading bookings...</div>
       </div>
     )
   }
@@ -151,9 +205,9 @@ export default function OwnerBookingsPage() {
       
       <div className="container mx-auto p-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Histórico de Reservas</h1>
+          <h1 className="text-3xl font-bold">Booking History</h1>
           <p className="text-muted-foreground mt-2">
-            Todas as reservas dos seus produtos
+            All bookings for your products
           </p>
         </div>
 
@@ -163,9 +217,100 @@ export default function OwnerBookingsPage() {
           </div>
         )}
 
-        {bookings.length === 0 ? (
+        {/* Filtros */}
+        <div className="mb-6 bg-card p-4 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filter by
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as 'all' | 'year' | 'month' | 'week')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white text-gray-900"
+              >
+                <option value="all">All Bookings</option>
+                <option value="year">By Year</option>
+                <option value="month">By Month</option>
+                <option value="week">By Week</option>
+              </select>
+            </div>
+
+            {(filterType === 'year' || filterType === 'month' || filterType === 'week') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Year
+                </label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white text-gray-900"
+                >
+                  {getAvailableYears().length > 0 ? (
+                    getAvailableYears().map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))
+                  ) : (
+                    <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
+                  )}
+                </select>
+              </div>
+            )}
+
+            {(filterType === 'month' || filterType === 'week') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Month
+                </label>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white text-gray-900"
+                >
+                  <option value={1}>January</option>
+                  <option value={2}>February</option>
+                  <option value={3}>March</option>
+                  <option value={4}>April</option>
+                  <option value={5}>May</option>
+                  <option value={6}>June</option>
+                  <option value={7}>July</option>
+                  <option value={8}>August</option>
+                  <option value={9}>September</option>
+                  <option value={10}>October</option>
+                  <option value={11}>November</option>
+                  <option value={12}>December</option>
+                </select>
+              </div>
+            )}
+
+            {filterType === 'week' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Week
+                </label>
+                <select
+                  value={selectedWeek}
+                  onChange={(e) => setSelectedWeek(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white text-gray-900"
+                >
+                  {Array.from({ length: getWeeksInMonth() }, (_, i) => i + 1).map(week => (
+                    <option key={week} value={week}>Week {week}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 text-sm text-gray-600">
+            Showing {filteredBookings.length} of {bookings.length} bookings
+          </div>
+        </div>
+
+        {filteredBookings.length === 0 ? (
           <div className="bg-card p-8 rounded-lg border text-center">
-            <p className="text-muted-foreground">Não existem reservas ainda</p>
+            <p className="text-muted-foreground">
+              {bookings.length === 0 ? 'No bookings yet' : 'No bookings found for the selected filters'}
+            </p>
           </div>
         ) : (
           <div className="bg-card rounded-lg border overflow-hidden">
@@ -173,27 +318,27 @@ export default function OwnerBookingsPage() {
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Produto
+                    Product
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cliente
+                    Customer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Data Início
+                    Start Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Data Fim
+                    End Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Valor
+                    Amount
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
+                    Status
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-card divide-y divide-border">
-                {bookings.map((booking) => (
+                {filteredBookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -230,33 +375,33 @@ export default function OwnerBookingsPage() {
           </div>
         )}
 
-        {bookings.length > 0 && (
+        {filteredBookings.length > 0 && (
           <div className="mt-6 bg-card p-6 rounded-lg border">
-            <h2 className="text-lg text-primary font-semibold mb-4">Resumo</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <h2 className="text-lg text-primary font-semibold mb-4">Summary</h2>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600">
-                  {bookings.filter(b => b.status === 'PENDING_APPROVAL').length}
+                  {filteredBookings.filter(b => b.status === 'PENDING_APPROVAL').length}
                 </div>
-                <div className="text-sm text-muted-foreground">Pendentes</div>
+                <div className="text-sm text-muted-foreground">Pending</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {bookings.filter(b => b.status === 'PAID').length}
+                <div className="text-2xl font-bold text-blue-600">
+                  {filteredBookings.filter(b => b.status === 'PAID' || b.status === 'APPROVED').length}
                 </div>
-                <div className="text-sm text-muted-foreground">Pagas</div>
+                <div className="text-sm text-muted-foreground">Active</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-700">
-                  {bookings.filter(b => b.status === 'COMPLETED').length}
+                  {filteredBookings.filter(b => b.status === 'COMPLETED').length}
                 </div>
-                <div className="text-sm text-muted-foreground">Concluídas</div>
+                <div className="text-sm text-muted-foreground">Completed</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl text-green-950 font-bold">
-                  {formatPrice(bookings.filter(b => b.status === 'PAID' || b.status === 'COMPLETED').reduce((sum, b) => sum + b.totalPrice, 0))}
+                  {formatPrice(filteredBookings.filter(b => b.status === 'PAID' || b.status === 'COMPLETED').reduce((sum, b) => sum + b.totalPrice, 0))}
                 </div>
-                <div className="text-sm text-muted-foreground">Total Faturado</div>
+                <div className="text-sm text-muted-foreground">Total Revenue</div>
               </div>
             </div>
           </div>
