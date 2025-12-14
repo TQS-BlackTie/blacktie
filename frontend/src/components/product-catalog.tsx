@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react"
-import { getProducts, createProduct, getReviewsByProduct, getPortugueseMunicipalities, isValidPortugueseMunicipality, type Product } from "@/lib/api"
+import { useEffect, useState } from "react"
+import { getProducts, createProduct, getReviewsByProduct, type Product } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,19 +21,10 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
 
   const [search, setSearch] = useState("")
   const [maxPrice, setMaxPrice] = useState<string>("")
-  const [searchCity, setSearchCity] = useState("")
-  const [searchCitySuggestions, setSearchCitySuggestions] = useState<string[]>([])
-  const searchCityInputRef = useRef<HTMLDivElement>(null)
 
   const [newName, setNewName] = useState("")
   const [newDescription, setNewDescription] = useState("")
   const [newPrice, setNewPrice] = useState("")
-  const [newDepositAmount, setNewDepositAmount] = useState("")
-  const [newSize, setNewSize] = useState("")
-  const [newCity, setNewCity] = useState("")
-  const [municipalitySuggestions, setMunicipalitySuggestions] = useState<string[]>([])
-  const [isValidMunicipality, setIsValidMunicipality] = useState(false)
-  const municipalityInputRef = useRef<HTMLDivElement>(null)
   const [newImage, setNewImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
@@ -113,55 +104,6 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Municipality autocomplete with validation (for add product form)
-  useEffect(() => {
-    const fetchMunicipalities = async () => {
-      if (newCity.length >= 2) {
-        const municipalities = await getPortugueseMunicipalities(newCity)
-        setMunicipalitySuggestions(municipalities)
-        // Validate if current value matches any valid municipality (accent-insensitive)
-        const isValid = await isValidPortugueseMunicipality(newCity)
-        setIsValidMunicipality(isValid)
-      } else {
-        setMunicipalitySuggestions([])
-        setIsValidMunicipality(false)
-      }
-    }
-
-    const timeoutId = setTimeout(fetchMunicipalities, 300)
-    return () => clearTimeout(timeoutId)
-  }, [newCity])
-
-  // Municipality autocomplete for search form
-  useEffect(() => {
-    const fetchSearchMunicipalities = async () => {
-      if (searchCity.length >= 2) {
-        const municipalities = await getPortugueseMunicipalities(searchCity)
-        setSearchCitySuggestions(municipalities)
-      } else {
-        setSearchCitySuggestions([])
-      }
-    }
-
-    const timeoutId = setTimeout(fetchSearchMunicipalities, 300)
-    return () => clearTimeout(timeoutId)
-  }, [searchCity])
-
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (municipalityInputRef.current && !municipalityInputRef.current.contains(event.target as Node)) {
-        setMunicipalitySuggestions([])
-      }
-      if (searchCityInputRef.current && !searchCityInputRef.current.contains(event.target as Node)) {
-        setSearchCitySuggestions([])
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     void loadProducts()
@@ -177,36 +119,18 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
       return
     }
 
-    if (newCity && !isValidMunicipality) {
-      setAddError("Please select a valid municipality from the suggestions")
-      return
-    }
-
-    const depositNumber = newDepositAmount.trim() ? Number(newDepositAmount) : undefined
-    if (depositNumber !== undefined && (Number.isNaN(depositNumber) || depositNumber < 0)) {
-      setAddError("Deposit amount must be a positive number")
-      return
-    }
-
     try {
       setAdding(true)
       await createProduct(userId, {
         name: newName.trim(),
         description: newDescription.trim(),
         price: priceNumber,
-        depositAmount: depositNumber,
-        city: newCity.trim() || undefined,
-        size: newSize.trim() || undefined,
         image: newImage || undefined,
       })
 
       setNewName("")
       setNewDescription("")
       setNewPrice("")
-      setNewDepositAmount("")
-      setNewSize("")
-      setNewCity("")
-      setIsValidMunicipality(false)
       setNewImage(null)
       setImagePreview(null)
       await loadProducts()
@@ -237,21 +161,11 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
     }
   }
 
-  // Filter products by municipality (client-side filtering)
-  const filteredProducts = searchCity.trim()
-    ? products.filter((p) => {
-      if (!p.city) return false
-      const normalizedSearchCity = searchCity.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      const normalizedProductCity = p.city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      return normalizedProductCity.includes(normalizedSearchCity)
-    })
-    : products
-
   return (
     <div className="mt-4 w-full space-y-6">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow-lg backdrop-blur md:p-5 relative z-20"
+        className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow-lg backdrop-blur md:p-5"
       >
         <div className="flex min-w-[220px] flex-1 flex-col">
           <label className="text-sm font-medium" htmlFor="search">
@@ -263,48 +177,6 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Smoking, vestido, gravata..."
           />
-        </div>
-
-        <div ref={searchCityInputRef} className="flex min-w-[180px] flex-col relative">
-          <label className="text-sm font-medium" htmlFor="searchCity">
-            Municipality
-          </label>
-          <div className="relative">
-            <Input
-              id="searchCity"
-              value={searchCity}
-              onChange={(e) => setSearchCity(e.target.value)}
-              placeholder="All municipalities"
-              autoComplete="off"
-            />
-            {searchCity && (
-              <button
-                type="button"
-                onClick={() => setSearchCity("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
-                title="Clear municipality filter"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          {searchCitySuggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-[100] mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {searchCitySuggestions.map((municipality, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => {
-                    setSearchCity(municipality)
-                    setSearchCitySuggestions([])
-                  }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm transition-colors first:rounded-t-lg last:rounded-b-lg border-b last:border-b-0"
-                >
-                  {municipality}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="flex w-32 flex-col">
@@ -366,63 +238,6 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
                 onChange={(e) => setNewPrice(e.target.value)}
                 className="w-32 rounded-xl"
               />
-              <Input
-                type="number"
-                min={0}
-                step={1}
-                placeholder="Deposit (optional)"
-                value={newDepositAmount}
-                onChange={(e) => setNewDepositAmount(e.target.value)}
-                className="w-36 rounded-xl"
-                title="Optional deposit amount for this product"
-              />
-              <Input
-                placeholder="Size (e.g., S, M, L, XL)"
-                value={newSize}
-                onChange={(e) => setNewSize(e.target.value)}
-                className="w-32 rounded-xl"
-                title="Product size (optional)"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <div ref={municipalityInputRef} className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Municipality {newCity && (
-                    isValidMunicipality
-                      ? <span className="text-green-600 ml-2">✓ Valid</span>
-                      : <span className="text-amber-600 ml-2">⚠ Please select from list</span>
-                  )}
-                </label>
-                <Input
-                  placeholder="Type to search municipality..."
-                  value={newCity}
-                  onChange={(e) => setNewCity(e.target.value)}
-                  className={`rounded-xl ${newCity && !isValidMunicipality ? 'border-amber-400 focus:border-amber-500' : ''}`}
-                  title="Municipality name"
-                  autoComplete="off"
-                />
-                {municipalitySuggestions.length > 0 && (
-                  <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {municipalitySuggestions.map((municipality, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => {
-                          setNewCity(municipality)
-                          setMunicipalitySuggestions([])
-                          setIsValidMunicipality(true)
-                        }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm transition-colors first:rounded-t-lg last:rounded-b-lg border-b last:border-b-0"
-                      >
-                        {municipality}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {newCity.length >= 2 && municipalitySuggestions.length === 0 && (
-                  <p className="text-sm text-gray-500 mt-1">No municipalities found. Keep typing...</p>
-                )}
-              </div>
             </div>
             <div className="flex flex-col gap-2 md:flex-row md:items-center">
               <div className="flex-1">
@@ -469,21 +284,21 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
         </div>
       )}
 
-      {filteredProducts.length === 0 && !loading && (
+      {products.length === 0 && !loading && (
         <div className="text-sm text-gray-500 text-center">
-          {products.length === 0 ? "No products found." : `No products found in "${searchCity}".`}
+          No products found.
         </div>
       )}
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredProducts.map((p) => (
+        {products.map((p) => (
           <Card
             key={p.id}
             onClick={() => handleProductClick(p)}
             className="group relative overflow-hidden border-slate-200/80 shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
           >
             <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-50 via-transparent to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
-
+            
             {/* Product Image */}
             <div className="relative w-full h-48 bg-gray-100 overflow-hidden">
               {p.imageUrl ? (
@@ -521,11 +336,10 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
                   Your listing
                 </div>
               )}
-              {showReviews && ratingsMap[p.id]?.count > 0 && (
+              {showReviews && ratingsMap[p.id] && ratingsMap[p.id].count > 0 && (
                 <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 text-sm font-medium text-yellow-600 shadow">
                   <span>⭐</span>
                   <span>{ratingsMap[p.id].avg.toFixed(1)}</span>
-                  <span className="text-xs text-gray-500">({ratingsMap[p.id].count})</span>
                 </div>
               )}
             </div>
@@ -536,31 +350,6 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
               <p className="text-emerald-600 font-bold text-xl mt-1">
                 {p.price.toFixed(2)} € <span className="text-sm font-normal text-slate-500">/ day</span>
               </p>
-              {p.city && (
-                <p className="text-sm text-slate-500 mt-1 flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  {p.city}
-                </p>
-              )}
-              {p.depositAmount && p.depositAmount > 0 && (
-                <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  Deposit: {p.depositAmount.toFixed(2)} €
-                </p>
-              )}
-              {p.size && (
-                <p className="text-sm text-slate-600 mt-1 flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                  </svg>
-                  Size: {p.size}
-                </p>
-              )}
             </CardContent>
           </Card>
         ))}
@@ -602,10 +391,6 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
           product={manageProduct}
           userId={userId}
           onClose={() => setManageProduct(null)}
-          onProductDeleted={() => {
-            setManageProduct(null)
-            void loadProducts()
-          }}
         />
       )}
 
