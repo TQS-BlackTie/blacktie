@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { getReviewsByProduct, type Product, type ReviewResponse } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { Info } from "lucide-react"
 
 type ProductDetailModalProps = {
   product: Product
@@ -8,6 +9,7 @@ type ProductDetailModalProps = {
   rating?: { avg: number; count: number }
   onClose: () => void
   onReserve: () => void
+  onViewProfile?: (userId: number) => void
 }
 
 export function ProductDetailModal({
@@ -16,6 +18,7 @@ export function ProductDetailModal({
   rating,
   onClose,
   onReserve,
+  onViewProfile,
 }: ProductDetailModalProps) {
   const [reviews, setReviews] = useState<ReviewResponse[]>([])
   const [loadingReviews, setLoadingReviews] = useState(false)
@@ -84,9 +87,22 @@ export function ProductDetailModal({
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">{product.name}</h2>
                 {product.owner?.name && (
-                  <p className="text-sm text-slate-500 mt-1">
-                    by {product.owner.name}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-sm text-slate-500">
+                      by {product.owner.name}
+                    </p>
+                    {onViewProfile && product.owner.id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-gray-500 hover:text-blue-600"
+                        onClick={() => onViewProfile(product.owner!.id)}
+                        title={`View ${product.owner.name}'s profile`}
+                      >
+                        <Info size={16} />
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
               <button

@@ -6,8 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { BookingModal } from "@/components/booking-modal"
 import { ProductBookingsModal } from "@/components/product-bookings-modal"
 import { ProductDetailModal } from "@/components/product-detail-modal"
-
-import { Info } from "lucide-react"
 import UserProfileModal from "./UserProfileModal"
 
 type ProductCatalogProps = {
@@ -352,38 +350,6 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
               <p className="text-emerald-600 font-bold text-xl mt-1">
                 {p.price.toFixed(2)} € <span className="text-sm font-normal text-slate-500">/ day</span>
               </p>
-              <div className="flex gap-2 items-center">
-                <Button
-                  onClick={() => (canCreateProduct ? setManageProduct(p) : setSelectedProduct(p))}
-                  className="flex-1"
-                  disabled={
-                    !canCreateProduct && (!p.available || p.owner?.id === userId)
-                  }
-                  variant={canCreateProduct ? "outline" : "default"}
-                >
-                  {canCreateProduct
-                    ? "View bookings"
-                    : p.owner?.id === userId
-                      ? "Your listing"
-                      : p.available
-                        ? "Reserve"
-                        : "Unavailable"}
-                </Button>
-                {p.owner && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 text-gray-500 hover:text-blue-600"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setViewProfileId(p.owner!.id)
-                    }}
-                    title={`View ${p.owner.name}'s profile`}
-                  >
-                    <Info size={20} />
-                  </Button>
-                )}
-              </div>
             </CardContent>
           </Card>
         ))}
@@ -399,6 +365,9 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
           onReserve={() => {
             setDetailProduct(null)
             setSelectedProduct(detailProduct)
+          }}
+          onViewProfile={(ownerId) => {
+            setViewProfileId(ownerId)
           }}
         />
       )}
