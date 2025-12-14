@@ -48,7 +48,7 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
       // Track which bookings have owner reviews
       const ownerReviewedBookings = new Set<number>()
       data.forEach(r => {
-        if ((r as any).reviewType === 'OWNER' && r.bookingId) {
+        if (r.reviewType === 'OWNER' && r.bookingId) {
           ownerReviewedBookings.add(r.bookingId)
         }
       })
@@ -327,12 +327,12 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
                         <span className="text-xs text-gray-500">
                           {new Date(review.createdAt).toLocaleDateString()}
                         </span>
-                        {(review as any).reviewType && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${(review as any).reviewType === 'OWNER'
+                        {review.reviewType && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${review.reviewType === 'OWNER'
                               ? 'bg-purple-100 text-purple-700'
                               : 'bg-blue-100 text-blue-700'
                             }`}>
-                            by {(review as any).reviewType === 'OWNER' ? 'Owner' : 'Customer'}
+                            by {review.reviewType === 'OWNER' ? 'Owner' : 'Customer'}
                           </span>
                         )}
                       </div>
