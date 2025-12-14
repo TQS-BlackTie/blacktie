@@ -32,6 +32,9 @@ public class Product {
     @Column(name = "available")
     private Boolean available;
 
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
+
     @ManyToOne
     @JoinColumn(name = "owner_id")
     private User owner;
