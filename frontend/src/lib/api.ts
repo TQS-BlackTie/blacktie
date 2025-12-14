@@ -4,6 +4,7 @@ export type Product = {
   description: string
   price: number
   available: boolean
+  imageUrl?: string
   owner?: {
     id: number
     name?: string
@@ -42,13 +43,40 @@ export type CreateProductInput = {
   name: string
   description: string
   price: number
+  image?: File
 }
 
 export async function createProduct(userId: number, input: CreateProductInput): Promise<Product> {
+  // If there's an image, use multipart form data
+  if (input.image) {
+    const formData = new FormData()
+    formData.append("name", input.name)
+    formData.append("description", input.description)
+    formData.append("price", String(input.price))
+    formData.append("image", input.image)
+
+    const res = await fetch("/api/products/with-image", {
+      method: "POST",
+      headers: { "X-User-Id": String(userId) },
+      body: formData,
+    })
+
+    if (!res.ok) {
+      throw new Error("Failed to create product")
+    }
+
+    return res.json()
+  }
+
+  // Otherwise use JSON
   const res = await fetch("/api/products", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-User-Id": String(userId) },
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      name: input.name,
+      description: input.description,
+      price: input.price,
+    }),
   })
 
   if (!res.ok) {

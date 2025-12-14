@@ -2,9 +2,10 @@ import { useEffect, useState } from "react"
 import { getProducts, createProduct, getReviewsByProduct, type Product } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { BookingModal } from "@/components/booking-modal"
 import { ProductBookingsModal } from "@/components/product-bookings-modal"
+import { ProductDetailModal } from "@/components/product-detail-modal"
 
 type ProductCatalogProps = {
   userRole: string
@@ -23,10 +24,13 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
   const [newName, setNewName] = useState("")
   const [newDescription, setNewDescription] = useState("")
   const [newPrice, setNewPrice] = useState("")
+  const [newImage, setNewImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [detailProduct, setDetailProduct] = useState<Product | null>(null)
   const [manageProduct, setManageProduct] = useState<Product | null>(null)
   const [ratingsMap, setRatingsMap] = useState<Record<number, { avg: number; count: number }>>({})
 
@@ -119,16 +123,39 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
         name: newName.trim(),
         description: newDescription.trim(),
         price: priceNumber,
+        image: newImage || undefined,
       })
 
       setNewName("")
       setNewDescription("")
       setNewPrice("")
+      setNewImage(null)
+      setImagePreview(null)
       await loadProducts()
     } catch {
       setAddError("Failed to add product")
     } finally {
       setAdding(false)
+    }
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setNewImage(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleProductClick = (product: Product) => {
+    if (canCreateProduct) {
+      setManageProduct(product)
+    } else {
+      setDetailProduct(product)
     }
   }
 
@@ -186,31 +213,65 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
               {addError}
             </div>
           )}
-          <div className="flex flex-col gap-2 md:flex-row">
-            <Input
-              placeholder="Name"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="flex-1 rounded-xl"
-            />
-            <Input
-              placeholder="Description"
-              value={newDescription}
-              onChange={(e) => setNewDescription(e.target.value)}
-              className="flex-1 rounded-xl"
-            />
-            <Input
-              type="number"
-              min={0}
-              step={1}
-              placeholder="Price"
-              value={newPrice}
-              onChange={(e) => setNewPrice(e.target.value)}
-              className="w-32 rounded-xl"
-            />
-            <Button type="submit" disabled={adding} className="rounded-full">
-              {adding ? "Adding..." : "Add"}
-            </Button>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2 md:flex-row">
+              <Input
+                placeholder="Name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="flex-1 rounded-xl"
+              />
+              <Input
+                placeholder="Description"
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                className="flex-1 rounded-xl"
+              />
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                placeholder="Price"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                className="w-32 rounded-xl"
+              />
+            </div>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product Image
+                </label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="rounded-xl"
+                />
+              </div>
+              {imagePreview && (
+                <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewImage(null)
+                      setImagePreview(null)
+                    }}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              <Button type="submit" disabled={adding} className="rounded-full">
+                {adding ? "Adding..." : "Add"}
+              </Button>
+            </div>
           </div>
         </form>
       )}
@@ -227,45 +288,86 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {products.map((p) => (
           <Card
             key={p.id}
-            className="group relative overflow-hidden border-slate-200/80 shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
+            onClick={() => handleProductClick(p)}
+            className="group relative overflow-hidden border-slate-200/80 shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
           >
             <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-50 via-transparent to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
-            <CardHeader>
-              <CardTitle>{p.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-700 mb-2">{p.description}</p>
-              <p className="font-semibold mb-3">{p.price.toFixed(2)} € / day</p>
-              {showReviews && ratingsMap[p.id] && ratingsMap[p.id].count > 0 && (
-                <p className="text-sm text-yellow-600 mb-2">Average: {ratingsMap[p.id].avg.toFixed(1)} ⭐ ({ratingsMap[p.id].count})</p>
+            
+            {/* Product Image */}
+            <div className="relative w-full h-48 bg-gray-100 overflow-hidden">
+              {p.imageUrl ? (
+                <img
+                  src={p.imageUrl}
+                  alt={p.name}
+                  className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                  <svg
+                    className="w-16 h-16 text-slate-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
               )}
-              <div className="flex flex-col gap-2">
-                <Button
-                  onClick={() => (canCreateProduct ? setManageProduct(p) : setSelectedProduct(p))}
-                  className="w-full"
-                  disabled={
-                    !canCreateProduct && (!p.available || p.owner?.id === userId)
-                  }
-                  variant={canCreateProduct ? "outline" : "default"}
-                >
-                  {canCreateProduct
-                    ? "View bookings"
-                    : p.owner?.id === userId
-                      ? "Your listing"
-                      : p.available
-                        ? "Reserve"
-                        : "Unavailable"}
-                </Button>
-              </div>
+              {!p.available && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <span className="text-white font-semibold px-3 py-1 bg-red-500 rounded-full text-sm">
+                    Unavailable
+                  </span>
+                </div>
+              )}
+              {p.owner?.id === userId && (
+                <div className="absolute top-2 left-2 bg-emerald-500 text-white rounded-full px-3 py-1 text-xs font-semibold shadow-lg">
+                  Your listing
+                </div>
+              )}
+              {showReviews && ratingsMap[p.id] && ratingsMap[p.id].count > 0 && (
+                <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 text-sm font-medium text-yellow-600 shadow">
+                  <span>⭐</span>
+                  <span>{ratingsMap[p.id].avg.toFixed(1)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Product Info */}
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-lg text-slate-900 truncate">{p.name}</h3>
+              <p className="text-emerald-600 font-bold text-xl mt-1">
+                {p.price.toFixed(2)} € <span className="text-sm font-normal text-slate-500">/ day</span>
+              </p>
             </CardContent>
           </Card>
         ))}
       </div>
 
+      {/* Product Detail Modal - for renters */}
+      {detailProduct && (
+        <ProductDetailModal
+          product={detailProduct}
+          userId={userId}
+          rating={ratingsMap[detailProduct.id]}
+          onClose={() => setDetailProduct(null)}
+          onReserve={() => {
+            setDetailProduct(null)
+            setSelectedProduct(detailProduct)
+          }}
+        />
+      )}
+
+      {/* Booking Modal - for making reservations */}
       {selectedProduct && (
         <BookingModal
           product={selectedProduct}
@@ -278,6 +380,7 @@ export function ProductCatalog({ userRole, userId, showReviews = true }: Product
         />
       )}
 
+      {/* Product Bookings Modal - for owners */}
       {manageProduct && (
         <ProductBookingsModal
           product={manageProduct}
