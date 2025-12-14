@@ -30,16 +30,14 @@ public class ProductController {
 	public List<Product> getProducts(
 			@RequestParam(required = false) String name,
 			@RequestParam(required = false) Double maxPrice,
-			@RequestHeader("X-User-Id") Long userId
-	) {
+			@RequestHeader("X-User-Id") Long userId) {
 		return productService.getAvailableProducts(name, maxPrice, userId);
 	}
 
 	@PostMapping
 	public ResponseEntity<?> createProduct(
-		@RequestBody Product product,
-		@RequestHeader("X-User-Id") Long userId
-	) {
+			@RequestBody Product product,
+			@RequestHeader("X-User-Id") Long userId) {
 		try {
 			Product created = productService.createProduct(product, userId);
 			return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -52,18 +50,18 @@ public class ProductController {
 
 	@PostMapping(value = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> createProductWithImage(
-		@RequestParam("name") String name,
-		@RequestParam("description") String description,
-		@RequestParam("price") Double price,
-		@RequestParam(value = "depositAmount", required = false) Double depositAmount,
-		@RequestParam(value = "address", required = false) String address,
-		@RequestParam(value = "city", required = false) String city,
-		@RequestParam(value = "postalCode", required = false) String postalCode,
-		@RequestParam(value = "latitude", required = false) Double latitude,
-		@RequestParam(value = "longitude", required = false) Double longitude,
-		@RequestParam(value = "image", required = false) MultipartFile image,
-		@RequestHeader("X-User-Id") Long userId
-	) {
+			@RequestParam("name") String name,
+			@RequestParam("description") String description,
+			@RequestParam("price") Double price,
+			@RequestParam(value = "depositAmount", required = false) Double depositAmount,
+			@RequestParam(value = "address", required = false) String address,
+			@RequestParam(value = "city", required = false) String city,
+			@RequestParam(value = "postalCode", required = false) String postalCode,
+			@RequestParam(value = "latitude", required = false) Double latitude,
+			@RequestParam(value = "longitude", required = false) Double longitude,
+			@RequestParam(value = "size", required = false) String size,
+			@RequestParam(value = "image", required = false) MultipartFile image,
+			@RequestHeader("X-User-Id") Long userId) {
 		try {
 			Product product = new Product();
 			product.setName(name);
@@ -75,6 +73,7 @@ public class ProductController {
 			product.setPostalCode(postalCode);
 			product.setLatitude(latitude);
 			product.setLongitude(longitude);
+			product.setSize(size);
 
 			if (image != null && !image.isEmpty()) {
 				String imageUrl = saveImage(image);
@@ -99,14 +98,14 @@ public class ProductController {
 		}
 
 		String originalFilename = image.getOriginalFilename();
-		String extension = originalFilename != null && originalFilename.contains(".") 
-			? originalFilename.substring(originalFilename.lastIndexOf(".")) 
-			: ".jpg";
+		String extension = originalFilename != null && originalFilename.contains(".")
+				? originalFilename.substring(originalFilename.lastIndexOf("."))
+				: ".jpg";
 		String filename = UUID.randomUUID().toString() + extension;
-		
+
 		Path filePath = uploadPath.resolve(filename);
 		Files.copy(image.getInputStream(), filePath);
-		
+
 		return "/api/products/images/" + filename;
 	}
 
@@ -117,16 +116,16 @@ public class ProductController {
 			if (!Files.exists(filePath)) {
 				return ResponseEntity.notFound().build();
 			}
-			
+
 			byte[] imageBytes = Files.readAllBytes(filePath);
 			String contentType = Files.probeContentType(filePath);
 			if (contentType == null) {
 				contentType = "image/jpeg";
 			}
-			
+
 			return ResponseEntity.ok()
-				.contentType(MediaType.parseMediaType(contentType))
-				.body(imageBytes);
+					.contentType(MediaType.parseMediaType(contentType))
+					.body(imageBytes);
 		} catch (IOException e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
@@ -134,9 +133,8 @@ public class ProductController {
 
 	@DeleteMapping("/{productId}")
 	public ResponseEntity<?> deleteProduct(
-		@PathVariable Long productId,
-		@RequestHeader("X-User-Id") Long userId
-	) {
+			@PathVariable Long productId,
+			@RequestHeader("X-User-Id") Long userId) {
 		try {
 			productService.deleteProduct(productId, userId);
 			return ResponseEntity.noContent().build();

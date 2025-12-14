@@ -11,6 +11,7 @@ export type Product = {
   postalCode?: string
   latitude?: number
   longitude?: number
+  size?: string
   owner?: {
     id: number
     name?: string
@@ -56,6 +57,7 @@ export type CreateProductInput = {
   postalCode?: string
   latitude?: number
   longitude?: number
+  size?: string
 }
 
 export async function createProduct(userId: number, input: CreateProductInput): Promise<Product> {
@@ -82,6 +84,9 @@ export async function createProduct(userId: number, input: CreateProductInput): 
     }
     if (input.longitude != null) {
       formData.append("longitude", String(input.longitude))
+    }
+    if (input.size) {
+      formData.append("size", input.size)
     }
     formData.append("image", input.image)
 
@@ -112,6 +117,7 @@ export async function createProduct(userId: number, input: CreateProductInput): 
       postalCode: input.postalCode,
       latitude: input.latitude,
       longitude: input.longitude,
+      size: input.size,
     }),
   })
 

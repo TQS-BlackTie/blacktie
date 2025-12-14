@@ -98,6 +98,15 @@ class ProductTest {
 
             assertEquals(now, product.getCreatedAt());
         }
+
+        @Test
+        @DisplayName("Should get and set size")
+        void whenSetSize_thenGetSize() {
+            Product product = new Product();
+            product.setSize("M");
+
+            assertEquals("M", product.getSize());
+        }
     }
 
     @Nested

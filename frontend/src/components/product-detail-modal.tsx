@@ -160,6 +160,15 @@ export function ProductDetailModal({
           <div className="p-6 border-b border-gray-100">
             <h3 className="font-semibold text-slate-700 mb-2">Description</h3>
             <p className="text-slate-600">{product.description || "No description available."}</p>
+            {product.size && (
+              <div className="mt-3 flex items-center gap-2 text-slate-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+                <span className="font-medium">Size:</span>
+                <span className="bg-slate-100 px-3 py-1 rounded-full text-sm font-semibold">{product.size}</span>
+              </div>
+            )}
           </div>
 
           {/* Location */}
