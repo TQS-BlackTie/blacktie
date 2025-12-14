@@ -35,6 +35,7 @@ export function Navbar({ userName, userRole, onLogout, notificationBell }: Navba
     { label: "Profile", href: "/profile" },
     { label: "Role Setup", href: "/role-setup", roleExcluded: "admin" },
     { label: "Pending Approvals", href: "/pending-approvals", roleRequired: "owner" },
+    { label: "My Reputation", href: "/my-reputation" },
 
   ]
 
@@ -71,11 +72,10 @@ export function Navbar({ userName, userRole, onLogout, notificationBell }: Navba
               <button
                 key={item.href}
                 onClick={() => goTo(item.href)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition duration-200 ${
-                  isActive
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition duration-200 ${isActive
                     ? "border-white/30 bg-white/15 text-white shadow-lg shadow-emerald-900/20"
                     : "border-white/5 text-slate-200 hover:border-white/15 hover:bg-white/10"
-                }`}
+                  }`}
               >
                 {item.label}
               </button>

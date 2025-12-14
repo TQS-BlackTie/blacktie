@@ -96,6 +96,12 @@ export type User = {
   address?: string
   businessInfo?: string
   createdAt: string
+  averageRating?: number
+  totalReviews?: number
+  renterAverageRating?: number
+  renterReviewCount?: number
+  ownerAverageRating?: number
+  ownerReviewCount?: number
 }
 
 export type SetRoleInput = {
@@ -103,7 +109,7 @@ export type SetRoleInput = {
 }
 
 export async function getCurrentUser(userId: number): Promise<User> {
-  const res = await fetch(`/api/users/${userId}/profile`)
+  const res = await fetch(`/api/users/${userId}`)
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: "Failed to fetch user" }))
@@ -115,7 +121,7 @@ export async function getCurrentUser(userId: number): Promise<User> {
 
 export async function setUserRole(userId: number, role: "renter" | "owner"): Promise<User> {
   const res = await fetch(`/api/users/${userId}/role`, {
-    method: "POST",
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
@@ -137,8 +143,16 @@ export type UpdateProfileInput = {
   businessInfo?: string
 }
 
+export async function getUserReputation(userId: number): Promise<User> {
+  const res = await fetch(`/api/users/${userId}/reputation`)
+  if (!res.ok) {
+    throw new Error("Failed to fetch user reputation")
+  }
+  return res.json()
+}
+
 export async function updateUserProfile(userId: number, data: UpdateProfileInput): Promise<User> {
-  const res = await fetch(`/api/users/${userId}/profile`, {
+  const res = await fetch(`/api/users/${userId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
