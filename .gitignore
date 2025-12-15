@@ -1,2 +1,6 @@
 .env
 node_modules/
+
+lighthouse/*.html
+lighthouse/*.json
+
