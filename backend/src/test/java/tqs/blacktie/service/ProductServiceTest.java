@@ -212,4 +212,56 @@ class ProductServiceTest {
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
             () -> productService.deleteProduct(1L, null));
     }
+
+    @Test
+    void shouldFilterProductsByNameCaseInsensitive() {
+        when(productRepository.findByAvailableTrueAndNameContainingIgnoreCase("SMOKING"))
+                .thenReturn(List.of());
+
+        User requester = new User("Renter", "r@example.com", "pass", "renter");
+        requester.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(requester));
+
+        productService.getAvailableProducts("SMOKING", null, 1L);
+
+        verify(productRepository)
+                .findByAvailableTrueAndNameContainingIgnoreCase("SMOKING");
+    }
+
+    @Test
+    void shouldHandleZeroPriceFilter() {
+        when(productRepository.findByAvailableTrueAndPriceLessThanEqual(0.0))
+                .thenReturn(List.of());
+
+        User requester = new User("Renter", "r@example.com", "pass", "renter");
+        requester.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(requester));
+
+        productService.getAvailableProducts(null, 0.0, 1L);
+
+        verify(productRepository)
+                .findByAvailableTrueAndPriceLessThanEqual(0.0);
+    }
+
+    @Test
+    void shouldCreateProductWithMinimalData() {
+        Product minimal = new Product("Tux", "", 0.0);
+        minimal.setAvailable(null);
+
+        Product saved = new Product("Tux", "", 0.0);
+        saved.setAvailable(true);
+        saved.setId(1L);
+
+        User owner = new User("Owner", "o@example.com", "pass", "owner");
+        owner.setId(10L);
+
+        when(userRepository.findById(10L)).thenReturn(java.util.Optional.of(owner));
+        when(productRepository.save(any(Product.class))).thenReturn(saved);
+
+        Product result = productService.createProduct(minimal, 10L);
+
+        assertThat(result.getAvailable()).isTrue();
+        verify(productRepository).save(any(Product.class));
+    }
+
 }

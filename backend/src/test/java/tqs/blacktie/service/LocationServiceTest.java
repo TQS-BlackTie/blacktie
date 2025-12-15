@@ -434,4 +434,23 @@ class LocationServiceTest {
         
         return response;
     }
+
+    @Test
+    void whenGeocodeWithNullAddress_thenHandlesGracefully() {
+        GeoApiResponse mockResponse = createMockGeoApiResponse(
+                "Lisboa, 1100-053, Portugal",
+                38.7139,
+                -9.1394,
+                "Lisboa",
+                "1100-053"
+        );
+
+        when(responseSpec.bodyToMono(GeoApiResponse.class)).thenReturn(Mono.just(mockResponse));
+
+        LocationDTO result = locationService.geocodeAddress(null, "Lisboa", "1100-053");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getCity()).isEqualTo("Lisboa");
+    }
+
 }

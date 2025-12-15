@@ -288,5 +288,23 @@ class ReviewServiceTest {
             assertTrue(responses.stream().anyMatch(r -> "OWNER".equals(r.getReviewType())));
             assertTrue(responses.stream().anyMatch(r -> "RENTER".equals(r.getReviewType())));
         }
+
+        @Test
+        @DisplayName("Should handle empty comment text")
+        void whenEmptyComment_thenSuccess() {
+            when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
+            when(reviewRepository.findByBookingIdAndReviewType(booking.getId(), "OWNER"))
+                    .thenReturn(Optional.empty());
+
+            Review savedReview = new Review(booking, 4, "", "OWNER");
+            savedReview.setId(200L);
+            savedReview.setCreatedAt(LocalDateTime.now());
+            when(reviewRepository.save(any(Review.class))).thenReturn(savedReview);
+
+            ReviewResponse response = reviewService.createReview(renter.getId(), booking.getId(), 4, "");
+
+            assertNotNull(response);
+            assertEquals("", response.getComment());
+        }
     }
 }
