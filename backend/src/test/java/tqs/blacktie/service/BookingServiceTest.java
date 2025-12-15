@@ -979,5 +979,28 @@ class BookingServiceTest {
             verify(notificationService, times(1)).createDepositRefundedNotification(
                     testUser, bookingWithPaidDeposit, 50.0);
         }
+
+        @Test
+        @DisplayName("Should get owner bookings correctly")
+        void shouldGetOwnerBookings() {
+            when(bookingRepository.findByProductOwnerId(5L)).thenReturn(Arrays.asList(testBooking));
+
+            List<BookingResponse> responses = bookingService.getOwnerBookings(5L);
+
+            assertNotNull(responses);
+            assertEquals(1, responses.size());
+            verify(bookingRepository, times(1)).findByProductOwnerId(5L);
+        }
+
+        @Test
+        @DisplayName("Should return empty list when user has no bookings")
+        void shouldReturnEmptyListWhenNoBookings() {
+            when(bookingRepository.findByRenterId(999L)).thenReturn(List.of());
+
+            List<BookingResponse> responses = bookingService.getUserBookings(999L);
+
+            assertNotNull(responses);
+            assertTrue(responses.isEmpty());
+        }
     }
 }
