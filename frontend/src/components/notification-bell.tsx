@@ -105,7 +105,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/notifications?userId=${userId}`)
+      const response = await fetch(`/api/notifications?userId=${userId}`)
       if (response.ok) {
         const data = await response.json()
         setNotifications(data)
@@ -117,7 +117,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/notifications/unread/count?userId=${userId}`)
+      const response = await fetch(`/api/notifications/unread/count?userId=${userId}`)
       if (response.ok) {
         const data = await response.json()
         setUnreadCount(data.count)
@@ -132,7 +132,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     if (!notification.isRead) {
       try {
         const response = await fetch(
-          `http://localhost:8080/api/notifications/${notification.id}/read?userId=${userId}`,
+          `/api/notifications/${notification.id}/read?userId=${userId}`,
           { method: 'PUT' }
         )
         if (response.ok) {
@@ -157,7 +157,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const markAllAsRead = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/notifications/read-all?userId=${userId}`,
+        `/api/notifications/read-all?userId=${userId}`,
         { method: 'PUT' }
       )
       if (response.ok) {
@@ -172,7 +172,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   useEffect(() => {
     const loadUnreadCount = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/notifications/unread/count?userId=${userId}`)
+        const response = await fetch(`/api/notifications/unread/count?userId=${userId}`)
         if (response.ok) {
           const data = await response.json()
           setUnreadCount(data.count)
@@ -194,7 +194,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   useEffect(() => {
     const loadNotifications = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/notifications?userId=${userId}`)
+        const response = await fetch(`/api/notifications?userId=${userId}`)
         if (response.ok) {
           const data = await response.json()
           setNotifications(data)
