@@ -72,7 +72,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
-			<scope>test</scope>
 		</dependency>
 
 		<!-- JUnit Platform Suite API for @Suite and related annotations used by Cucumber runner -->
