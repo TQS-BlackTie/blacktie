@@ -1,0 +1,13 @@
+{
+  "name": "blacktie-lighthouse",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Lighthouse User Flow tests for BlackTie application",
+  "scripts": {
+    "flow": "node user-flow.js"
+  },
+  "dependencies": {
+    "lighthouse": "^12.0.0",
+    "puppeteer": "^24.0.0"
+  }
+}

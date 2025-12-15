@@ -1,0 +1,8 @@
+# BlackTie - Robots.txt
+# https://www.robotstxt.org/
+
+User-agent: *
+Allow: /
+
+# Sitemap (optional - add if you have one)
+# Sitemap: https://yourdomain.com/sitemap.xml
