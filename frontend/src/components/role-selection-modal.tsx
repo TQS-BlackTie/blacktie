@@ -72,8 +72,8 @@ export function RoleSelectionModal({ userId, onRoleSelected, onClose, title }: R
           </button>
         )}
         <CardHeader>
-          <CardTitle>{title || "Choose Your Role"}</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-slate-900">{title || "Choose Your Role"}</CardTitle>
+          <CardDescription className="text-slate-500">
             {currentRole && currentRole !== "renter"
               ? `Current role: ${currentRole === "owner" ? "Owner" : currentRole}. You can change it anytime.`
               : "Select how you want to use the platform. You can change it anytime."}
@@ -108,8 +108,8 @@ export function RoleSelectionModal({ userId, onRoleSelected, onClose, title }: R
                     className="mr-3"
                   />
                   <div className="text-left">
-                    <div className="font-medium">Renter</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="font-medium text-slate-900">Renter</div>
+                    <div className="text-sm text-slate-500">
                       I want to rent suits for events
                     </div>
                   </div>
@@ -126,8 +126,8 @@ export function RoleSelectionModal({ userId, onRoleSelected, onClose, title }: R
                     className="mr-3"
                   />
                   <div className="text-left">
-                    <div className="font-medium">Owner</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="font-medium text-slate-900">Owner</div>
+                    <div className="text-sm text-slate-500">
                       I want to make my suits available for rent
                     </div>
                   </div>
