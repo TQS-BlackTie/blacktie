@@ -20,7 +20,8 @@ jobs:
           java-version: "21"
           cache: "maven"
       - name: Build & unit tests
-        run: mvn clean test -Dtest='!tqs.blacktie.e2e.playwright.**'
+        # Exclude Playwright and Cucumber E2E tests that require a running frontend
+        run: mvn clean test -Dtest='!tqs.blacktie.e2e.playwright.**,!tqs.blacktie.e2e.cucumber.**'
       - name: List generated test reports
         if: always()
         run: |
@@ -107,4 +108,5 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=TQS-BlackTie_blacktie -Dtest='!tqs.blacktie.e2e.playwright.**'
+        # Exclude Playwright and Cucumber E2E tests from Sonar/verify step (requires frontend runtime)
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=TQS-BlackTie_blacktie -Dtest='!tqs.blacktie.e2e.playwright.**,!tqs.blacktie.e2e.cucumber.**'

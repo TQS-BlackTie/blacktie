@@ -204,7 +204,7 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
                       </p>
                       <p className="text-xs text-gray-500">Total: {b.totalPrice.toFixed(2)} €</p>
                       {b.depositAmount && b.depositRequested && (
-                        <p className="text-xs text-amber-600">
+                        <p className="text-xs text-amber-700">
                           Deposit: {b.depositAmount.toFixed(2)} € {b.depositReason && `- ${b.depositReason}`}
                         </p>
                       )}
