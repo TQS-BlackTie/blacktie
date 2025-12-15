@@ -45,10 +45,11 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
       setLoadingReviews(true)
       const data = await getReviewsByProduct(product.id)
       setReviews(data)
-      // Track which bookings have owner reviews
+      // Track which bookings the owner has already reviewed (reviewing the renter)
+      // When owner reviews renter, reviewType is 'RENTER' (the type of person being reviewed)
       const ownerReviewedBookings = new Set<number>()
       data.forEach(r => {
-        if (r.reviewType === 'OWNER' && r.bookingId) {
+        if (r.reviewType === 'RENTER' && r.bookingId) {
           ownerReviewedBookings.add(r.bookingId)
         }
       })
@@ -142,8 +143,8 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold">Bookings for {product.name}</h2>
-            <p className="text-sm text-gray-600">Manage reservations on this product.</p>
+            <h2 className="text-2xl font-bold text-slate-900">Bookings for {product.name}</h2>
+            <p className="text-sm text-slate-500">Manage reservations on this product.</p>
             {!loadingReviews && reviews.length > 0 && (
               <div className="mt-2 flex items-center gap-2">
                 <span className="text-yellow-600 text-lg">⭐</span>
@@ -329,10 +330,11 @@ export function ProductBookingsModal({ product, userId, onClose, onProductDelete
                         </span>
                         {review.reviewType && (
                           <span className={`text-xs px-2 py-0.5 rounded-full ${review.reviewType === 'OWNER'
-                              ? 'bg-purple-100 text-purple-700'
-                              : 'bg-blue-100 text-blue-700'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-blue-100 text-blue-700'
                             }`}>
-                            by {review.reviewType === 'OWNER' ? 'Owner' : 'Customer'}
+                            {/* reviewType is WHO is being reviewed: OWNER=customer reviewed owner, RENTER=owner reviewed customer */}
+                            {review.reviewType === 'OWNER' ? 'Customer Review' : 'Owner Review'}
                           </span>
                         )}
                       </div>

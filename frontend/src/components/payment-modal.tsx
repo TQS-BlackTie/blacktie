@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { getStripe } from '@/lib/stripe'
 import { Button } from '@/components/ui/button'
@@ -53,15 +53,15 @@ function CheckoutForm({ booking, totalAmount, onSuccess, onCancel }: Omit<Paymen
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="bg-gray-50 p-4 rounded-lg">
-        <h3 className="font-semibold mb-2 text-gray-900">Payment Summary</h3>
-        <p className="text-sm text-gray-600">Product: {booking.productName}</p>
-        <p className="text-sm text-gray-600">
+        <h3 className="font-semibold mb-2 text-slate-900">Payment Summary</h3>
+        <p className="text-sm text-slate-500">Product: {booking.productName}</p>
+        <p className="text-sm text-slate-500">
           Dates: {new Date(booking.bookingDate).toLocaleDateString()} - {new Date(booking.returnDate).toLocaleDateString()}
         </p>
 
         {/* Price breakdown */}
         <div className="mt-3 pt-3 border-t border-gray-200 space-y-1">
-          <div className="flex justify-between text-sm text-gray-600">
+          <div className="flex justify-between text-sm text-slate-600">
             <span>Rental</span>
             <span>€{booking.totalPrice.toFixed(2)}</span>
           </div>
@@ -71,14 +71,14 @@ function CheckoutForm({ booking, totalAmount, onSuccess, onCancel }: Omit<Paymen
               <span>+€{depositAmount.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between font-bold text-gray-900 pt-2 border-t mt-2">
+          <div className="flex justify-between font-bold text-slate-900 pt-2 border-t mt-2">
             <span>Total</span>
             <span>€{totalAmount.toFixed(2)}</span>
           </div>
         </div>
 
         {hasDeposit && (
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-slate-500 mt-2">
             The security deposit will be refunded after the item is returned in good condition.
           </p>
         )}
@@ -123,7 +123,7 @@ export function PaymentModal({ booking, userId, onSuccess, onCancel }: PaymentFo
   const depositAmount = hasDeposit ? booking.productDepositAmount! : 0
   const totalAmount = booking.totalPrice + depositAmount
 
-  useState(() => {
+  useEffect(() => {
     const initPayment = async () => {
       try {
         setLoading(true)
@@ -141,7 +141,7 @@ export function PaymentModal({ booking, userId, onSuccess, onCancel }: PaymentFo
       }
     }
     void initPayment()
-  })
+  }, [booking.id, userId, totalAmount])
 
   const stripePromise = getStripe()
 
