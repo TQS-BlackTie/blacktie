@@ -247,9 +247,9 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
 
           const baseClasses =
             "w-9 h-9 rounded-full flex items-center justify-center border transition-colors"
-          const monthClasses = inCurrentMonth ? "text-gray-900" : "text-gray-400"
+          const monthClasses = inCurrentMonth ? "text-gray-900" : "text-gray-500"
           const blockedClasses = blocked
-            ? "bg-gray-200 text-gray-500 cursor-not-allowed border-gray-200"
+            ? "bg-gray-200 text-gray-600 cursor-not-allowed border-gray-200"
             : "hover:bg-blue-50 border-transparent cursor-pointer"
           const selectedClasses = selected
             ? edge
@@ -257,12 +257,20 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
               : "bg-blue-100 text-blue-700 border-blue-100"
             : ""
 
+          const dateLabel = date.toLocaleDateString(undefined, {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+
           return (
             <button
               key={key}
               type="button"
               onClick={() => handleDayClick(date)}
               disabled={blocked}
+              aria-label={dateLabel}
               className={`${baseClasses} ${monthClasses} ${blockedClasses} ${selectedClasses}`}
             >
               {date.getDate()}
@@ -329,7 +337,7 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
                   {product.price.toFixed(2)} € / day
                 </p>
                 {hasDeposit && (
-                  <p className="text-sm text-amber-600 flex items-center gap-1 mt-1">
+                  <p className="text-sm text-amber-700 flex items-center gap-1 mt-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
@@ -350,13 +358,13 @@ export function BookingModal({ product, userId, onClose, onSuccess }: BookingMod
                     <p className="text-sm font-medium">Select booking range</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => moveMonth(-1)}>
+                    <Button type="button" size="sm" variant="outline" onClick={() => moveMonth(-1)} aria-label="Previous month">
                       ‹
                     </Button>
                     <span className="text-sm font-semibold">
                       {viewMonth.toLocaleString(undefined, { month: "long", year: "numeric" })}
                     </span>
-                    <Button type="button" size="sm" variant="outline" onClick={() => moveMonth(1)}>
+                    <Button type="button" size="sm" variant="outline" onClick={() => moveMonth(1)} aria-label="Next month">
                       ›
                     </Button>
                   </div>

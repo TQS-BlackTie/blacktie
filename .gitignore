@@ -1,2 +1,7 @@
 .env
 node_modules/
+
+# Lighthouse reports (generated files)
+lighthouse/lighthouse-user-flow-report.html
+lighthouse/lighthouse-user-flow-report.json
+lighthouse/package-lock.json
