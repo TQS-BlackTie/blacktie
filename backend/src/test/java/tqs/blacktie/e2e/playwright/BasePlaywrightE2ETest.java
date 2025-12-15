@@ -229,8 +229,23 @@ public abstract class BasePlaywrightE2ETest {
     }
 
     protected void assertTextVisible(String text) {
-        waitForElementVisible("text=" + text);
-        assertThat(page.locator("text=" + text).isVisible()).isTrue();
+        // Playwright 'text=' selector can match multiple elements (strict mode violation).
+        // Be tolerant: locate all matches and assert at least one is visible.
+        Locator loc = page.locator("text=" + text);
+        int matches = loc.count();
+        if (matches == 0) {
+            throw new AssertionError("Text '" + text + "' not found on the page");
+        }
+        for (int i = 0; i < matches; i++) {
+            try {
+                if (loc.nth(i).isVisible()) {
+                    return;
+                }
+            } catch (com.microsoft.playwright.PlaywrightException e) {
+                // ignore and try next match
+            }
+        }
+        throw new AssertionError("Text '" + text + "' found but not visible on the page");
     }
 
     protected void assertElementVisible(String selector) {
