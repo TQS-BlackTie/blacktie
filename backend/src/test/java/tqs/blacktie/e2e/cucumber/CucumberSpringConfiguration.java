@@ -1,8 +1,13 @@
 package tqs.blacktie.e2e.cucumber;
 
-// Removed cucumber-spring and Spring Boot test annotations to avoid starting
-// an in-process Spring context during the Cucumber runs. This placeholder
-// keeps the file present without referencing missing dependencies.
-public class CucumberSpringConfiguration {
+import io.cucumber.spring.CucumberContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
+@CucumberContextConfiguration
+@SpringBootTest
+@ActiveProfiles("test")
+public class CucumberSpringConfiguration {
+    // This class configures Cucumber to use Spring Boot test context
+    // for backend integration-style BDD tests
 }

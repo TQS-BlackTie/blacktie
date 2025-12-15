@@ -1,8 +1,22 @@
 module.exports = {
   ci: {
     collect: {
-      staticDistDir: "./frontend/dist",
+      // Use Vite preview server instead of static serving for proper SPA support
+      startServerCommand: "npm run preview -- --port 4173",
+      startServerReadyPattern: "Local:",
+      url: ["http://localhost:4173"],
       numberOfRuns: 3,
+      settings: {
+        // Increase timeout for SPA rendering
+        maxWaitForLoad: 45000,
+        // Chrome flags for CI environment
+        chromeFlags: [
+          "--no-sandbox",
+          "--disable-gpu",
+          "--disable-dev-shm-usage",
+          "--disable-software-rasterizer",
+        ],
+      },
     },
     assert: {
       assertions: {
