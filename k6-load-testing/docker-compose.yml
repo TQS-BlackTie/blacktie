@@ -55,6 +55,7 @@ services:
     environment:
       - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
       - K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=true
+      - BASE_URL=http://host.docker.internal:8080
     volumes:
       - ./scripts:/scripts:ro
       - ./reports:/reports
