@@ -457,5 +457,24 @@ class UserServiceTest {
 
             assertFalse(result);
         }
+
+        @Test
+        @DisplayName("Should handle null email gracefully")
+        void whenAuthenticateWithNullEmail_thenThrowException() {
+            assertThrows(IllegalArgumentException.class, () -> userService.authenticateUser(null, "password"));
+        }
+
+        @Test
+        @DisplayName("Should normalize email to lowercase")
+        void whenRegisterWithUppercaseEmail_thenNormalizeToLowercase() {
+            SignUpRequest request = new SignUpRequest("Test User", "TEST@EXAMPLE.COM", RAW_PASSWORD);
+            when(userRepository.existsByEmail(anyString())).thenReturn(false);
+            when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(HASHED_PASSWORD);
+            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            User result = userService.createUser(request);
+
+            assertEquals("test@example.com", result.getEmail().toLowerCase());
+        }
     }
 }

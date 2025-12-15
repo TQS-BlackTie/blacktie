@@ -223,4 +223,36 @@ class NotificationServiceTest {
 
         verify(notificationRepository).save(any(Notification.class));
     }
+
+    @Test
+    void testGetUserNotifications_EmptyList() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(notificationRepository.findByUserOrderByCreatedAtDesc(owner)).thenReturn(List.of());
+
+        List<NotificationResponse> result = notificationService.getUserNotifications(1L);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void testMarkAsRead_AlreadyRead() {
+        notification.setIsRead(true);
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
+        when(notificationRepository.save(notification)).thenReturn(notification);
+
+        notificationService.markAsRead(1L, 1L);
+
+        assertThat(notification.getIsRead()).isTrue();
+        verify(notificationRepository).save(notification);
+    }
+
+    @Test
+    void testGetUnreadCount_Zero() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(notificationRepository.countByUserAndIsRead(owner, false)).thenReturn(0L);
+
+        long count = notificationService.getUnreadCount(1L);
+
+        assertThat(count).isZero();
+    }
 }
