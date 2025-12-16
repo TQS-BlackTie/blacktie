@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Base class for Playwright E2E tests.
  * Provides common setup, teardown, and utility methods for browser-based testing.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public abstract class BasePlaywrightE2ETest {
@@ -302,7 +302,10 @@ public abstract class BasePlaywrightE2ETest {
      * @param password User's password
      */
     protected void loginViaUI(String email, String password) {
-        navigateToLogin();
+        // Only navigate to login if not already there
+        if (!page.url().contains("/login")) {
+            navigateToLogin();
+        }
         waitForElement("#email");
         
         fillInputById("email", email);
@@ -310,8 +313,9 @@ public abstract class BasePlaywrightE2ETest {
         
         clickButton("Log In");
         
-        // Wait for navigation/success
-        waitMs(2000);
+        // Wait for redirect - frontend uses setTimeout(1000) before navigation
+        // Plus API call time, so need at least 2-3 seconds
+        waitMs(4000);
     }
 
     /**
