@@ -87,7 +87,7 @@ docker exec -it k6-runner k6 run /scripts/test.js
 
 ---
 
-## End-to-End Tests (Playwright)
+## c) End-to-End Tests (Playwright)
 
 A comprehensive Playwright E2E test suite is available in `backend/src/test/java/tqs/blacktie/e2e/playwright`. These tests verify critical user flows including authentication, navigation, product catalog, and admin functionality.
 
