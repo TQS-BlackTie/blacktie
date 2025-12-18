@@ -1,7 +1,0 @@
-Unit Test (JUnit + Mockito) - teste rápido, isolado, sem arrancar Spring. // cd backend && mvn -Dtest=ProductServiceUnitTest test
-Integration Test (Spring Boot + H2 in-memory): arranca contexto Spring e testa a integração de componentes (DB em memória). //cd backend && mvn -Dtest=HealthIntegrationTest test
-Controller Test (MockMvc): teste rápido ao controlador sem iniciar o servidor HTTP completo. // cd backend && mvn -Dtest=HealthControllerTest test
-End-to-End (E2E) — Playwright (JS) minimal //
-Cucumber (E2E) - 
-Load Test (k6) — teste mínimo
-Lighthouse
