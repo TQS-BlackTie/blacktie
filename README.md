@@ -102,7 +102,6 @@ npm run dev
 # In a new terminal: run the tests
 cd backend
 ./mvnw test -Dtest=tqs.blacktie.e2e.playwright.SimplePlaywrightE2ETest
-
 ---
 
 http://deti-tqs-10.ua.pt
